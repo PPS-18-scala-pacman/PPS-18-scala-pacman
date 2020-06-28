@@ -1,20 +1,32 @@
-// Esempio build Akka https://github.com/beercan1989/playground-kotlin-akka/blob/master/build.gradle.kts
-// It is possible to import classes
+import com.github.alisiikh.scalastyle.ScalastyleExtension
+
+val rootScalastyleConfig = file("${projectDir}/scalastyle_config.xml");
 
 plugins {
   scala
   idea
   id("com.github.maiflai.scalatest") version "0.26"
   id("org.scoverage") version "4.0.1"
+  id("com.github.alisiikh.scalastyle") version "3.4.0"
+}
+
+buildscript {
+  repositories {
+    maven {
+      url = uri("https://plugins.gradle.org/m2/")
+    }
+  }
+  dependencies {
+    classpath("com.github.alisiikh:gradle-scalastyle-plugin:3.4.0")
+  }
 }
 
 allprojects {
   repositories {
-    // is superior to mavenCentral() in terms of performance and memory footprint
-    // https://stackoverflow.com/a/50726436/3687018
-    /*jcenter()*/
     mavenCentral()
   }
+
+  apply(plugin = "com.github.alisiikh.scalastyle")
 
   apply(plugin = "scala")
   apply(plugin = "com.github.maiflai.scalatest")
@@ -33,7 +45,6 @@ allprojects {
     implementation(group = "com.typesafe.akka", name = "akka-stream_$scalaVersion", version = akkaVersion)
     implementation(group = "com.typesafe.akka", name = "akka-http_$scalaVersion", version = akkaHttpVersion)
     implementation(group = "com.typesafe.akka", name = "akka-http-spray-json_$scalaVersion", version = akkaHttpVersion)
-    /*implementation(group = "com.typesafe.akka", name = "akka-protobuf_$scalaVersion", version = akkaVersion)*/
 
     // Logging
     implementation(group = "ch.qos.logback", name = "logback-classic", version = "1.2.3")
@@ -53,6 +64,11 @@ allprojects {
   tasks.withType<ScalaCompile> {
     sourceCompatibility = "1.8"
     targetCompatibility = "1.8"
+  }
+
+  configure<ScalastyleExtension> {
+    config.set(rootScalastyleConfig)
+    failOnWarning.set(true)
   }
 }
 
