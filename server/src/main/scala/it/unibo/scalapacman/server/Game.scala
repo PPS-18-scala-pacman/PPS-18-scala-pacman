@@ -2,7 +2,7 @@ package it.unibo.scalapacman.server
 
 import akka.actor.typed.Behavior
 import akka.actor.typed.receptionist.{Receptionist, ServiceKey}
-import akka.actor.typed.scaladsl.{ActorContext, Behaviors, TimerScheduler}
+import akka.actor.typed.scaladsl.{ActorContext, Behaviors}
 import it.unibo.scalapacman.server.Game.Setup
 import it.unibo.scalapacman.server.util.Settings
 
