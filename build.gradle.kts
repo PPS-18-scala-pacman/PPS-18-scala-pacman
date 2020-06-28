@@ -49,6 +49,7 @@ allprojects {
     // Logging
     implementation(group = "ch.qos.logback", name = "logback-classic", version = "1.2.3")
     implementation(group = "com.typesafe.akka", name = "akka-slf4j_$scalaVersion", version = akkaVersion)
+    implementation(group = "org.clapper", name = "grizzled-slf4j_$scalaVersion", version = "1.3.4")
 
     testImplementation(group = "org.scalatest", name = "scalatest_$scalaVersion", version = "3.1.2")
     testImplementation(group = "com.typesafe.akka", name = "akka-actor-testkit-typed_$scalaVersion", version = akkaVersion)
