@@ -13,48 +13,55 @@ import scala.reflect.ClassTag
 
 class MasterTest extends ScalaTestWithActorTestKit with AnyWordSpecLike with BeforeAndAfterAll {
 
-  private var masterProbe: TestProbe[Master.GameCreated] = _
+  private var gameCreatedProbe: TestProbe[Master.GameCreated] = _
   private var masterActor: ActorRef[Master.MasterCommand] = _
 
-  def findActors[A: ClassTag](keyId: String): Set[ActorRef[A]] = {
+  implicit def stringToKeyService[A: ClassTag](keyId: String): ServiceKey[A] = ServiceKey[A](keyId)
+
+  override def beforeAll(): Unit = {
+    gameCreatedProbe = createTestProbe[Master.GameCreated]()
+    masterActor = spawn(Master())
+  }
+
+  def findActors[A: ClassTag](key: ServiceKey[A]): Set[ActorRef[A]] = {
     val gameProbe = createTestProbe[Receptionist.Listing]()
-    val key = ServiceKey[A](keyId)
     var actors: Set[ActorRef[A]] = null
 
-    masterProbe.awaitAssert({
+    TestProbe().awaitAssert({
       system.receptionist ! Receptionist.Find(key, gameProbe.ref)
       actors = gameProbe.receiveMessage().serviceInstances(key)
-      actors should not be (null)
-      actors.size should be > (0)
+      actors should not be null
+      actors.size should be > 0
     }, FiniteDuration(5, TimeUnit.SECONDS), FiniteDuration(250, TimeUnit.MILLISECONDS))
     actors
   }
 
-  override def beforeAll(): Unit = {
-    masterProbe = createTestProbe[Master.GameCreated]()
-    masterActor = spawn(Master())
-  }
+  "A Master actor" must {
 
-  "Master actor" must {
+    "is discoverable" in {
 
-    "be able to start a game actor" in {
+      val res = findActors[Master.MasterCommand](Master.MasterServiceKey)
+      res should have size 1
+    }
 
-      masterActor ! Master.CreateGame(masterProbe.ref)
-      val gameId = masterProbe.receiveMessage().gameId
+    "is able to start a game actor" in {
+
+      masterActor ! Master.CreateGame(gameCreatedProbe.ref)
+      val gameId = gameCreatedProbe.receiveMessage().gameId
       val res = findActors[Game.GameCommand](gameId)
       res should have size 1
     }
 
     "spawn different actors each times" in {
 
-      masterActor ! Master.CreateGame(masterProbe.ref)
-      val gameIdFst = masterProbe.receiveMessage().gameId
+      masterActor ! Master.CreateGame(gameCreatedProbe.ref)
+      val gameIdFst = gameCreatedProbe.receiveMessage().gameId
       val resFst = findActors[Game.GameCommand](gameIdFst)
       resFst should have size 1
       val gameFst = resFst.head
 
-      masterActor ! Master.CreateGame(masterProbe.ref)
-      val gameIdSnd = masterProbe.receiveMessage().gameId
+      masterActor ! Master.CreateGame(gameCreatedProbe.ref)
+      val gameIdSnd = gameCreatedProbe.receiveMessage().gameId
       val resSnd = findActors[Game.GameCommand](gameIdSnd)
       resSnd should have size 1
       val gameSnd = resSnd.head
