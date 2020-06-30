@@ -2,7 +2,7 @@ package it.unibo.scalapacman.client.gui
 
 import java.awt.{BorderLayout, CardLayout, Dimension}
 
-import javax.swing.{JFrame, JPanel}
+import javax.swing.{JFrame, JPanel, WindowConstants}
 
 class GUI extends JFrame {
   private final val HEIGHT = 960
@@ -19,7 +19,7 @@ class GUI extends JFrame {
 
   setTitle("Scala Pacman")
   setSize(new Dimension(WIDTH, HEIGHT))
-  setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE)
+  setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE)
   //noinspection ScalaStyle
   setLocationRelativeTo(null)
   setVisible(true)
