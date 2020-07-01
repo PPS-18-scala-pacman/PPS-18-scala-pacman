@@ -4,9 +4,15 @@ import java.awt.{BorderLayout, CardLayout, Dimension}
 
 import javax.swing.{JFrame, JPanel, WindowConstants}
 
-class GUI extends JFrame {
-  private final val HEIGHT = 960
-  private final val WIDTH = 720
+object GUI {
+  def apply(): GUI = new GUI
+}
+
+class GUI {
+  private val frame: JFrame = new JFrame
+
+  private val HEIGHT = 960
+  private val WIDTH = 720
   private val mainLayout = new CardLayout
   private val mainPanel = new JPanel(mainLayout)
 
@@ -15,12 +21,12 @@ class GUI extends JFrame {
   mainPanel add(menu, "menu")
   mainLayout show (mainPanel, "menu")
 
-  add(mainPanel, BorderLayout.CENTER)
+  frame add(mainPanel, BorderLayout.CENTER)
 
-  setTitle("Scala Pacman")
-  setSize(new Dimension(WIDTH, HEIGHT))
-  setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE)
+  frame setTitle "Scala Pacman"
+  frame setSize new Dimension(WIDTH, HEIGHT)
+  frame setDefaultCloseOperation WindowConstants.EXIT_ON_CLOSE
   //noinspection ScalaStyle
-  setLocationRelativeTo(null)
-  setVisible(true)
+  frame setLocationRelativeTo null
+  frame setVisible true
 }

@@ -4,5 +4,5 @@ import it.unibo.scalapacman.client.gui.GUI
 
 object ClientApp extends App {
 //  ScalaGreeter().sayHello
-  new GUI
+  GUI()
 }
