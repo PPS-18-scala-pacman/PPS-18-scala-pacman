@@ -25,8 +25,9 @@ class MasterTest extends ScalaTestWithActorTestKit with AnyWordSpecLike with Bef
 
   def findActors[A: ClassTag](key: ServiceKey[A]): Set[ActorRef[A]] = {
     val gameProbe = createTestProbe[Receptionist.Listing]()
-    var actors: Set[ActorRef[A]] = null
+    var actors = Set[ActorRef[A]]()
 
+    //noinspection ScalaStyle
     TestProbe().awaitAssert({
       system.receptionist ! Receptionist.Find(key, gameProbe.ref)
       actors = gameProbe.receiveMessage().serviceInstances(key)
