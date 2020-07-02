@@ -27,13 +27,12 @@ class MasterTest extends ScalaTestWithActorTestKit with AnyWordSpecLike with Bef
     val gameProbe = createTestProbe[Receptionist.Listing]()
     var actors = Set[ActorRef[A]]()
 
-    //noinspection ScalaStyle
     TestProbe().awaitAssert({
       system.receptionist ! Receptionist.Find(key, gameProbe.ref)
       actors = gameProbe.receiveMessage().serviceInstances(key)
-      actors should not be null
+      actors should not be null // scalastyle:ignore null
       actors.size should be > 0
-    }, FiniteDuration(5, TimeUnit.SECONDS), FiniteDuration(250, TimeUnit.MILLISECONDS))
+    }, FiniteDuration(5, TimeUnit.SECONDS), FiniteDuration(250, TimeUnit.MILLISECONDS)) // scalastyle:ignore magic.number
     actors
   }
 

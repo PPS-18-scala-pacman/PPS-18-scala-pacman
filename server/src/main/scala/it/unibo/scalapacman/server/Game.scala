@@ -3,7 +3,7 @@ package it.unibo.scalapacman.server
 import akka.actor.typed.Behavior
 import akka.actor.typed.receptionist.{Receptionist, ServiceKey}
 import akka.actor.typed.scaladsl.{ActorContext, Behaviors}
-import it.unibo.scalapacman.server.Game.Setup
+import it.unibo.scalapacman.server.Game.{CloseCommand, GameCommand, Setup, WakeUp}
 import it.unibo.scalapacman.server.util.Settings
 
 object Game {
@@ -30,7 +30,6 @@ object Game {
 }
 
 private class Game (setup: Setup) {
-  import Game._
 
   private def game(): Behavior[GameCommand] = {
 

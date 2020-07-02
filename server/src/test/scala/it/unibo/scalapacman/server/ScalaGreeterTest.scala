@@ -11,8 +11,8 @@ class ScalaGreeterTest extends AnyWordSpec {
     "always" should { // All tests within these curly braces are about "A Set (when empty)"
 
       "greet with hello" in {    // Here, 'it' refers to "A Set (when empty)". The full name
-        val res = ScalaGreeter().sayHello;
-        assert((res.toLowerCase) startsWith "hello") // of this test is: "A Set (when empty) should have size 0"
+        val res = ScalaGreeter().sayHello
+        assert(res.toLowerCase startsWith "hello") // of this test is: "A Set (when empty) should have size 0"
       }
     }
   }
