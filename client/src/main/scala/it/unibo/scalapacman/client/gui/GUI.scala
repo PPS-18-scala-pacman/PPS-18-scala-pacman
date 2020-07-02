@@ -20,6 +20,7 @@ object GUI {
 
   frame setTitle "Scala Pacman"
   frame setSize new Dimension(WIDTH, HEIGHT)
+  frame setResizable false
   frame setDefaultCloseOperation WindowConstants.EXIT_ON_CLOSE
   frame setLocationRelativeTo null // scalastyle:ignore null
   frame setVisible true
