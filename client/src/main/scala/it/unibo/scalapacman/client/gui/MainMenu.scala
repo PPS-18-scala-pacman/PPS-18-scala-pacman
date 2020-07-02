@@ -1,8 +1,6 @@
 package it.unibo.scalapacman.client.gui
 
 import java.awt.{Color, Font}
-
-import it.unibo.scalapacman.client.gui.Panel.PanelImpl
 import javax.swing.{JButton, JLabel}
 
 class MainMenu extends PanelImpl {

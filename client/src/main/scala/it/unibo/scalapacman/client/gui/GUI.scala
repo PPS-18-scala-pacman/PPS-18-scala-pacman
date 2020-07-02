@@ -1,14 +1,9 @@
 package it.unibo.scalapacman.client.gui
 
 import java.awt.{BorderLayout, CardLayout, Dimension}
-
 import javax.swing.{JFrame, JPanel, WindowConstants}
 
 object GUI {
-  def apply(): GUI = new GUI
-}
-
-class GUI {
   private val frame: JFrame = new JFrame
 
   private val HEIGHT = 960
@@ -29,4 +24,6 @@ class GUI {
   //noinspection ScalaStyle
   frame setLocationRelativeTo null
   frame setVisible true
+
+  def changePanel(page: String): Unit = mainLayout show (mainPanel, page)
 }
