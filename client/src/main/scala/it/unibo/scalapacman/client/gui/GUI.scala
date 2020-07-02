@@ -21,8 +21,7 @@ object GUI {
   frame setTitle "Scala Pacman"
   frame setSize new Dimension(WIDTH, HEIGHT)
   frame setDefaultCloseOperation WindowConstants.EXIT_ON_CLOSE
-  //noinspection ScalaStyle
-  frame setLocationRelativeTo null
+  frame setLocationRelativeTo null // scalastyle:ignore null
   frame setVisible true
 
   def changePanel(page: String): Unit = mainLayout show (mainPanel, page)
