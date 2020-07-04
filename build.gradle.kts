@@ -32,10 +32,10 @@ allprojects {
   apply(plugin = "com.github.maiflai.scalatest")
   apply(plugin = "org.scoverage")
 
-  val scalaVersion = "2.12"
-  val akkaVersion = "2.6.5"
-  val akkaHttpVersion = "10.1.12"
-  val scoverageVersion = "1.4.1"
+  val scalaVersion: String by project
+  val akkaVersion: String by project
+  val akkaHttpVersion: String by project
+  val scoverageVersion: String by project
 
   dependencies {
     implementation(group = "org.scala-lang", name = "scala-library", version = "$scalaVersion.8")
@@ -52,7 +52,6 @@ allprojects {
     implementation(group = "org.clapper", name = "grizzled-slf4j_$scalaVersion", version = "1.3.4")
 
     testImplementation(group = "org.scalatest", name = "scalatest_$scalaVersion", version = "3.1.2")
-    testImplementation(group = "org.scalamock", name = "scalamock-scalatest-support_$scalaVersion", version = "3.6.0")
     testImplementation(group = "com.typesafe.akka", name = "akka-actor-testkit-typed_$scalaVersion", version = akkaVersion)
     testImplementation(group = "com.typesafe.akka", name = "akka-http-testkit_$scalaVersion", version = akkaHttpVersion)
     testImplementation(group = "com.typesafe.akka", name = "akka-stream-testkit_$scalaVersion", version = akkaVersion)
