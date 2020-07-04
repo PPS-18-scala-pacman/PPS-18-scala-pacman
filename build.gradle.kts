@@ -1,6 +1,6 @@
 import com.github.alisiikh.scalastyle.ScalastyleExtension
 
-val rootScalastyleConfig = file("${projectDir}/scalastyle_config.xml");
+val rootScalastyleConfig = file("${projectDir}/scalastyle_config.xml")
 
 plugins {
   scala
@@ -52,6 +52,7 @@ allprojects {
     implementation(group = "org.clapper", name = "grizzled-slf4j_$scalaVersion", version = "1.3.4")
 
     testImplementation(group = "org.scalatest", name = "scalatest_$scalaVersion", version = "3.1.2")
+    testImplementation(group = "org.scalamock", name = "scalamock-scalatest-support_$scalaVersion", version = "3.6.0")
     testImplementation(group = "com.typesafe.akka", name = "akka-actor-testkit-typed_$scalaVersion", version = akkaVersion)
     testImplementation(group = "com.typesafe.akka", name = "akka-http-testkit_$scalaVersion", version = akkaHttpVersion)
     testImplementation(group = "com.typesafe.akka", name = "akka-stream-testkit_$scalaVersion", version = akkaVersion)
