@@ -1,4 +1,4 @@
-package it.unibo.scalapacman.server
+package it.unibo.scalapacman.server.core
 
 import java.util.concurrent.TimeUnit
 
@@ -11,7 +11,7 @@ import org.scalatest.wordspec.AnyWordSpecLike
 import scala.concurrent.duration.FiniteDuration
 import scala.reflect.ClassTag
 
-class MasterTest extends ScalaTestWithActorTestKit with AnyWordSpecLike with BeforeAndAfterAll {
+class MasterTest extends ScalaTestWithActorTestKit with AnyWordSpecLike {
 
   private var gameCreatedProbe: TestProbe[Master.GameCreated] = _
   private var masterActor: ActorRef[Master.MasterCommand] = _
@@ -19,6 +19,8 @@ class MasterTest extends ScalaTestWithActorTestKit with AnyWordSpecLike with Bef
   implicit def stringToKeyService[A: ClassTag](keyId: String): ServiceKey[A] = ServiceKey[A](keyId)
 
   override def beforeAll(): Unit = {
+    super.beforeAll()
+
     gameCreatedProbe = createTestProbe[Master.GameCreated]()
     masterActor = spawn(Master())
   }
