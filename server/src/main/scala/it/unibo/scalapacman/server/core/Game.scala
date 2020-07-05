@@ -1,9 +1,9 @@
-package it.unibo.scalapacman.server
+package it.unibo.scalapacman.server.core
 
 import akka.actor.typed.Behavior
 import akka.actor.typed.receptionist.{Receptionist, ServiceKey}
 import akka.actor.typed.scaladsl.{ActorContext, Behaviors}
-import it.unibo.scalapacman.server.Game.{CloseCommand, GameCommand, Setup, WakeUp}
+import it.unibo.scalapacman.server.core.Game.{CloseCommand, GameCommand, Setup, WakeUp}
 import it.unibo.scalapacman.server.util.Settings
 
 object Game {
@@ -23,13 +23,13 @@ object Game {
 
       Behaviors.withTimers { timers =>
 
-        timers.startTimerWithFixedDelay(WakeUp(), WakeUp(), Settings.timeout)
+        timers.startTimerWithFixedDelay(WakeUp(), WakeUp(), Settings.gameRefreshRate)
         new Game(Setup(id, context)).game()
       }
     }
 }
 
-private class Game (setup: Setup) {
+private class Game(setup: Setup) {
 
   private def game(): Behavior[GameCommand] = {
 
