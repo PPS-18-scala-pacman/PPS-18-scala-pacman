@@ -23,3 +23,7 @@ application {
 tasks.shadowJar {
   archiveClassifier.set("fat")
 }
+
+scoverage {
+  excludedPackages.set(listOf("it.unibo.scalapacman.client.gui"))
+}
