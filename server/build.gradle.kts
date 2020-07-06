@@ -7,12 +7,14 @@ plugins {
   id("com.github.johnrengelman.shadow") version "5.2.0"
 }
 
+val group: String by project
+
 dependencies {
   implementation(project(":pacman-lib"))
 }
 
 application {
-  mainClassName = "it.unibo.scalapacman.server.ServerApp"
+  mainClassName = "$group.server.ServerApp"
 }
 
 tasks.shadowJar {

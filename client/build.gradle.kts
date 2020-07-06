@@ -25,5 +25,5 @@ tasks.shadowJar {
 }
 
 scoverage {
-  excludedPackages.set(listOf("$group.client.gui"))
+  excludedPackages.set(listOf("it.unibo.scalapacman.client.gui"))
 }

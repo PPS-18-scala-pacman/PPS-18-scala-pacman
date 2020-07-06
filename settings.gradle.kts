@@ -1,2 +1,2 @@
-rootProject.name = "scala-pacman"
+rootProject.name = "scalapacman"
 include("pacman-lib", "server", "client")

@@ -1,8 +1,8 @@
-package it.unibo.scalapacman.server
+package it.unibo.scalapacman.server.core
 
-import akka.actor.typed.{ActorRef, Behavior}
 import akka.actor.typed.receptionist.{Receptionist, ServiceKey}
 import akka.actor.typed.scaladsl.{ActorContext, Behaviors}
+import akka.actor.typed.{ActorRef, Behavior}
 
 object Master {
 
@@ -17,12 +17,13 @@ object Master {
 
   val gameIdPrefix = "GAME$$n%1$d$$"
 
-  def apply(): Behavior[MasterCommand] = Behaviors.setup{context =>
-    context.system.receptionist ! Receptionist.Register(Master.MasterServiceKey, context.self)
-    master(Setup(context), 0)
-  }
+  def apply(): Behavior[MasterCommand] =
+    Behaviors.setup { context =>
+      context.system.receptionist ! Receptionist.Register(Master.MasterServiceKey, context.self)
+      master(Setup(context), 0)
+    }
 
-  private def master(setup: Setup, gameCounter: Int): Behavior[MasterCommand] = {
+  private def master(setup: Setup, gameCounter: Int): Behavior[MasterCommand] =
     Behaviors.receiveMessage {
       case CreateGame(replyTo) =>
         val newCounter = gameCounter + 1
@@ -31,6 +32,4 @@ object Master {
         if(replyTo != null) replyTo ! GameCreated(gameId)
         master(setup, newCounter)
     }
-  }
 }
-

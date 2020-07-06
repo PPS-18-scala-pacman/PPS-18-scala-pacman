@@ -1,6 +1,6 @@
 import com.github.alisiikh.scalastyle.ScalastyleExtension
 
-val rootScalastyleConfig = file("${projectDir}/scalastyle_config.xml");
+val rootScalastyleConfig = file("${projectDir}/scalastyle_config.xml")
 
 plugins {
   scala
@@ -32,10 +32,10 @@ allprojects {
   apply(plugin = "com.github.maiflai.scalatest")
   apply(plugin = "org.scoverage")
 
-  val scalaVersion = "2.12"
-  val akkaVersion = "2.6.5"
-  val akkaHttpVersion = "10.1.12"
-  val scoverageVersion = "1.4.1"
+  val scalaVersion: String by project
+  val akkaVersion: String by project
+  val akkaHttpVersion: String by project
+  val scoverageVersion: String by project
 
   dependencies {
     implementation(group = "org.scala-lang", name = "scala-library", version = "$scalaVersion.8")
