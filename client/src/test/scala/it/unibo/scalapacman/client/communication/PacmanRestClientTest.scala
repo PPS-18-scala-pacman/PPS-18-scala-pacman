@@ -27,6 +27,7 @@ class PacmanRestClientTest
 
   private var pacmanRestClient: PacmanRestClientWithMockClientHandler = _
   private val GAME_ID_EXAMPLE = "1"
+  private val FAILURE_MESSAGE = "Failure message"
 
   override protected def beforeAll(): Unit = {
     super.beforeAll()
@@ -57,11 +58,26 @@ class PacmanRestClientTest
     }
 
     "handle create game failure" in {
-      val failureMessage = "Failure message"
+      val failureMessage = FAILURE_MESSAGE
 
       pacmanRestClient.mock
         .expects(HttpRequest(method = HttpMethods.POST, uri = PacmanRestClient.GAME_URL))
-        .returning(Future.failed(new IOException(failureMessage)))
+        .returning(Future.successful(HttpResponse(status = StatusCodes.InternalServerError, entity = HttpEntity(ByteString(FAILURE_MESSAGE)))))
+
+      recoverToSucceededIf[IOException] {
+        pacmanRestClient.startGame flatMap { res =>
+          res should be (failureMessage)
+        }
+      }
+
+    }
+
+    "handle create game unknown response" in {
+      val failureMessage = FAILURE_MESSAGE
+
+      pacmanRestClient.mock
+        .expects(HttpRequest(method = HttpMethods.POST, uri = PacmanRestClient.GAME_URL))
+        .returning(Future.successful(HttpResponse(status = StatusCodes.NotFound, entity = HttpEntity(ByteString(failureMessage)))))
 
       recoverToSucceededIf[IOException] {
         pacmanRestClient.startGame flatMap { res =>
@@ -87,15 +103,15 @@ class PacmanRestClientTest
 
     }
 
-    "handle delete game request failure" in {
+    "handle delete game unknown response" in {
       val gameId = GAME_ID_EXAMPLE
       val uri = s"${PacmanRestClient.GAME_URL}/$gameId"
 
-      val failureMessage = "Failure message"
+      val failureMessage = FAILURE_MESSAGE
 
       pacmanRestClient.mock
         .expects(HttpRequest(method = HttpMethods.DELETE, uri = uri))
-        .returning(Future.failed(new IOException(failureMessage)))
+        .returning(Future.successful(HttpResponse(status = StatusCodes.InternalServerError, entity = HttpEntity(ByteString(failureMessage)))))
 
       recoverToSucceededIf[IOException] {
         pacmanRestClient.endGame(gameId) flatMap { res =>
