@@ -38,8 +38,6 @@ object Controller extends Logging {
     case _ => error(UNKNOWN_ACTION)
   }
 
-  def test(text: String): Unit = debug(text)
-
   private def doStartGame(): Unit = {
     pacmanRestClient.startGame onComplete {
       case Success(value) => gameId = Some(value); info(s"Partita creata con successo: id $value") // scalastyle:ignore multiple.string.literals
