@@ -2,7 +2,7 @@ package it.unibo.scalapacman.lib.model
 
 import it.unibo.scalapacman.lib.Utility
 import it.unibo.scalapacman.lib.model.Dot.{ENERGIZER_DOT, SMALL_DOT}
-import it.unibo.scalapacman.lib.model.Tile.{GhostSpawn, Track, TrackSafe, TrackTunnel, Wall}
+import it.unibo.scalapacman.lib.model.Tile.{GhostSpawn, Tile, Track, TrackSafe, TrackTunnel, Wall}
 
 /**
  *
@@ -20,7 +20,7 @@ case object Map {
   def classic: Map = Map(
 
     tiles = List[List[Tile]](
-      // scalastyle:off magic.number
+      // scalastyle:off
       List.fill(14)(Wall()),
       Wall() :: List.fill(12)(Track(Some(SMALL_DOT))) ::: Wall() :: Nil,
       Wall() :: Track(Some(SMALL_DOT)) :: List.fill(4)(Wall()) ::: Track(Some(SMALL_DOT)) :: List.fill(5)(Wall()) ::: Track(Some(SMALL_DOT)) :: Wall() :: Nil,
@@ -52,7 +52,7 @@ case object Map {
       Wall() :: Track(Some(SMALL_DOT)) :: List.fill(10)(Wall()) ::: Track(Some(SMALL_DOT)) :: Wall() :: Nil,
       Wall() :: List.fill(13)(Track(Some(SMALL_DOT))),
       List.fill(14)(Wall())
-      // scalastyle:on magic.number
+      // scalastyle:on
     ).map(Utility.mirrorList)
   )
 }
