@@ -20,7 +20,7 @@ trait PacmanRestClient extends Logging { this: HttpClient =>
       response.status match {
         case StatusCodes.OK => Unmarshal(response.entity).to[String]
         case StatusCodes.InternalServerError => Unmarshal(response.entity).to[String] flatMap { body =>
-          Future.failed(new IOException(s"Non è stato possibile creare una nuova partita: $body"))
+          Future.failed(new IOException(s"Non è stato possibile creare una nuova partita: $body")) // scalastyle:ignore multiple.string.literals
         }
         case _ => handleUnknownStatusCode(request, response)
       }

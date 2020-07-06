@@ -42,7 +42,7 @@ object Controller extends Logging {
 
   private def doStartGame(): Unit = {
     pacmanRestClient.startGame onComplete {
-      case Success(value) => gameId = Some(value); info(s"Partita creata con successo: id $value")
+      case Success(value) => gameId = Some(value); info(s"Partita creata con successo: id $value") // scalastyle:ignore multiple.string.literals
       case Failure(exception) => error(s"Errore nella creazione della partita: ${exception.getMessage}")
     }
   }
