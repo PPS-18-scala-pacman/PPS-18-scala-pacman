@@ -4,8 +4,8 @@
 | 1 | Configurazione ambiente di progetto | | 10 |0|0||||||
 | 2 | Analisi dei requisiti | | 10 |0|0||||||
 | 3 | Design architetturale | | 20 |8|8||||||
-| 4 | Come utente devo poter avviare una partita | | 33 |33|8||||||
-| 5 | Come utente devo poter muovere Pacman | | 30 |30|14||||||
+| 4 | Come utente devo poter avviare una partita | | 35 |35|10||||||
+| 5 | Come utente devo poter muovere Pacman | | 34 |34|16||||||
 | 6 | Interazione di Pacman con la mappa | | 20 |20|20||||||
 | 7 | Introduzione dei pellet, dei frutti e del punteggio | | 20 |20|20||||||
 | 8 | Introduzione dei fantasmi | | 30 |30|30||||||
