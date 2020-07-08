@@ -17,8 +17,8 @@ object ServiceRoutes {
   case class CreateGame(replyTo: ActorRef[Response]) extends RoutesCommand
 
   sealed trait Response
-  case class OK(gameId: String) extends Response
-  case class KO(reason: String) extends Response
+  case class Success(gameId: String) extends Response
+  case class Failure(reason: String) extends Response
 
   private case class ListingResponse(listing: Receptionist.Listing)
 
@@ -29,8 +29,8 @@ object ServiceRoutes {
           post {
             val operationPerformed: Future[Response] = handler.ask(CreateGame)
             onSuccess(operationPerformed) {
-              case ServiceRoutes.OK(gameId) => complete(StatusCodes.Created, gameId)
-              case ServiceRoutes.KO(reason) => complete(StatusCodes.InternalServerError -> reason)
+              case ServiceRoutes.Success(gameId) => complete(StatusCodes.Created, gameId)
+              case ServiceRoutes.Failure(reason) => complete(StatusCodes.InternalServerError -> reason)
             }
           }
         },

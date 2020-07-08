@@ -18,8 +18,8 @@ object Game {
   def apply(id: String): Behavior[GameCommand] =
     Behaviors.setup { context =>
 
-      val GameServiceKey: ServiceKey[GameCommand] = ServiceKey[GameCommand](id)
-      context.system.receptionist ! Receptionist.Register(GameServiceKey, context.self)
+      val gameServiceKey: ServiceKey[GameCommand] = ServiceKey[GameCommand](id)
+      context.system.receptionist ! Receptionist.Register(gameServiceKey, context.self)
 
       Behaviors.withTimers { timers =>
 

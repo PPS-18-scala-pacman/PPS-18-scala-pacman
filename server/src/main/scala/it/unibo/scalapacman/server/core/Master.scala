@@ -13,13 +13,13 @@ object Master {
 
   private case class Setup(context: ActorContext[MasterCommand])
 
-  val MasterServiceKey: ServiceKey[MasterCommand] = ServiceKey[MasterCommand]("MasterService")
+  val masterServiceKey: ServiceKey[MasterCommand] = ServiceKey[MasterCommand]("MasterService")
 
   val gameIdPrefix = "GAME$$n%1$d$$"
 
   def apply(): Behavior[MasterCommand] =
     Behaviors.setup { context =>
-      context.system.receptionist ! Receptionist.Register(Master.MasterServiceKey, context.self)
+      context.system.receptionist ! Receptionist.Register(Master.masterServiceKey, context.self)
       master(Setup(context), 0)
     }
 

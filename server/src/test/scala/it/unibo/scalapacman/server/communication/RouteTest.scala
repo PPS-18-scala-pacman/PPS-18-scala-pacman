@@ -28,7 +28,9 @@ class RouteTest extends AnyWordSpec with ScalatestRouteTest with Matchers {
 
     val mockedBehavior = Behaviors.receiveMessage[ServiceRoutes.RoutesCommand] {
       case ServiceRoutes.CreateGame(replyTo) =>
-        replyTo ! ServiceRoutes.OK(testGameId)
+        replyTo ! ServiceRoutes.Success(testGameId)
+        Behaviors.same
+      case _ =>
         Behaviors.same
     }
     probeRoutesHandler = testKit.createTestProbe[ServiceRoutes.RoutesCommand]()
@@ -50,14 +52,14 @@ class RouteTest extends AnyWordSpec with ScalatestRouteTest with Matchers {
       }
     }
 
-    "return a MethodNotAllowed error for PUT requests to the game path" in {
+    "return a MethodNotAllowed error for PUT requests to the games path" in {
       Put("/games") ~> Route.seal(routes) ~> check {
         status shouldEqual StatusCodes.MethodNotAllowed
         responseAs[String] shouldEqual "HTTP method not allowed, supported methods: POST"
       }
     }
 
-    "return a game for GET requests to the game path" in {
+    "return a new game for POST requests to the games path" in {
       Post("/games") ~> routes ~> check {
         status should ===(StatusCodes.Created)
         contentType should ===(ContentTypes.`text/plain(UTF-8)`)
@@ -69,7 +71,7 @@ class RouteTest extends AnyWordSpec with ScalatestRouteTest with Matchers {
       }
     }
 
-    "delete a game for DELETE requests to the game path" in {
+    "delete a game for DELETE requests to the games path" in {
       val res = Delete(s"/games/$testGameId") ~> routes
 
       probeRoutesHandler.expectMessage(ServiceRoutes.DeleteGame(testGameId))
