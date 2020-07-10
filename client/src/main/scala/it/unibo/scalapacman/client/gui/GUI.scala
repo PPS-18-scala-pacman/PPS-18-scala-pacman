@@ -2,16 +2,10 @@ package it.unibo.scalapacman.client.gui
 
 import java.awt.{BorderLayout, CardLayout, Dimension}
 
+import it.unibo.scalapacman.client.utility.View.{MENU, OPTIONS, PLAY, STATS}
 import javax.swing.{JFrame, JPanel, WindowConstants}
 
 object GUI {
-
-  object ViewsName {
-    val MENU_VIEW: String = "menu"
-    val PLAY_VIEW: String = "play"
-    val OPTIONS_VIEW: String = "options"
-    val STATS_VIEW: String = "stats"
-  }
 
   private val frame: JFrame = new JFrame
 
@@ -26,12 +20,12 @@ object GUI {
   private val optionsView = new OptionsView
   private val statsView = new StatsView
 
-  mainPanel add(menuView, ViewsName.MENU_VIEW)
-  mainPanel add(playView, ViewsName.PLAY_VIEW)
-  mainPanel add(optionsView, ViewsName.OPTIONS_VIEW)
-  mainPanel add(statsView, ViewsName.STATS_VIEW)
+  mainPanel add(menuView, MENU.name)
+  mainPanel add(playView, PLAY.name)
+  mainPanel add(optionsView, OPTIONS.name)
+  mainPanel add(statsView, STATS.name)
 
-  changeView(ViewsName.MENU_VIEW)
+  changeView(MENU.name)
 
   frame add(mainPanel, BorderLayout.CENTER)
 

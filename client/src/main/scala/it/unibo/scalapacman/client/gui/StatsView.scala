@@ -2,7 +2,9 @@ package it.unibo.scalapacman.client.gui
 
 import java.awt.{BorderLayout, Component}
 
-import it.unibo.scalapacman.client.gui.GUI.ViewsName
+import it.unibo.scalapacman.client.utility.Action.CHANGE_VIEW
+import it.unibo.scalapacman.client.controller.GameController
+import it.unibo.scalapacman.client.utility.View.MENU
 import javax.swing.{JButton, JLabel, SwingConstants}
 
 class StatsView extends PanelImpl {
@@ -14,7 +16,7 @@ class StatsView extends PanelImpl {
 
   placeholderLabel setHorizontalAlignment SwingConstants.CENTER
 
-  backButton addActionListener (_ => GUI.changeView(ViewsName.MENU_VIEW))
+  backButton addActionListener (_ => GameController.handleAction(CHANGE_VIEW, Some(MENU)))
 
   private val buttonsPanel: PanelImpl = new PanelImpl
 
