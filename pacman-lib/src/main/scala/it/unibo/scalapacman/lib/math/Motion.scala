@@ -22,13 +22,11 @@ object Motion {
    * @return time needed to reach end position
    * @throws java.lang.ArithmeticException when vx is zero and x2 - x1 is not zero
    */
-  def uniformLinearUntil(x1: Double, x2: Double, vx: Double): Int = x2 - x1 match {
+  def uniformLinearUntil(x1: Double, x2: Double, vx: Double): Double = x2 - x1 match {
     case 0 => 0
-    case _ if vx == 0 => throw new java.lang.ArithmeticException("/ by zero")
+//    case _ if vx == 0 => throw new java.lang.ArithmeticException("/ by zero")
     case distance: Double => (distance / vx)
-      .round
       .abs
-      .toInt
   }
 
   /**
@@ -51,7 +49,7 @@ object Motion {
    * @param speed speed
    * @return time needed to reach end position
    */
-  def uniformLinearUntil(fromPosition: Point2D, toPosition: Point2D, speed: Vector2D): Int =
+  def uniformLinearUntil(fromPosition: Point2D, toPosition: Point2D, speed: Vector2D): Double =
     max(
       uniformLinearUntil(fromPosition.x, toPosition.x, speed.x),
       uniformLinearUntil(fromPosition.y, toPosition.y, speed.y)
