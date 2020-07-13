@@ -5,7 +5,7 @@ import it.unibo.scalapacman.lib.model.Direction.{EAST, NORTH, NORTHEAST, NORTHWE
 import it.unibo.scalapacman.lib.model.{Character, Direction}
 
 object CharacterMovement {
-  def move(character: Character, timeMs: Double): Point2D =
+  def moveFor(character: Character, timeMs: Double): Point2D =
     Motion.uniformLinearFor(character.position, character.speedVector, timeMs)
 
   def moveUntil(character: Character, endingPoint: Point2D): Double =

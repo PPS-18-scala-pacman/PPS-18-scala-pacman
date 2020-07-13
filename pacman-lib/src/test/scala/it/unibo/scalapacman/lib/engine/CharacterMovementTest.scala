@@ -1,6 +1,6 @@
 package it.unibo.scalapacman.lib.engine
 
-import it.unibo.scalapacman.lib.engine.CharacterMovement.{move, moveUntil}
+import it.unibo.scalapacman.lib.engine.CharacterMovement.{moveFor, moveUntil}
 import it.unibo.scalapacman.lib.math.{Point2D, Vector2D}
 import it.unibo.scalapacman.lib.model.{Pacman, Direction}
 import org.scalatest.wordspec.AnyWordSpec
@@ -24,16 +24,16 @@ class CharacterMovementTest extends AnyWordSpec {
   "A movement" can {
     "be calculated from a given time" when {
       "used on the Pacman character" in {
-        val endingPoint2 = move(PACMAN_WEST, TIME_MS)
+        val endingPoint2 = moveFor(PACMAN_WEST, TIME_MS)
         assert(endingPoint2.x == ENDING_POINT_WEST.x && endingPoint2.y == ENDING_POINT_WEST.y)
 
-        val endingPoint1 = move(PACMAN_EAST, TIME_MS)
+        val endingPoint1 = moveFor(PACMAN_EAST, TIME_MS)
         assert(endingPoint1.x == ENDING_POINT_EAST.x && endingPoint1.y == ENDING_POINT_EAST.y)
 
-        val endingPoint3 = move(PACMAN_NORTH, TIME_MS)
+        val endingPoint3 = moveFor(PACMAN_NORTH, TIME_MS)
         assert(endingPoint3.x == ENDING_POINT_NORTH.x && endingPoint3.y == ENDING_POINT_NORTH.y)
 
-        val endingPoint4 = move(PACMAN_SOUTH, TIME_MS)
+        val endingPoint4 = moveFor(PACMAN_SOUTH, TIME_MS)
         assert(endingPoint4.x == ENDING_POINT_SOUTH.x && endingPoint4.y == ENDING_POINT_SOUTH.y)
       }
       "used on the Ghost character" in pending

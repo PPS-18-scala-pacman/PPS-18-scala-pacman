@@ -20,3 +20,7 @@ application {
 tasks.shadowJar {
   archiveClassifier.set("fat")
 }
+
+scoverage {
+  minimumRate.set(BigDecimal("0.5"))
+}
