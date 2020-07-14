@@ -28,7 +28,7 @@ class RouteTest extends AnyWordSpec with ScalatestRouteTest with Matchers {
 
     val mockedBehavior = Behaviors.receiveMessage[ServiceRoutes.RoutesCommand] {
       case ServiceRoutes.CreateGame(replyTo) =>
-        replyTo ! ServiceRoutes.Success(testGameId)
+        replyTo ! ServiceRoutes.SuccessCrG(testGameId)
         Behaviors.same
       case _ =>
         Behaviors.same

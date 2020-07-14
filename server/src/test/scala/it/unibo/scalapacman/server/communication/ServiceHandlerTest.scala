@@ -20,7 +20,7 @@ class ServiceHandlerTest extends ScalaTestWithActorTestKit with AnyWordSpecLike 
     "send a create a new game request" when {
       "asked" in {
         val fakeGameId = "fakeCreateGameId"
-        val clientProbe = createTestProbe[ServiceRoutes.Response]()
+        val clientProbe = createTestProbe[ServiceRoutes.ResponseCreateGame]()
         val masterProbe = createTestProbe[Master.MasterCommand]()
         system.receptionist ! Receptionist.Register(Master.masterServiceKey, masterProbe.ref)
 
@@ -30,8 +30,8 @@ class ServiceHandlerTest extends ScalaTestWithActorTestKit with AnyWordSpecLike 
           case _ => fail()
         }
 
-        serviceHandlerActor ! ServiceHandler.WrappedResponseCreateGame(Master.GameCreated(fakeGameId))
-        clientProbe.expectMessage(ServiceRoutes.Success(fakeGameId))
+        serviceHandlerActor ! ServiceHandler.WrapRespCreateGame(Master.GameCreated(fakeGameId))
+        clientProbe.expectMessage(ServiceRoutes.SuccessCrG(fakeGameId))
       }
     }
     "send a delete game request" when {

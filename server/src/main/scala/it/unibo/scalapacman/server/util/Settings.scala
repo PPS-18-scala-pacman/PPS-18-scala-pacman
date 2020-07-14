@@ -17,4 +17,6 @@ object Settings {
   val gameRefreshRate: FiniteDuration = FiniteDuration(1, TimeUnit.SECONDS)
 
   val stashSize = 100
+
+  val bufferSizeWS = 100
 }
