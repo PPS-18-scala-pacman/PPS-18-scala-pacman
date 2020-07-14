@@ -8,7 +8,7 @@ import org.scalatest.wordspec.AnyWordSpec
 class GameMovementTest extends AnyWordSpec {
   val MAP_SIZE = 4
   val TIME_MS = 1
-  val MAP: Map = Map(
+  implicit val MAP: Map = Map(
     List.fill(MAP_SIZE - 1)(
       List.fill(MAP_SIZE)(Tile.Track(None))
     ) :::
@@ -25,7 +25,7 @@ class GameMovementTest extends AnyWordSpec {
         )
         val desiredDirection = Direction.SOUTH
         val attended: Point2D = TileGeography.southGate
-        val result: Character = move(MAP, character, TIME_MS, desiredDirection)
+        val result: Character = move(character, TIME_MS, desiredDirection)
         assert(result.position.x == attended.x && result.position.y == attended.y && result.direction == desiredDirection)
       }
       "go straight if it isn't possible" in {
@@ -35,7 +35,7 @@ class GameMovementTest extends AnyWordSpec {
           Direction.WEST
         )
         val attended: Point2D = TileGeography.westGate + Point2D(0, TileGeography.SIZE * 2)
-        val result: Character = move(MAP, character, TIME_MS, Direction.SOUTH)
+        val result: Character = move(character, TIME_MS, Direction.SOUTH)
         assert(result.position.x == attended.x && result.position.y == attended.y && result.direction == character.direction)
       }
     }
@@ -47,7 +47,7 @@ class GameMovementTest extends AnyWordSpec {
           Direction.WEST
         )
         val attended: Point2D = TileGeography.center + Point2D(TileGeography.SIZE * 3, 0)
-        val result: Character = move(MAP, character, TIME_MS, character.direction)
+        val result: Character = move(character, TIME_MS, character.direction)
         assert(result.position.x == attended.x && result.position.y == attended.y && result.direction == character.direction)
       }
       "stop if it isn't possible" in {
@@ -57,7 +57,7 @@ class GameMovementTest extends AnyWordSpec {
           Direction.SOUTH
         )
         val attended: Point2D = TileGeography.center + Point2D(0, TileGeography.SIZE * 2)
-        val result: Character = move(MAP, character, TIME_MS, character.direction)
+        val result: Character = move(character, TIME_MS, character.direction)
         assert(result.position.x == attended.x && result.position.y == attended.y && result.direction == character.direction)
       }
     }
@@ -70,7 +70,7 @@ class GameMovementTest extends AnyWordSpec {
         )
         val desiredDirection = Direction.SOUTH
         val attended: Point2D = TileGeography.center + Point2D(0, TileGeography.SIZE)
-        val result: Character = move(MAP, character, TIME_MS, desiredDirection)
+        val result: Character = move(character, TIME_MS, desiredDirection)
         assert(result.position.x == attended.x && result.position.y == attended.y && result.direction == desiredDirection)
       }
       "revert it and stop if it isn't possible" in {
@@ -81,7 +81,7 @@ class GameMovementTest extends AnyWordSpec {
         )
         val desiredDirection = Direction.NORTH
         val attended: Point2D = character.position
-        val result: Character = move(MAP, character, TIME_MS, desiredDirection)
+        val result: Character = move(character, TIME_MS, desiredDirection)
         assert(result.position.x == attended.x && result.position.y == attended.y && result.direction == desiredDirection)
       }
     }

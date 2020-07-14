@@ -11,48 +11,27 @@ object GameMovement {
   /**
    * 1. Desidero invertire la direzione?
    * - se SI Inverto la rotta
-   * 2. Sono al centro?
+   * 2. Sono al centro della tile?
    * - se NO Mi muovo fino al centro (jump 2)
    * 3. Voglio curvare e la prossima Tile è agibile?
    * - se SI Cambio la direzione
    * 4. La prossima tile è agibile?
    * - se SI finisco di muovermi
    *
-   * @param map
-   * @param character
-   * @param timeMs
-   * @param desiredDirection
-   * @return
+   * @param character Character to move
+   * @param timeMs Time available
+   * @param desiredDirection Direction to turn, if possible
+   * @param map Map of the game
+   * @return The updated character
    */
-  def move(map: Map, character: Character, timeMs: Double, desiredDirection: Direction): Character = {
-    def nextTileCenter: Point2D =
-      (map.tileOrigin(character) :: map.nextTileOrigin(character) :: Nil)
-        .map(_ + TileGeography.center)
-        .minBy(center => moveUntil(map, character, center))
-
-    def characterDesireRevert: Boolean = character.direction match {
-      case EAST if desiredDirection == WEST => true
-      case WEST if desiredDirection == EAST => true
-      case NORTH if desiredDirection == SOUTH => true
-      case SOUTH if desiredDirection == NORTH => true
-      case _ => false
-    }
-
-    if (timeMs == 0) return character
-    val character1: Character = if (characterDesireRevert) character revert else character
-    val character2: Character = if (character.position == nextTileCenter) character1
-      else if (moveUntil(map, character1, nextTileCenter) > timeMs) return character1.move(moveFor(map, character1, timeMs)) // BREAK
-      else return move(map, character1.move(nextTileCenter), timeMs - moveUntil(map, character1, nextTileCenter), desiredDirection) // BREAK
-
-    val character3: Character = if (character2.direction != desiredDirection && map.nextTile(character2, desiredDirection).walkable(character2)) character2.changeDirection(desiredDirection) else character2
-    val character4: Character = if (map.nextTile(character3).walkable(character3)) character3.move(moveFor(map, character3, timeMs)) else character3
-    return character4
+  @scala.annotation.tailrec
+  def move(character: Character, timeMs: Double, desiredDirection: Direction)(implicit map: Map): Character = (character, timeMs, desiredDirection) match {
+    case (_, 0, _) => character
+    case _ if character desireRevert desiredDirection => move(character revert, timeMs, desiredDirection)
+    case _ if character.position == character.nextTileCenter => character.changeDirectionIfPossible(desiredDirection).moveIfPossible(timeMs)
+    case _ if moveUntil(character, character.nextTileCenter) > timeMs => character.move(moveFor(character, timeMs))
+    case _ => move(character.move(character.nextTileCenter), timeMs - moveUntil(character, character.nextTileCenter), desiredDirection)
   }
-
-  //    1. revert(character)
-  //    2. character.position match { case position if position == tile(position).center => Unit; case position if moveUntil() > timeMs => moveFor(); case position => move(map, character.move(tile(position).center), timeMs - moveUntil(), desiredDirection) }
-  //    3. if (desireToCurve(character) && isAgibile(nextTile(desiredDirection))) changeDirection(character)
-  //    4. if (isAgibile(nextTile())) moveFor()
 
   implicit private class CharacterEnhanced(character: Character) {
     def move(position: Point2D): Character = character match {
@@ -74,6 +53,32 @@ object GameMovement {
       case SOUTH => changeDirection(NORTH)
       case _ => character
     }
+
+    def desireRevert(desiredDirection: Direction): Boolean = character.direction match {
+      case EAST if desiredDirection == WEST => true
+      case WEST if desiredDirection == EAST => true
+      case NORTH if desiredDirection == SOUTH => true
+      case SOUTH if desiredDirection == NORTH => true
+      case _ => false
+    }
+
+    def nextTileCenter(implicit map: Map): Point2D =
+      (map.tileOrigin(character) :: map.nextTileOrigin(character) :: Nil)
+        .map(_ + TileGeography.center)
+        .minBy(center => moveUntil(character, center))
+
+    def changeDirectionIfPossible(desiredDirection: Direction)(implicit map: Map): Character =
+      if (character.direction != desiredDirection && map.nextTile(character, desiredDirection).walkable(character)) {
+        changeDirection(desiredDirection)
+      } else {
+        character
+      }
+
+    def moveIfPossible(timeMs: Double)(implicit map: Map): Character = if (map.nextTile(character).walkable(character)) {
+      character.move(moveFor(character, timeMs))
+    } else {
+      character
+    }
   }
 
   implicit private class MapEnhanced(map: Map) {
@@ -91,8 +96,10 @@ object GameMovement {
 
     def nextTile(character: Character, direction: Direction): Tile = tile(character.position, Some(direction).map(CharacterMovement.unitVector))
 
-    private def tileOrigin(position: Point2D, watchOut: Option[Vector2D]) =
-      Point2D((pacmanEffect(tileIndex(position.x, watchOut.map(_.x)), width)) * TileGeography.SIZE, (pacmanEffect(tileIndex(position.y, watchOut.map(_.y)), height)) * TileGeography.SIZE)
+    private def tileOrigin(position: Point2D, watchOut: Option[Vector2D]) = Point2D(
+      pacmanEffect(tileIndex(position.x, watchOut.map(_.x)), width) * TileGeography.SIZE,
+      pacmanEffect(tileIndex(position.y, watchOut.map(_.y)), height) * TileGeography.SIZE
+    )
 
     def tileOrigin(character: Character): Point2D =
       tileOrigin(character.position, None)
