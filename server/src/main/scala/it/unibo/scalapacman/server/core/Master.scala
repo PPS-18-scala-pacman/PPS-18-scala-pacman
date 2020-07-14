@@ -29,7 +29,7 @@ object Master {
         val newCounter = gameCounter + 1
         val gameId = gameIdPrefix format newCounter
         setup.context.spawn(Game(gameId), gameId + gameCounter)
-        if(replyTo != null) replyTo ! GameCreated(gameId)
+        if(replyTo != null) replyTo ! GameCreated(gameId) //FIXME far rispondere direttamente dal game al termine del setup???
         master(setup, newCounter)
     }
 }
