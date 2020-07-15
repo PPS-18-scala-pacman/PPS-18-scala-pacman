@@ -18,7 +18,7 @@ object CharacterMovement {
   /**
    * Versore
    */
-  implicit private def unitVector(direction: Direction): Vector2D = direction match {
+  implicit def unitVector(direction: Direction): Vector2D = direction match {
     case NORTH => Vector2D(0, -1)
     case SOUTH => Vector2D(0, 1)
     case WEST => Vector2D(-1, 0)

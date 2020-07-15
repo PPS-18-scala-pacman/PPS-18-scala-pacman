@@ -49,14 +49,14 @@ class MotionTest extends AnyWordSpec {
           assert(uniformLinearUntil(test.startingPoint, test.endingPoint, test.speed) <= test.timeMs)
       }
     }
-    "throw error when ending point is unreachable" when {
-      UNIDIMENSIONAL in {
-        assertThrows[ArithmeticException](uniformLinearUntil(unreachableTest.startingPoint.x, unreachableTest.endingPoint.x, unreachableTest.speed.x))
-        assertThrows[ArithmeticException](uniformLinearUntil(unreachableTest.startingPoint.y, unreachableTest.endingPoint.y, unreachableTest.speed.y))
-      }
-      BIDIMENSIONAL in {
-        assertThrows[ArithmeticException](uniformLinearUntil(unreachableTest.startingPoint, unreachableTest.endingPoint, unreachableTest.speed))
-      }
-    }
+//    "throw error when ending point is unreachable" when {
+//      UNIDIMENSIONAL in {
+//        assertThrows[ArithmeticException](uniformLinearUntil(unreachableTest.startingPoint.x, unreachableTest.endingPoint.x, unreachableTest.speed.x))
+//        assertThrows[ArithmeticException](uniformLinearUntil(unreachableTest.startingPoint.y, unreachableTest.endingPoint.y, unreachableTest.speed.y))
+//      }
+//      BIDIMENSIONAL in {
+//        assertThrows[ArithmeticException](uniformLinearUntil(unreachableTest.startingPoint, unreachableTest.endingPoint, unreachableTest.speed))
+//      }
+//    }
   }
 }

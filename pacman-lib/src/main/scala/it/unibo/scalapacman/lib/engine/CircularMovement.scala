@@ -8,9 +8,9 @@ import it.unibo.scalapacman.lib.model.{Character, Direction, Map}
  */
 object CircularMovement {
 
-  def moveFor(map: Map, character: Character, timeMs: Double): Point2D = map.pacmanEffect(CharacterMovement.moveFor(character, timeMs))
+  def moveFor(character: Character, timeMs: Double)(implicit map: Map): Point2D = map.pacmanEffect(CharacterMovement.moveFor(character, timeMs))
 
-  def moveUntil(map: Map, character: Character, endingPoint: Point2D): Double = character.direction match {
+  def moveUntil(character: Character, endingPoint: Point2D)(implicit map: Map): Double = character.direction match {
     case Direction.WEST if character.position.x < endingPoint.x => CharacterMovement.moveUntil(character, Point2D(endingPoint.x - map.width, endingPoint.y))
     case Direction.EAST if character.position.x > endingPoint.x => CharacterMovement.moveUntil(character, Point2D(endingPoint.x + map.width, endingPoint.y))
     case Direction.NORTH if character.position.y < endingPoint.y => CharacterMovement.moveUntil(character, Point2D(endingPoint.x, endingPoint.y - map.height))
