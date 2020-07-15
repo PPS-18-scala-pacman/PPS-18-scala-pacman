@@ -8,7 +8,7 @@ import org.scalatest.wordspec.AnyWordSpec
 class CircularMovementTest extends AnyWordSpec {
   val MAP_SIZE = 3
   val TIME_MS = 1
-  val MAP: Map = Map(
+  implicit val MAP: Map = Map(
     List.fill(MAP_SIZE)(
       List.fill(MAP_SIZE)(Tile.Track(None))
     )
@@ -22,7 +22,7 @@ class CircularMovementTest extends AnyWordSpec {
           TileGeography.SIZE,
           Direction.EAST
         )
-        val arrival: Point2D = moveFor(MAP, character, TIME_MS)
+        val arrival: Point2D = moveFor(character, TIME_MS)
         assert(arrival.x == TileGeography.SIZE)
       }
       "exit west and reappear east" in {
@@ -31,7 +31,7 @@ class CircularMovementTest extends AnyWordSpec {
           TileGeography.SIZE,
           Direction.WEST
         )
-        val arrival: Point2D = moveFor(MAP, character, TIME_MS)
+        val arrival: Point2D = moveFor(character, TIME_MS)
         assert(arrival.x == TileGeography.SIZE * (MAP_SIZE - 1))
       }
       "exit north and reappear south" in {
@@ -40,7 +40,7 @@ class CircularMovementTest extends AnyWordSpec {
           TileGeography.SIZE,
           Direction.NORTH
         )
-        val arrival: Point2D = moveFor(MAP, character, TIME_MS)
+        val arrival: Point2D = moveFor(character, TIME_MS)
         assert(arrival.y == TileGeography.SIZE * (MAP_SIZE - 1))
       }
       "exit south and reappear north" in {
@@ -49,7 +49,7 @@ class CircularMovementTest extends AnyWordSpec {
           TileGeography.SIZE,
           Direction.SOUTH
         )
-        val arrival: Point2D = moveFor(MAP, character, TIME_MS)
+        val arrival: Point2D = moveFor(character, TIME_MS)
         assert(arrival.y == TileGeography.SIZE)
       }
     }
@@ -61,7 +61,7 @@ class CircularMovementTest extends AnyWordSpec {
           TileGeography.SIZE,
           Direction.EAST
         )
-        assertResult(TIME_MS)(moveUntil(MAP, character, Point2D(TileGeography.SIZE, 0)))
+        assertResult(TIME_MS)(moveUntil(character, Point2D(TileGeography.SIZE, 0)))
       }
       "exit west and reappear east" in {
         val character = Pacman(
@@ -69,7 +69,7 @@ class CircularMovementTest extends AnyWordSpec {
           TileGeography.SIZE,
           Direction.WEST
         )
-        assertResult(TIME_MS)(moveUntil(MAP, character, Point2D(TileGeography.SIZE * (MAP_SIZE - 1), 0)))
+        assertResult(TIME_MS)(moveUntil(character, Point2D(TileGeography.SIZE * (MAP_SIZE - 1), 0)))
       }
       "exit north and reappear south" in {
         val character = Pacman(
@@ -77,7 +77,7 @@ class CircularMovementTest extends AnyWordSpec {
           TileGeography.SIZE,
           Direction.NORTH
         )
-        assertResult(TIME_MS)(moveUntil(MAP, character, Point2D(0, TileGeography.SIZE * (MAP_SIZE - 1))))
+        assertResult(TIME_MS)(moveUntil(character, Point2D(0, TileGeography.SIZE * (MAP_SIZE - 1))))
       }
       "exit south and reappear north" in {
         val character = Pacman(
@@ -85,7 +85,7 @@ class CircularMovementTest extends AnyWordSpec {
           TileGeography.SIZE,
           Direction.SOUTH
         )
-        assertResult(TIME_MS)(moveUntil(MAP, character, Point2D(0, TileGeography.SIZE)))
+        assertResult(TIME_MS)(moveUntil(character, Point2D(0, TileGeography.SIZE)))
       }
     }
   }
