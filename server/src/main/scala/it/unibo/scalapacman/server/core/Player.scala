@@ -57,7 +57,6 @@ class Player(setup: Setup) {
   private def mainRoutine(sourceAct: ActorRef[Message]): Behavior[PlayerCommand] =
     Behaviors.receiveMessage {
       //TODO gestire messaggi client ed engine
-      //TODO inviare messaggi al client spedendoli a sourceAct
       case RegisterUser(replyTo, _) =>
         replyTo ! RegistrationRejected("Player occupato") //FIXME
         Behaviors.same
@@ -69,6 +68,7 @@ class Player(setup: Setup) {
         Behaviors.same
       case WrapRespUpdate(UpdateMsg(updateMsg)) =>
         setup.context.log.info("Ricevuto update: " + updateMsg)
+        sourceAct ! TextMessage(updateMsg)
         Behaviors.same
       case WrapRespUpdate(_) =>
         setup.context.log.warn("Ricevuto update non gestito")

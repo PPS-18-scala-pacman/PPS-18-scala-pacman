@@ -36,11 +36,11 @@ object Game {
 
       new Game(Setup(id, context, engine, player)).initRoutine()
         .receiveSignal {
-          case (context, ChildFailed(engine)) => //FIXME non mi legge: ‘
+          case (context, ChildFailed(`engine`, _)) =>
             context.log.info("Engine stopped")
             //TODO notificare gli elementi interessati che il game verrà chiuso
             Behaviors.stopped
-          case (context, ChildFailed(_)) =>
+          case (context, ChildFailed(_, _)) =>
             context.log.info("Player stopped")
             engine ! Engine.Pause()
             Behaviors.same

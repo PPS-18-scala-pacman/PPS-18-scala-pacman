@@ -24,9 +24,9 @@ object Engine {
   //TODO gestire in maniera adeguata la struttura del Model (aggiungere anche wathcer e player)
   private case class Model(blinky: Option[Participant], pinky: Option[Participant], inky: Option[Participant],
                            clyde: Option[Participant], player: Option[Participant])
-  // TODO aggiunto Util o def al object model per vedere se è pieno?
+  //TODO aggiunto Util o def al object model per vedere se è pieno?
   //TODO  a fine registrazione lo converto in un modello senza Option?
-  // TODO il model non lo passo alal classe ma ad ogni Routine?
+  //TODO il model non lo passo alal classe ma ad ogni Routine?
 
   private case class Participant(actor: ActorRef[UpdateCommand])
 
@@ -43,10 +43,10 @@ private class Engine(setup: Setup) {
 
   private def idleRoutine(): Behavior[EngineCommand] =
     Behaviors.receiveMessage {
-      //  todo ad ogni registrazione guardo se sono arrivati tutti nel caso cambio stato
+      //TODO ad ogni registrazione guardo se sono arrivati tutti nel caso cambio stato
       case RegisterGhost(actor, ghostType) => ???
       case RegisterPlayer(actor) =>
-        //fixme LA LOGICA SARÀ DA CORREGGERE
+        //FIXME lo logica va corretta
         mainRoutine(Model(Option.empty, Option.empty, None, Option.empty, Some(Participant(actor))))
       case RegisterWatcher(actor) => ???
     }
@@ -67,7 +67,7 @@ private class Engine(setup: Setup) {
       Behaviors.receiveMessage {
         case WakeUp() =>
           setup.context.log.info("WakeUp id: " + setup.gameId)
-          //fixme update di tutti gli osservatori
+          //FIXME update di tutti gli osservatori
           if(model.player.isDefined) model.player.get.actor ! UpdateMsg("aggiornamento")
           Behaviors.same
         case Pause() =>
