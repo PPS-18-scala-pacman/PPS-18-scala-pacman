@@ -43,6 +43,7 @@ allprojects {
 
     implementation(group = "com.typesafe.akka", name = "akka-actor-typed_$scalaVersion", version = akkaVersion)
     implementation(group = "com.typesafe.akka", name = "akka-stream_$scalaVersion", version = akkaVersion)
+    implementation(group = "com.typesafe.akka", name = "akka-stream-typed_$scalaVersion", version = akkaVersion)
     implementation(group = "com.typesafe.akka", name = "akka-http_$scalaVersion", version = akkaHttpVersion)
     implementation(group = "com.typesafe.akka", name = "akka-http-spray-json_$scalaVersion", version = akkaHttpVersion)
 
