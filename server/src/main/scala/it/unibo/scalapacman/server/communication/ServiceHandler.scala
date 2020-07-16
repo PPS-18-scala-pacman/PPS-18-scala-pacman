@@ -94,7 +94,7 @@ private class ServiceHandler(setup: Setup) {
                              key: ServiceKey[Game.GameCommand]): Behavior[ServiceRoutes.RoutesCommand] =
     Behaviors.withStash(Settings.stashSize) { buffer =>
 
-      setup.context.log.info(s"Richiesta connessione da client per game ${key.id}")
+      setup.context.log.info(s"Richiesta connessione per game ${key.id}")
 
       //FIXME
       def safeTell[T](replyTo: ActorRef[T], msg: T): Unit = {

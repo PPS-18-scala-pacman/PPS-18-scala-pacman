@@ -1,11 +1,15 @@
 package it.unibo.scalapacman.server.communication
 
+import akka.NotUsed
 import akka.actor.testkit.typed.scaladsl.{ActorTestKit, TestProbe}
 import akka.actor.typed.{ActorRef, ActorSystem}
 import akka.actor.typed.scaladsl.Behaviors
+import akka.http.scaladsl.model.ws.{BinaryMessage, Message}
 import akka.http.scaladsl.model.{ContentTypes, StatusCodes}
 import akka.http.scaladsl.server.Route
-import akka.http.scaladsl.testkit.ScalatestRouteTest
+import akka.http.scaladsl.testkit.{ScalatestRouteTest, WSProbe}
+import akka.stream.scaladsl.Flow
+import akka.util.ByteString
 import it.unibo.scalapacman.server.core.Master
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
@@ -16,9 +20,13 @@ class RouteTest extends AnyWordSpec with ScalatestRouteTest with Matchers {
   var routes: Route = _
   var probeRoutesHandler: TestProbe[ServiceRoutes.RoutesCommand] = _
   var mockedRoutesHandler: ActorRef[ServiceRoutes.RoutesCommand] = _
+  var probeWSClient: WSProbe = _
   var testKit: ActorTestKit = _
 
   val testGameId: String = Master.gameIdPrefix format 0
+  val failureTestGameId: String = Master.gameIdPrefix format 1
+
+  val failureTestMsg:String = "err:FailureConG"
 
   override def beforeAll(): Unit = {
     super.beforeAll()
@@ -30,11 +38,19 @@ class RouteTest extends AnyWordSpec with ScalatestRouteTest with Matchers {
       case ServiceRoutes.CreateGame(replyTo) =>
         replyTo ! ServiceRoutes.SuccessCrG(testGameId)
         Behaviors.same
+      case ServiceRoutes.CreateConnectionGame(replyTo, `testGameId`) =>
+        val echoFlow: Flow[Message, Message, NotUsed] =  Flow[Message]
+        replyTo ! ServiceRoutes.SuccessConG(echoFlow)
+        Behaviors.same
+      case ServiceRoutes.CreateConnectionGame(replyTo, `failureTestGameId`) =>
+        replyTo ! ServiceRoutes.FailureConG(failureTestMsg)
+        Behaviors.same
       case _ =>
         Behaviors.same
     }
     probeRoutesHandler = testKit.createTestProbe[ServiceRoutes.RoutesCommand]()
     mockedRoutesHandler = testKit.spawn(Behaviors.monitor(probeRoutesHandler.ref, mockedBehavior))
+    probeWSClient = WSProbe()
     routes = ServiceRoutes(mockedRoutesHandler)
   }
 
@@ -61,8 +77,8 @@ class RouteTest extends AnyWordSpec with ScalatestRouteTest with Matchers {
 
     "return a new game for POST requests to the games path" in {
       Post("/games") ~> routes ~> check {
-        status should ===(StatusCodes.Created)
-        contentType should ===(ContentTypes.`text/plain(UTF-8)`)
+        status shouldEqual StatusCodes.Created
+        contentType shouldEqual ContentTypes.`text/plain(UTF-8)`
         responseAs[String] shouldEqual testGameId
       }
       probeRoutesHandler.receiveMessage() match {
@@ -72,12 +88,33 @@ class RouteTest extends AnyWordSpec with ScalatestRouteTest with Matchers {
     }
 
     "delete a game for DELETE requests to the games path" in {
-      val res = Delete(s"/games/$testGameId") ~> routes
+      val res = Delete(s"/games/$testGameId") ~> routes //scalastyle:ignore
 
       probeRoutesHandler.expectMessage(ServiceRoutes.DeleteGame(testGameId))
 
       res ~> check {
         status should ===(StatusCodes.Accepted)
+      }
+    }
+
+    "accept ws connection" in {
+      WS(s"/connection-management/games/$testGameId", probeWSClient.flow) ~> routes ~> check {
+        isWebSocketUpgrade shouldEqual true
+
+        probeWSClient.sendMessage("echo")
+        probeWSClient.expectMessage("echo")
+
+        probeWSClient.sendMessage(BinaryMessage(ByteString("abcdef")))
+        probeWSClient.expectNoMessage()
+      }
+    }
+
+    "decline ws connection" in {
+      WS(s"/connection-management/games/$failureTestGameId", probeWSClient.flow) ~> routes ~> check {
+        isWebSocketUpgrade shouldEqual false
+
+        status shouldEqual StatusCodes.InternalServerError
+        responseAs[String] shouldEqual failureTestMsg
       }
     }
   }

@@ -9,7 +9,8 @@ import scala.concurrent.duration.FiniteDuration
 
 object Settings {
 
-  implicit val askTimeout: Timeout = 3.seconds
+  val askDuration = 3.seconds
+  implicit val askTimeout: Timeout = askDuration
 
   val hostAddr = "localhost"
   val port = 8080
