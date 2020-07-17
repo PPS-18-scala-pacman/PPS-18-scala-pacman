@@ -25,7 +25,7 @@ object Engine {
   private case class Model(blinky: Option[Participant], pinky: Option[Participant], inky: Option[Participant],
                            clyde: Option[Participant], player: Option[Participant])
   //TODO aggiunto Util o def al object model per vedere se è pieno?
-  //TODO  a fine registrazione lo converto in un modello senza Option?
+  //TODO a fine registrazione lo converto in un modello senza Option?
   //TODO il model non lo passo alal classe ma ad ogni Routine?
 
   private case class Participant(actor: ActorRef[UpdateCommand])
