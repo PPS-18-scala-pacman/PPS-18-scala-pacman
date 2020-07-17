@@ -2,7 +2,6 @@ package it.unibo.scalapacman.client.gui
 
 import java.awt.{BorderLayout, Color, Font, GridLayout}
 
-import grizzled.slf4j.Logging
 import it.unibo.scalapacman.client.controller.Action.CHANGE_VIEW
 import it.unibo.scalapacman.client.controller.Controller
 import it.unibo.scalapacman.client.input.{KeyBinder, KeyMap, UserInput}
@@ -13,7 +12,7 @@ object PlayView {
   def apply()(implicit controller: Controller): PlayView = new PlayView()
 }
 
-class PlayView(implicit controller: Controller) extends PanelImpl with KeyBinder with Logging {
+class PlayView(implicit controller: Controller) extends PanelImpl with KeyBinder {
   private val TITLE_LABEL: String = "Play View"
   private val POINTS_LABEL: String = "Punteggio"
   private val LIVES_LABEL: String = "Vite"

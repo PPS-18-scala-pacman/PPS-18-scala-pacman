@@ -3,7 +3,6 @@ package it.unibo.scalapacman.client.gui
 import java.awt.event.{KeyEvent, KeyListener}
 import java.awt.{BorderLayout, GridLayout}
 
-import grizzled.slf4j.Logging
 import it.unibo.scalapacman.client.controller.Action.CHANGE_VIEW
 import it.unibo.scalapacman.client.controller.Controller
 import it.unibo.scalapacman.client.gui.View.MENU
@@ -16,7 +15,7 @@ object OptionsView {
   def apply(keyBinder: KeyBinder)(implicit controller: Controller): OptionsView = new OptionsView(keyBinder)
 }
 
-class OptionsView(keyBinder: KeyBinder)(implicit controller: Controller) extends PanelImpl with Logging {
+class OptionsView(keyBinder: KeyBinder)(implicit controller: Controller) extends PanelImpl {
   private val TITLE_LABEL: String = "Imposta tasti"
   private val SAVE_BUTTON_LABEL: String = "Salva"
   private val BACK_BUTTON_LABEL: String = "Indietro"
