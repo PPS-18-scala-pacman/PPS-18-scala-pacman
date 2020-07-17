@@ -1,4 +1,4 @@
-package it.unibo.scalapacman.client.utility
+package it.unibo.scalapacman.client.gui
 
 sealed trait View { def name: String }
 

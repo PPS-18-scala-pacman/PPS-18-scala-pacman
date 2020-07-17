@@ -1,8 +1,8 @@
-package it.unibo.scalapacman.client.utility
+package it.unibo.scalapacman.client.controller
 
 sealed trait Action
 sealed trait UserIntention extends Action
-sealed trait KeyTap extends Action
+sealed trait UserAction extends Action
 
 object Action {
   case object START_GAME extends UserIntention
@@ -10,8 +10,10 @@ object Action {
   case object EXIT_APP extends UserIntention
   case object CHANGE_VIEW extends UserIntention
   case object MOVEMENT extends UserIntention
-  case object SAVE_CONFIGURATION extends UserIntention
 
-  case object KEY_PRESSED extends KeyTap
-  case object KEY_RELEASED extends KeyTap
+  case object MOVE_UP extends UserAction
+  case object MOVE_DOWN extends UserAction
+  case object MOVE_RIGHT extends UserAction
+  case object MOVE_LEFT extends UserAction
+  case object MOVE_DEFAULT extends UserAction
 }

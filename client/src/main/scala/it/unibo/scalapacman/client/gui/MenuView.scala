@@ -2,12 +2,16 @@ package it.unibo.scalapacman.client.gui
 
 import java.awt.{BorderLayout, Component, Dimension}
 
-import it.unibo.scalapacman.client.utility.Action.{CHANGE_VIEW, EXIT_APP}
-import it.unibo.scalapacman.client.controller.GameController
-import it.unibo.scalapacman.client.utility.View.{OPTIONS, PLAY, STATS}
+import it.unibo.scalapacman.client.controller.Action.{CHANGE_VIEW, EXIT_APP}
+import it.unibo.scalapacman.client.controller.Controller
+import it.unibo.scalapacman.client.gui.View.{OPTIONS, PLAY, STATS}
 import javax.swing.{Box, BoxLayout, JButton, JLabel, JSplitPane, SwingConstants}
 
-class MenuView extends PanelImpl {
+object MenuView {
+  def apply()(implicit controller: Controller): MenuView = new MenuView()
+}
+
+class MenuView(implicit controller: Controller) extends PanelImpl {
   private val MAIN_TITLE_LABEL: String = "<html><div style='text-align: center'>Scala<br>Pacman<div></html>"
   private val PLAY_VIEW_BUTTON_LABEL: String = "Gioca"
   private val OPTIONS_VIEW_BUTTON_LABEL: String = "Opzioni"
@@ -31,14 +35,14 @@ class MenuView extends PanelImpl {
   statsButton setAlignmentX Component.CENTER_ALIGNMENT
   exitButton setAlignmentX Component.CENTER_ALIGNMENT
 
-  playButton addActionListener (_ => GameController.handleAction(CHANGE_VIEW, Some(PLAY)))
-  optionsButton addActionListener (_ => GameController.handleAction(CHANGE_VIEW, Some(OPTIONS)))
-  statsButton addActionListener (_ => GameController.handleAction(CHANGE_VIEW, Some(STATS)))
-  exitButton addActionListener (_ => GameController.handleAction(EXIT_APP, None))
+  playButton addActionListener (_ => controller.handleAction(CHANGE_VIEW, Some(PLAY)))
+  optionsButton addActionListener (_ => controller.handleAction(CHANGE_VIEW, Some(OPTIONS)))
+  statsButton addActionListener (_ => controller.handleAction(CHANGE_VIEW, Some(STATS)))
+  exitButton addActionListener (_ => controller.handleAction(EXIT_APP, None))
 
   private val splitPane: JSplitPane = new JSplitPane
-  private val titlePanel: PanelImpl = new PanelImpl
-  private val buttonsPanel: PanelImpl = new PanelImpl
+  private val titlePanel: PanelImpl = PanelImpl()
+  private val buttonsPanel: PanelImpl = PanelImpl()
 
   splitPane setOrientation JSplitPane.VERTICAL_SPLIT
   splitPane setDividerLocation 300
