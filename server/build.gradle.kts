@@ -1,5 +1,4 @@
-// It is possible to import classes
-//import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
+import com.github.jengelman.gradle.plugins.shadow.transformers.AppendingTransformer
 
 plugins {
   application
@@ -20,6 +19,11 @@ application {
 
 tasks.shadowJar {
   archiveClassifier.set("fat")
+
+  // Akka reference.conf resource file
+  val newTransformer = AppendingTransformer()
+  newTransformer.resource = "reference.conf"
+  transformers.add(newTransformer)
 }
 
 scoverage {
