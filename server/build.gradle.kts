@@ -11,6 +11,7 @@ val group: String by project
 
 dependencies {
   implementation(project(":pacman-lib"))
+  implementation(project(":common"))
 }
 
 application {

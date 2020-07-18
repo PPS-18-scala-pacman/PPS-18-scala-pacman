@@ -33,7 +33,7 @@ object HttpService {
       context.log.info("HttpService avvio")
       implicit val system: ActorSystem[Nothing] = context.system
 
-      val routesHandler = context.spawn(Behaviors.unhandled[ServiceRoutes.RoutesCommand], "RoutesHandler")  // todo
+      val routesHandler = context.spawn(ServiceHandler(), "RoutesHandler")
       val routes = ServiceRoutes(routesHandler)
 
       val serverBinding: Future[Http.ServerBinding] = startHttpServer(routes, context.system, host, port)
