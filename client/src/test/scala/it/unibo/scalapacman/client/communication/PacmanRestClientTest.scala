@@ -51,7 +51,7 @@ class PacmanRestClientTest
         .expects(HttpRequest(method = HttpMethods.POST, uri = PacmanRestClient.GAME_URL))
         .returning(Future.successful(HttpResponse(status = StatusCodes.OK, entity = HttpEntity(ByteString(expectedGameId)))))
 
-      whenReady(pacmanRestClient startGame) { res =>
+      whenReady(pacmanRestClient.startGame) { res =>
         res should be (expectedGameId)
       }
 

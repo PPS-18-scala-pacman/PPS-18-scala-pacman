@@ -1,7 +1,8 @@
 package it.unibo.scalapacman.client.gui
 
-import java.awt.{Color, Cursor, Font}
-import javax.swing.{JButton, JLabel, JPanel}
+import java.awt.{Cursor, Font}
+
+import javax.swing.{JButton, JLabel, JPanel, JTextField}
 
 sealed trait Panel {
   def createLabel(text: String): JLabel
@@ -11,21 +12,22 @@ sealed trait Panel {
 
   def createButton(text: String): JButton
   def createButton(text: String, width: Int, height: Int): JButton
+
+  def createTextField(): JTextField
+}
+
+object PanelImpl {
+  def apply(): PanelImpl = new PanelImpl()
 }
 
 class PanelImpl extends JPanel with Panel {
-  protected val BUTTON_FONT_SIZE = 32
-  protected val MAIN_TITLE_LABELS_FONT_SIZE = 86
-  protected val TITLE_LABELS_FONT_SIZE = 56
-  protected val MAIN_FONT_NAME = "Arial"
-
-  setBackground(Color.black)
+  setBackground(BACKGROUND_COLOR)
 
   override def createButton(text: String): JButton = new JButton(text) {
     setFocusPainted(false)
 //    setBorderPainted(false)
     setContentAreaFilled(false)
-    setForeground(Color.white)
+    setForeground(DEFAULT_TEXT_COLOR)
     setFont(new Font(MAIN_FONT_NAME, Font.PLAIN, BUTTON_FONT_SIZE))
     setCursor(new Cursor(Cursor.HAND_CURSOR))
   }
@@ -37,7 +39,7 @@ class PanelImpl extends JPanel with Panel {
   }
 
   override def createLabel(text: String): JLabel = new JLabel(text) {
-    setForeground(Color.white)
+    setForeground(DEFAULT_TEXT_COLOR)
   }
 
   override def createLabel(text: String, width: Int, height: Int): JLabel = {
@@ -57,4 +59,6 @@ class PanelImpl extends JPanel with Panel {
     label setFont new Font(MAIN_FONT_NAME, Font.BOLD, TITLE_LABELS_FONT_SIZE)
     label
   }
+
+  override def createTextField(): JTextField = new JTextField()
 }

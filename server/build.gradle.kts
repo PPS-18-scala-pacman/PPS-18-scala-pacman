@@ -11,6 +11,7 @@ val group: String by project
 
 dependencies {
   implementation(project(":pacman-lib"))
+  implementation(project(":common"))
 }
 
 application {
@@ -19,4 +20,8 @@ application {
 
 tasks.shadowJar {
   archiveClassifier.set("fat")
+}
+
+scoverage {
+  minimumRate.set(BigDecimal("0.5"))
 }

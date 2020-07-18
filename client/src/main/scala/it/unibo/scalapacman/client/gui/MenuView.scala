@@ -1,11 +1,17 @@
 package it.unibo.scalapacman.client.gui
 
-import java.awt.{BorderLayout, Color, Component, Dimension, Font}
+import java.awt.{BorderLayout, Component, Dimension}
 
-import it.unibo.scalapacman.client.gui.GUI.ViewsName
+import it.unibo.scalapacman.client.controller.Action.{CHANGE_VIEW, EXIT_APP}
+import it.unibo.scalapacman.client.controller.Controller
+import it.unibo.scalapacman.client.gui.View.{OPTIONS, PLAY, STATS}
 import javax.swing.{Box, BoxLayout, JButton, JLabel, JSplitPane, SwingConstants}
 
-class MenuView extends PanelImpl {
+object MenuView {
+  def apply()(implicit controller: Controller): MenuView = new MenuView()
+}
+
+class MenuView(implicit controller: Controller) extends PanelImpl {
   private val MAIN_TITLE_LABEL: String = "<html><div style='text-align: center'>Scala<br>Pacman<div></html>"
   private val PLAY_VIEW_BUTTON_LABEL: String = "Gioca"
   private val OPTIONS_VIEW_BUTTON_LABEL: String = "Opzioni"
@@ -21,7 +27,7 @@ class MenuView extends PanelImpl {
   private val statsButton: JButton = createButton(STATS_VIEW_BUTTON_LABEL)
   private val exitButton: JButton = createButton(EXIT_BUTTON_LABEL)
 
-  titleLabel setForeground Color.yellow
+  titleLabel setForeground MAIN_TITLE_TEXT_COLOR
   titleLabel setHorizontalAlignment SwingConstants.CENTER
 
   playButton setAlignmentX Component.CENTER_ALIGNMENT
@@ -29,14 +35,14 @@ class MenuView extends PanelImpl {
   statsButton setAlignmentX Component.CENTER_ALIGNMENT
   exitButton setAlignmentX Component.CENTER_ALIGNMENT
 
-  playButton addActionListener (_ => GUI.changeView(ViewsName.PLAY_VIEW))
-  optionsButton addActionListener (_ => GUI.changeView(ViewsName.OPTIONS_VIEW))
-  statsButton addActionListener (_ => GUI.changeView(ViewsName.STATS_VIEW))
-  exitButton addActionListener (_ => System exit 0)
+  playButton addActionListener (_ => controller.handleAction(CHANGE_VIEW, Some(PLAY)))
+  optionsButton addActionListener (_ => controller.handleAction(CHANGE_VIEW, Some(OPTIONS)))
+  statsButton addActionListener (_ => controller.handleAction(CHANGE_VIEW, Some(STATS)))
+  exitButton addActionListener (_ => controller.handleAction(EXIT_APP, None))
 
   private val splitPane: JSplitPane = new JSplitPane
-  private val titlePanel: PanelImpl = new PanelImpl
-  private val buttonsPanel: PanelImpl = new PanelImpl
+  private val titlePanel: PanelImpl = PanelImpl()
+  private val buttonsPanel: PanelImpl = PanelImpl()
 
   splitPane setOrientation JSplitPane.VERTICAL_SPLIT
   splitPane setDividerLocation 300

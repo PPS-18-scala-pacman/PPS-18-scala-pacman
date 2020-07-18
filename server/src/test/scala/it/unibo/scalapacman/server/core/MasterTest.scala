@@ -41,7 +41,7 @@ class MasterTest extends ScalaTestWithActorTestKit with AnyWordSpecLike {
 
     "is discoverable" in {
 
-      val res = findActors(Master.MasterServiceKey)
+      val res = findActors(Master.masterServiceKey)
       res should have size 1
     }
 

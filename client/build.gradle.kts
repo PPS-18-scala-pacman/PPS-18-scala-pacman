@@ -12,6 +12,7 @@ val group: String by project
 
 dependencies {
   implementation(project(":pacman-lib"))
+  implementation(project(":common"))
 
   testImplementation(group = "org.scalamock", name = "scalamock-scalatest-support_$scalaVersion", version = "3.6.0")
 }
@@ -26,4 +27,5 @@ tasks.shadowJar {
 
 scoverage {
   excludedPackages.set(listOf("it.unibo.scalapacman.client.gui"))
+  minimumRate.set(BigDecimal("0.5"))
 }
