@@ -42,6 +42,6 @@ trait PacmanRestClient extends Logging { this: HttpClient =>
   }
 }
 
-object PacmanRestClient {
+case object PacmanRestClient {
   val GAME_URL = "http://localhost:8080/games"
 }
