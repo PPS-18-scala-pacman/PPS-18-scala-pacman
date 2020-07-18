@@ -9,6 +9,8 @@ object Action {
   case object END_GAME extends UserIntention
   case object EXIT_APP extends UserIntention
   case object CHANGE_VIEW extends UserIntention
+  case object SAVE_KEY_MAP extends UserIntention
+  case object RESET_KEY_MAP extends UserIntention
   case object MOVEMENT extends UserIntention
 
   case object MOVE_UP extends UserAction

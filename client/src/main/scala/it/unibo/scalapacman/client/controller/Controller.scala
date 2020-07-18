@@ -3,12 +3,12 @@ package it.unibo.scalapacman.client.controller
 import akka.actor.ActorSystem
 import grizzled.slf4j.Logging
 import it.unibo.scalapacman.client.communication.{ClientHandler, PacmanRestClient}
-import Action.{CHANGE_VIEW, END_GAME, EXIT_APP, MOVEMENT, START_GAME}
+import Action.{CHANGE_VIEW, END_GAME, EXIT_APP, MOVEMENT, RESET_KEY_MAP, SAVE_KEY_MAP, START_GAME}
 import it.unibo.scalapacman.client.gui.{GUI, View}
 import it.unibo.scalapacman.client.input.JavaKeyBinding.DefaultJavaKeyBinding
 import it.unibo.scalapacman.client.input.KeyMap
 
-import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
+import scala.concurrent.{ExecutionContext, ExecutionContextExecutor}
 import scala.util.{Failure, Success}
 
 trait Controller {
@@ -24,6 +24,12 @@ trait Controller {
    * @return  la mappatura iniziale
    */
   def getKeyMap: KeyMap
+
+  /**
+   * Recupera l'ultima azione dell'utente avvenuta in partita
+   * @return  l'ultima azione dell'utente avvenuta in partita
+   */
+  def getUserAction: Option[UserAction]
 }
 
 object Controller {
@@ -38,34 +44,43 @@ private case class ControllerImpl() extends Controller with Logging {
    * Viene utilizzata in PlayView per applicare la mappatura iniziale della board di gioco.
    * Viene utilizzata in OptionsView per inizializzare i campi di testo.
    */
-  private val _keyMap: KeyMap = KeyMap(DefaultJavaKeyBinding.UP, DefaultJavaKeyBinding.DOWN, DefaultJavaKeyBinding.RIGHT, DefaultJavaKeyBinding.LEFT)
+  private val _defaultKeyMap = KeyMap(DefaultJavaKeyBinding.UP, DefaultJavaKeyBinding.DOWN, DefaultJavaKeyBinding.RIGHT, DefaultJavaKeyBinding.LEFT)
+  private var _keyMap: KeyMap = _defaultKeyMap
   private var _gameId: Option[String] = None
   private var _prevUserAction: Option[UserAction] = None
+
+  private val pacmanRestClient = new PacmanRestClient() with ClientHandler {
+    override implicit def classicActorSystem: ActorSystem = ActorSystem()
+    override implicit def executionContext: ExecutionContextExecutor = classicActorSystem.dispatcher
+  }
 
   def handleAction(action: Action, param: Option[Any]): Unit = action match {
     case START_GAME => evalStartGame()
     case END_GAME => evalEndGame()
     case CHANGE_VIEW => evalChangeView(param.asInstanceOf[Option[View]])
     case MOVEMENT => evalSendMovement(param.asInstanceOf[Option[UserAction]])
+    case SAVE_KEY_MAP => evalSaveKeyMap(param.asInstanceOf[Option[KeyMap]])
+    case RESET_KEY_MAP => evalSaveKeyMap(Some(_defaultKeyMap))
     case EXIT_APP => evalExitApp()
     case _ => error(UNKNOWN_ACTION)
   }
 
   def getKeyMap: KeyMap = _keyMap
+  def getUserAction: Option[UserAction] = _prevUserAction
 
   private def evalStartGame(): Unit = _gameId match {
-    case None => Actions.doStartGame() onComplete {
+    case None => pacmanRestClient.startGame onComplete {
       case Success(value) =>
         _prevUserAction = None
         info(s"Partita creata con successo: id $value") // scalastyle:ignore multiple.string.literals
         Some(value)
-      case Failure(exception) => error(s"Errore nella creazione della partita: ${exception.getMessage}")
+      case Failure(exception) => error(s"Errore nella creazione della partita: ${exception.getMessage}") // scalastyle:ignore multiple.string.literals
     }
     case Some(_) => error("Impossibile creare nuova partita quando ce n'è già una in corso")
   }
 
   private def evalEndGame(): Unit = _gameId match {
-    case Some(id) => Actions.doEndGame(id) onComplete  {
+    case Some(id) => pacmanRestClient.endGame(id) onComplete  {
       case Success(message) =>
         info(s"Partita terminata con successo: $message")
         _gameId = None
@@ -77,7 +92,7 @@ private case class ControllerImpl() extends Controller with Logging {
   }
 
   private def evalChangeView(view: Option[View]): Unit = view match {
-    case Some(view) => Actions.doChangeView(view.name)
+    case Some(view) => GUI.changeView(view.name)
     case None => error("Nessuna view scelta, impossibile cambiare finestra")
   }
 
@@ -86,35 +101,19 @@ private case class ControllerImpl() extends Controller with Logging {
     case (None, _) => error("Nuova azione utente è None")
     case _ =>
       info("Invio aggiornamento al server")
-      Actions.doSendMovement(newUserAction.get)
+      debug(s"Invio al server l'azione ${newUserAction.get} dell'utente")
       _prevUserAction = newUserAction
   }
 
+  private def evalSaveKeyMap(maybeKeyMap: Option[KeyMap]): Unit = maybeKeyMap match {
+    case None => error("Configurazione tasti non valida")
+    case Some(keyMap) =>
+      _keyMap = keyMap
+      info(s"Nuova configurazione dei tasti salvata $keyMap") // scalastyle:ignore multiple.string.literals
+  }
+
   private def evalExitApp(): Unit = {
-    _gameId match {
-      case Some(id) =>
-        Actions.doEndGame(id)
-      case None => // do nothing
-    }
-    Actions.doExitApp()
-  }
-}
-
-object Actions extends Logging {
-  private val pacmanRestClient = new PacmanRestClient() with ClientHandler {
-    override implicit def classicActorSystem: ActorSystem = ActorSystem()
-    override implicit def executionContext: ExecutionContextExecutor = classicActorSystem.dispatcher
-  }
-
-  def doStartGame(): Future[String] = pacmanRestClient.startGame
-
-  def doEndGame(id: String): Future[String] = pacmanRestClient.endGame(id)
-
-  def doChangeView(viewName: String): Unit = GUI.changeView(viewName)
-
-  def doSendMovement(userAction: UserAction): Unit = debug(s"Invio al server l'azione $userAction dell'utente")
-
-  def doExitApp(): Unit = {
+    evalEndGame()
     info("Chiusura dell'applicazione")
     System.exit(0)
   }
