@@ -4,9 +4,6 @@ import it.unibo.scalapacman.lib.math.Point2D
 
 case class Ghost(ghostType: GhostType, override val position: Point2D, override val speed: Double, override val direction: Direction)
   extends Character
-    with Eatable {
-  val points: Int = Ghost.POINTS
-}
 
 object Ghost {
   val POINTS = 200
