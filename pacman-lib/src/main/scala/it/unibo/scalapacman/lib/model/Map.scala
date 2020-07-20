@@ -2,13 +2,13 @@ package it.unibo.scalapacman.lib.model
 
 import it.unibo.scalapacman.lib.Utility
 import it.unibo.scalapacman.lib.model.Dot.{ENERGIZER_DOT, SMALL_DOT}
-import it.unibo.scalapacman.lib.model.Tile.{GhostSpawn, Tile, Track, TrackSafe, TrackTunnel, Wall}
+import it.unibo.scalapacman.lib.model.Tile.{GhostSpawn, Track, TrackSafe, TrackTunnel, Wall}
 
 /**
  *
  * @param tiles A matrix of tiles
  */
-case class Map(tiles: List[List[Tile]])
+case class Map(tiles: List[List[it.unibo.scalapacman.lib.model.Tile]])
 
 case object Map {
 

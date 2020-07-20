@@ -7,7 +7,7 @@ import org.scalatest.wordspec.AnyWordSpec
 class GameTickTest extends AnyWordSpec {
   val GHOST_1: Ghost = Ghost.blinky(Point2D(0, 0), 0.0, Direction.WEST)
   val GHOST_2: Ghost = Ghost.inky(Point2D(1, 1), 0.0, Direction.EAST)
-  val PACMAN: Pacman = Pacman(Point2D(0, 0), 0.0, Direction.EAST)
+  val PACMAN: Pacman = Pacman(Point2D(0, 0), 0.0, Direction.NORTH)
   val MAP_SIZE = 4
   implicit val MAP: Map = Map(
     List(
@@ -48,19 +48,19 @@ class GameTickTest extends AnyWordSpec {
       }
       "return the tile's game object" when {
         "a fruit is in the Pacman's tile" in {
-          val pacman = Pacman(PACMAN.position + Point2D(0, TileGeography.SIZE), 0.0, Direction.EAST)
+          val pacman = Pacman(PACMAN.position + Point2D(0, TileGeography.SIZE), 0.0, Direction.SOUTH)
           val collisions = GameTick.collisions(List(pacman))
-          assert(collisions.size == 1 /* && collisions.head == GHOST_1*/)
+          assert(collisions.size == 1 && collisions.head == Dot.SMALL_DOT)
         }
         "a small dot is in the Pacman's tile" in {
-          val pacman = Pacman(PACMAN.position + Point2D(0, TileGeography.SIZE * 2), 0.0, Direction.EAST)
+          val pacman = Pacman(PACMAN.position + Point2D(0, TileGeography.SIZE * 2), 0.0, Direction.NORTH)
           val collisions = GameTick.collisions(List(pacman))
-          assert(collisions.size == 1 /* && collisions.head == GHOST_1*/)
+          assert(collisions.size == 1 && collisions.head == Dot.ENERGIZER_DOT)
         }
         "an energized dot is in the Pacman's tile" in {
-          val pacman = Pacman(PACMAN.position + Point2D(0, TileGeography.SIZE * 3), 0.0, Direction.EAST)
+          val pacman = Pacman(PACMAN.position + Point2D(0, TileGeography.SIZE * 3), 0.0, Direction.WEST)
           val collisions = GameTick.collisions(List(pacman))
-          assert(collisions.size == 1 /* && collisions.head == GHOST_1*/)
+          assert(collisions.size == 1 && collisions.head == Fruit.APPLE)
         }
       }
       "return ghosts and tile's game object" when {
