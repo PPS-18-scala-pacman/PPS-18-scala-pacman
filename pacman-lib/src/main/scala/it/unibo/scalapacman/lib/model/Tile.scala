@@ -1,14 +1,14 @@
 package it.unibo.scalapacman.lib.model
 
+trait Tile {
+  val eatable: Option[Eatable]
+
+  def walkable(character: Character): Boolean
+
+  def speedModifier(character: Character, speed: Double): Double
+}
+
 object Tile {
-
-  trait Tile {
-    val eatable: Option[Eatable]
-
-    def walkable(character: Character): Boolean
-
-    def speedModifier(character: Character, speed: Double): Double
-  }
 
   abstract class TileAbstract extends Tile {
     val eatable: Option[Eatable] = None

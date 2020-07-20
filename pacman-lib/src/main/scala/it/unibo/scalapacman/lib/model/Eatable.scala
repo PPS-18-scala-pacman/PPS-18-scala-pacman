@@ -1,5 +1,5 @@
 package it.unibo.scalapacman.lib.model
 
-trait Eatable {
+trait Eatable extends GameObject {
   val points: Int
 }
