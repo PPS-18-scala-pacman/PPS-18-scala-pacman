@@ -1,8 +1,9 @@
 package it.unibo.scalapacman.lib.engine
 
-import it.unibo.scalapacman.lib.model.{Character, Direction, Map}
+import it.unibo.scalapacman.lib.model.{Character, Map}
+import it.unibo.scalapacman.lib.model.Direction.Direction
 import it.unibo.scalapacman.lib.engine.CircularMovement.{moveFor, moveUntil}
-import it.unibo.scalapacman.lib.engine.GameHelpers.{CharacterHelper}
+import it.unibo.scalapacman.lib.engine.GameHelpers.CharacterHelper
 
 object GameMovement {
 
