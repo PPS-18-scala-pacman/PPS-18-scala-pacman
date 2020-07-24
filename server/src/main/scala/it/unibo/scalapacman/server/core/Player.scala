@@ -7,9 +7,10 @@ import akka.actor.typed.{ActorRef, Behavior}
 import akka.http.scaladsl.model.ws.{Message, TextMessage}
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.scala.DefaultScalaModule
-import it.unibo.scalapacman.common.UpdateModel
-import it.unibo.scalapacman.server.core.Engine.UpdateMsg
-import it.unibo.scalapacman.server.core.Player.{PlayerCommand, RegisterUser, RegistrationAccepted, RegistrationRejected, Setup, WrapRespMessage, WrapRespUpdate}
+import it.unibo.scalapacman.common.{Command, CommandType, CommandTypeHolder, MoveCommandType, MoveCommandTypeHolder,
+  UpdateModel}
+import it.unibo.scalapacman.server.core.Player.{PlayerCommand, RegisterUser, RegistrationAccepted, RegistrationRejected,
+  Setup, WrapRespMessage, WrapRespUpdate}
 
 object Player {
 
@@ -48,13 +49,10 @@ class Player(setup: Setup) {
       case RegisterUser(replyTo, sourceAct) =>
         replyTo ! RegistrationAccepted(clientMsgAdapter)
         mainRoutine(sourceAct)
-      case WrapRespMessage(TextMessage.Strict(msg)) =>
-        setup.context.log.info("Ricevuto messaggio: " + msg)
-        Behaviors.same
       case WrapRespMessage(_) =>
-        setup.context.log.warn("Ricevuto messaggio non gestito")
+        setup.context.log.warn("Ricevuto messaggio, game non avviato")
         Behaviors.same
-      case WrapRespUpdate(UpdateMsg(updateMsg)) =>
+      case WrapRespUpdate(Engine.UpdateMsg(updateMsg)) =>
         setup.context.log.info("Ricevuto update: " + updateMsg)
         Behaviors.same
       case WrapRespUpdate(_) =>
@@ -64,17 +62,18 @@ class Player(setup: Setup) {
 
   private def mainRoutine(sourceAct: ActorRef[Message]): Behavior[PlayerCommand] =
     Behaviors.receiveMessage {
-      //TODO gestire messaggi client ed engine
       case RegisterUser(replyTo, _) =>
         replyTo ! RegistrationRejected("Player occupato") //FIXME
         Behaviors.same
       case WrapRespMessage(TextMessage.Strict(msg)) =>
         setup.context.log.info("Ricevuto messaggio: " + msg)
+        val command = convertClientMessage(msg)
+        if(command.isDefined) setup.engine ! command.get
         Behaviors.same
       case WrapRespMessage(_) =>
         setup.context.log.warn("Ricevuto messaggio non gestito")
         Behaviors.same
-      case WrapRespUpdate(UpdateMsg(model)) =>
+      case WrapRespUpdate(Engine.UpdateMsg(model)) =>
         setup.context.log.debug("Ricevuto update: " + model)
         val msg = convertModel(model)
         sourceAct ! TextMessage(msg)
@@ -88,5 +87,27 @@ class Player(setup: Setup) {
     val out = new StringWriter
     mapper.writeValue(out, model)
     out.toString
+  }
+
+  private def convertClientMessage(jsonMsg: String): Option[Engine.GameEntityCommand] = {
+    mapper.readValue(jsonMsg, classOf[Command]) match {
+
+      case Command(CommandTypeHolder(CommandType.PAUSE), None) => Some(Engine.SwitchGameState())
+
+      case Command(CommandTypeHolder(CommandType.MOVE), Some(data)) =>
+        mapper.readValue(data, classOf[MoveCommandTypeHolder]) match {
+          case MoveCommandTypeHolder(MoveCommandType.UP) =>
+            Some(Engine.ChangeDirectionReq(updateMsgAdapter, Engine.MoveDirection.UP))
+          case MoveCommandTypeHolder(MoveCommandType.DOWN) =>
+            Some(Engine.ChangeDirectionReq(updateMsgAdapter, Engine.MoveDirection.DOWN))
+          case MoveCommandTypeHolder(MoveCommandType.LEFT) =>
+            Some(Engine.ChangeDirectionReq(updateMsgAdapter, Engine.MoveDirection.LEFT))
+          case MoveCommandTypeHolder(MoveCommandType.RIGHT) =>
+            Some(Engine.ChangeDirectionReq(updateMsgAdapter, Engine.MoveDirection.RIGHT))
+          case _ => setup.context.log.error("Comando di movimento non riconosciuto"); None
+        }
+
+      case _ => setup.context.log.error("Comando non riconosciuto"); None
+    }
   }
 }

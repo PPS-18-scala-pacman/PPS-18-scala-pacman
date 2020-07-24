@@ -6,8 +6,10 @@ import it.unibo.scalapacman.common.{DirectionHolder, DotHolder, FruitHolder, Gam
 import it.unibo.scalapacman.common.{GameEntity, GameState, Item, Pellet, UpdateModel}
 import it.unibo.scalapacman.lib.math.Point2D
 import it.unibo.scalapacman.lib.model.{Direction, Dot, Fruit, GhostType}
-import it.unibo.scalapacman.server.core.Engine.{EngineCommand, Model, Participant, Pause, RegisterGhost}
-import it.unibo.scalapacman.server.core.Engine.{RegisterPlayer, RegisterWatcher, Resume, Setup, UpdateMsg, WakeUp}
+import it.unibo.scalapacman.server.core.Engine.MoveDirection.MoveDirection
+import it.unibo.scalapacman.server.core.Engine.{ChangeDirectionAbort, ChangeDirectionReq, EngineCommand,
+  Model, Participant, Pause, RegisterGhost, RegisterPlayer, RegisterWatcher, Resume, Setup,
+  SwitchGameState, UpdateMsg, WakeUp}
 import it.unibo.scalapacman.server.util.Settings
 
 object Engine {
@@ -16,6 +18,20 @@ object Engine {
   case class WakeUp() extends EngineCommand
   case class Pause() extends EngineCommand
   case class Resume() extends EngineCommand
+
+  // TODO valutare questa gestione che non mi fa impazzire
+  sealed trait GameEntityCommand extends EngineCommand
+  case class SwitchGameState() extends GameEntityCommand
+  sealed trait DirectionCommand extends GameEntityCommand
+  case class ChangeDirectionReq(id:ActorRef[UpdateCommand], direction:MoveDirection) extends DirectionCommand
+  case class ChangeDirectionAbort(id:ActorRef[UpdateCommand]) extends DirectionCommand
+
+
+  //FIXME SPOSTARE IN PACMAN-LIB???
+  object MoveDirection extends Enumeration {
+    type MoveDirection = Value
+    val UP, DOWN, RIGHT, LEFT = Value
+  }
 
   //TODO gestire logica di registrazione e update
   case class RegisterGhost(actor: ActorRef[UpdateCommand], ghostType: GhostType) extends EngineCommand
@@ -52,6 +68,7 @@ private class Engine(setup: Setup) {
         //FIXME lo logica va corretta
         mainRoutine(Model(Option.empty, Option.empty, None, Option.empty, Some(Participant(actor))))
       case RegisterWatcher(actor) => ???
+      case SwitchGameState() => ???
     }
 
 
@@ -61,6 +78,7 @@ private class Engine(setup: Setup) {
         setup.context.log.info("Go id: " + setup.gameId)
         mainRoutine(model)
       case RegisterWatcher(actor) => ???
+      case SwitchGameState() => ???
     }
 
   private def mainRoutine(model: Model): Behavior[EngineCommand] =
@@ -71,16 +89,21 @@ private class Engine(setup: Setup) {
         case WakeUp() =>
           setup.context.log.info("WakeUp id: " + setup.gameId)
           //FIXME update di tutti gli osservatori
-          if(model.player.isDefined) model.player.get.actor ! UpdateMsg(elaborateModel)
+          if(model.player.isDefined) model.player.get.actor ! UpdateMsg(elaborateModel())
           Behaviors.same
         case Pause() =>
           setup.context.log.info("Pause id: " + setup.gameId)
           pauseRoutine(model)
         case RegisterWatcher(actor) => ???
+        case ChangeDirectionAbort(_) => ???
+        case ChangeDirectionReq(_, _) => ???
+        case SwitchGameState() => ???
       }
     }
 
   private def elaborateModel(): UpdateModel = {
+    //FIXME gestire creazione modello da inviare
+
     // scalastyle:off magic.number
     val gameEntities:List[GameEntity] =
       GameEntity(GameCharacterHolder(GameCharacter.PACMAN), Point2D(1,2), isDead=false, DirectionHolder(Direction.NORTH)) ::
