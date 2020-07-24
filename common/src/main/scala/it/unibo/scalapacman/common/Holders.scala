@@ -16,3 +16,9 @@ case class GameCharacterHolder(@JsonScalaEnumeration(classOf[GameCharacterType])
 
 class DirectionType extends TypeReference[Direction.type]
 case class DirectionHolder(@JsonScalaEnumeration(classOf[DirectionType]) direction: Direction.Value)
+
+class CommandTypeType extends TypeReference[CommandType.type]
+case class CommandTypeHolder(@JsonScalaEnumeration(classOf[CommandTypeType]) commandType: CommandType.CommandType)
+
+class MoveCommandTypeType extends TypeReference[MoveCommandType.type]
+case class MoveCommandTypeHolder(@JsonScalaEnumeration(classOf[MoveCommandTypeType]) moveCommandType: MoveCommandType.MoveCommandType)
