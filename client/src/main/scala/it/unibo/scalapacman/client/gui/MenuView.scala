@@ -8,10 +8,10 @@ import it.unibo.scalapacman.client.gui.View.{OPTIONS, PLAY, STATS}
 import javax.swing.{Box, BoxLayout, JButton, JLabel, JSplitPane, SwingConstants}
 
 object MenuView {
-  def apply()(implicit controller: Controller): MenuView = new MenuView()
+  def apply()(implicit controller: Controller, viewChanger: ViewChanger): MenuView = new MenuView()
 }
 
-class MenuView(implicit controller: Controller) extends PanelImpl {
+class MenuView(implicit controller: Controller, viewChanger: ViewChanger) extends PanelImpl {
   private val MAIN_TITLE_LABEL: String = "<html><div style='text-align: center'>Scala<br>Pacman<div></html>"
   private val PLAY_VIEW_BUTTON_LABEL: String = "Gioca"
   private val OPTIONS_VIEW_BUTTON_LABEL: String = "Opzioni"
@@ -35,9 +35,9 @@ class MenuView(implicit controller: Controller) extends PanelImpl {
   statsButton setAlignmentX Component.CENTER_ALIGNMENT
   exitButton setAlignmentX Component.CENTER_ALIGNMENT
 
-  playButton addActionListener (_ => controller.handleAction(CHANGE_VIEW, Some(PLAY)))
-  optionsButton addActionListener (_ => controller.handleAction(CHANGE_VIEW, Some(OPTIONS)))
-  statsButton addActionListener (_ => controller.handleAction(CHANGE_VIEW, Some(STATS)))
+  playButton addActionListener (_ => viewChanger.changeView(PLAY))
+  optionsButton addActionListener (_ => viewChanger.changeView(OPTIONS))
+  statsButton addActionListener (_ => viewChanger.changeView(STATS))
   exitButton addActionListener (_ => controller.handleAction(EXIT_APP, None))
 
   private val splitPane: JSplitPane = new JSplitPane
