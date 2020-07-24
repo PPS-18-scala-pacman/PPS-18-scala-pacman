@@ -2,9 +2,12 @@ package it.unibo.scalapacman.server.core
 
 import akka.actor.typed.{ActorRef, Behavior}
 import akka.actor.typed.scaladsl.{ActorContext, Behaviors}
-import it.unibo.scalapacman.lib.model.GhostType
-import it.unibo.scalapacman.server.core.Engine.{EngineCommand, Model, Participant, Pause,
-  RegisterGhost, RegisterPlayer, RegisterWatcher, Resume, Setup, UpdateMsg, WakeUp}
+import it.unibo.scalapacman.common.{DirectionHolder, DotHolder, FruitHolder, GameCharacter, GameCharacterHolder}
+import it.unibo.scalapacman.common.{GameEntity, GameState, Item, Pellet, UpdateModel}
+import it.unibo.scalapacman.lib.math.Point2D
+import it.unibo.scalapacman.lib.model.{Direction, Dot, Fruit, GhostType}
+import it.unibo.scalapacman.server.core.Engine.{EngineCommand, Model, Participant, Pause, RegisterGhost}
+import it.unibo.scalapacman.server.core.Engine.{RegisterPlayer, RegisterWatcher, Resume, Setup, UpdateMsg, WakeUp}
 import it.unibo.scalapacman.server.util.Settings
 
 object Engine {
@@ -31,7 +34,7 @@ object Engine {
   private case class Participant(actor: ActorRef[UpdateCommand])
 
   sealed trait UpdateCommand
-  case class UpdateMsg(msg: String) extends UpdateCommand
+  case class UpdateMsg(model: UpdateModel) extends UpdateCommand
 
   def apply(gameId: String): Behavior[EngineCommand] =
     Behaviors.setup { context =>
@@ -68,7 +71,7 @@ private class Engine(setup: Setup) {
         case WakeUp() =>
           setup.context.log.info("WakeUp id: " + setup.gameId)
           //FIXME update di tutti gli osservatori
-          if(model.player.isDefined) model.player.get.actor ! UpdateMsg("aggiornamento")
+          if(model.player.isDefined) model.player.get.actor ! UpdateMsg(elaborateModel)
           Behaviors.same
         case Pause() =>
           setup.context.log.info("Pause id: " + setup.gameId)
@@ -77,4 +80,23 @@ private class Engine(setup: Setup) {
       }
     }
 
+  private def elaborateModel(): UpdateModel = {
+    // scalastyle:off magic.number
+    val gameEntities:List[GameEntity] =
+      GameEntity(GameCharacterHolder(GameCharacter.PACMAN), Point2D(1,2), isDead=false, DirectionHolder(Direction.NORTH)) ::
+        GameEntity(GameCharacterHolder(GameCharacter.PACMAN), Point2D(3,4), isDead=false, DirectionHolder(Direction.NORTH)) ::
+        GameEntity(GameCharacterHolder(GameCharacter.PACMAN), Point2D(5,6), isDead=false, DirectionHolder(Direction.NORTH)) ::
+        Nil
+    val gs: GameState = GameState(ghostInFear=false, pacmanEmpowered=false)
+    val pellets: List[Pellet] =
+      Pellet(DotHolder(Dot.SMALL_DOT), Point2D(5,6)) ::
+        Pellet(DotHolder(Dot.SMALL_DOT), Point2D(6,6)) ::
+        Pellet(DotHolder(Dot.SMALL_DOT), Point2D(7,6)) ::
+        Pellet(DotHolder(Dot.SMALL_DOT), Point2D(8,6)) ::
+        Nil
+    val fruit = Some(Item(FruitHolder(Fruit.APPLE), Point2D(9,9)))
+    // scalastyle:on magic.number
+
+    UpdateModel(gameEntities, 2, gs, pellets, fruit)
+  }
 }

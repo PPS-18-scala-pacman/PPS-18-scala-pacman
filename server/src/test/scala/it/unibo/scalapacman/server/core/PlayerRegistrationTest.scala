@@ -5,7 +5,7 @@ import akka.actor.typed.ActorRef
 import akka.http.scaladsl.model.ws.Message
 import org.scalatest.wordspec.AnyWordSpecLike
 
-class PlayerTest extends ScalaTestWithActorTestKit with AnyWordSpecLike {
+class PlayerRegistrationTest extends ScalaTestWithActorTestKit with AnyWordSpecLike {
 
   val fakeGameId = "fakeCreateGameId"
 

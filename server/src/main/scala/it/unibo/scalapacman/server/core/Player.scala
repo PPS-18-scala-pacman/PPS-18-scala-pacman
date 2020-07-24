@@ -1,8 +1,13 @@
 package it.unibo.scalapacman.server.core
 
+import java.io.StringWriter
+
 import akka.actor.typed.scaladsl.{ActorContext, Behaviors}
 import akka.actor.typed.{ActorRef, Behavior}
 import akka.http.scaladsl.model.ws.{Message, TextMessage}
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.module.scala.DefaultScalaModule
+import it.unibo.scalapacman.common.UpdateModel
 import it.unibo.scalapacman.server.core.Engine.UpdateMsg
 import it.unibo.scalapacman.server.core.Player.{PlayerCommand, RegisterUser, RegistrationAccepted, RegistrationRejected, Setup, WrapRespMessage, WrapRespUpdate}
 
@@ -35,6 +40,9 @@ class Player(setup: Setup) {
 
   setup.engine ! Engine.RegisterPlayer(updateMsgAdapter)
 
+  val mapper = new ObjectMapper()
+  mapper.registerModule(DefaultScalaModule)
+
   private def initRoutine(): Behavior[PlayerCommand] =
     Behaviors.receiveMessage {
       case RegisterUser(replyTo, sourceAct) =>
@@ -66,12 +74,19 @@ class Player(setup: Setup) {
       case WrapRespMessage(_) =>
         setup.context.log.warn("Ricevuto messaggio non gestito")
         Behaviors.same
-      case WrapRespUpdate(UpdateMsg(updateMsg)) =>
-        setup.context.log.info("Ricevuto update: " + updateMsg)
-        sourceAct ! TextMessage(updateMsg)
+      case WrapRespUpdate(UpdateMsg(model)) =>
+        setup.context.log.debug("Ricevuto update: " + model)
+        val msg = convertModel(model)
+        sourceAct ! TextMessage(msg)
         Behaviors.same
       case WrapRespUpdate(_) =>
         setup.context.log.warn("Ricevuto update non gestito")
         Behaviors.same
     }
+
+  private def convertModel(model: UpdateModel): String = {
+    val out = new StringWriter
+    mapper.writeValue(out, model)
+    out.toString
+  }
 }
