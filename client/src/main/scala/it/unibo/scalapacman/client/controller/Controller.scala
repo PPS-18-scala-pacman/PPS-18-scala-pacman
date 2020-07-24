@@ -3,7 +3,7 @@ package it.unibo.scalapacman.client.controller
 import akka.actor.ActorSystem
 import grizzled.slf4j.Logging
 import it.unibo.scalapacman.client.communication.{ClientHandler, PacmanRestClient}
-import Action.{CHANGE_VIEW, END_GAME, EXIT_APP, MOVEMENT, RESET_KEY_MAP, SAVE_KEY_MAP, START_GAME}
+import Action.{CHANGE_VIEW, END_GAME, EXIT_APP, MOVEMENT, RESET_KEY_MAP, SAVE_KEY_MAP, START_GAME, SUBSCRIBE_TO_GAME_UPDATES}
 import it.unibo.scalapacman.client.gui.{GUI, View}
 import it.unibo.scalapacman.client.input.JavaKeyBinding.DefaultJavaKeyBinding
 import it.unibo.scalapacman.client.input.KeyMap
@@ -57,6 +57,7 @@ private case class ControllerImpl() extends Controller with Logging {
   def handleAction(action: Action, param: Option[Any]): Unit = action match {
     case START_GAME => evalStartGame()
     case END_GAME => evalEndGame()
+    case SUBSCRIBE_TO_GAME_UPDATES => evalSubscribeToGameUpdates() // Come parametro avrà il Subscriber? Controller diventerà un Publisher
     case CHANGE_VIEW => evalChangeView(param.asInstanceOf[Option[View]])
     case MOVEMENT => evalSendMovement(param.asInstanceOf[Option[UserAction]])
     case SAVE_KEY_MAP => evalSaveKeyMap(param.asInstanceOf[Option[KeyMap]])
@@ -73,7 +74,8 @@ private case class ControllerImpl() extends Controller with Logging {
       case Success(value) =>
         _prevUserAction = None
         info(s"Partita creata con successo: id $value") // scalastyle:ignore multiple.string.literals
-        Some(value)
+        _gameId = Some(value)
+        evalSubscribeToGameUpdates()
       case Failure(exception) => error(s"Errore nella creazione della partita: ${exception.getMessage}") // scalastyle:ignore multiple.string.literals
     }
     case Some(_) => error("Impossibile creare nuova partita quando ce n'è già una in corso")
@@ -82,7 +84,7 @@ private case class ControllerImpl() extends Controller with Logging {
   private def evalEndGame(): Unit = _gameId match {
     case Some(id) => pacmanRestClient.endGame(id) onComplete  {
       case Success(message) =>
-        info(s"Partita terminata con successo: $message")
+        info(s"Partita $id terminata con successo: $message")
         _gameId = None
       case Failure(exception) =>
         error(s"Errore nella terminazione della partita: ${exception.getMessage}")
@@ -90,6 +92,13 @@ private case class ControllerImpl() extends Controller with Logging {
     }
     case None => info("Nessuna partita da dover terminare")
   }
+
+  private def evalSubscribeToGameUpdates(): Unit = _gameId match {
+    case None => error("Impossibile restare in ascolto se non c'è una partita avviata")
+    case Some(id) => pacmanRestClient.openWS(id, handleWebSocketMessage)
+  }
+
+  private def handleWebSocketMessage(message: String): Unit = debug(s"Ricevuto messaggio dal server: $message")
 
   private def evalChangeView(view: Option[View]): Unit = view match {
     case Some(view) => GUI.changeView(view.name)
@@ -102,6 +111,7 @@ private case class ControllerImpl() extends Controller with Logging {
     case _ =>
       info("Invio aggiornamento al server")
       debug(s"Invio al server l'azione ${newUserAction.get} dell'utente")
+      pacmanRestClient.sendOverWebSocket(newUserAction.get.toString)
       _prevUserAction = newUserAction
   }
 
