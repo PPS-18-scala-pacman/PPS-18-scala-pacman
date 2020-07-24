@@ -18,7 +18,7 @@ trait PacmanRestClient extends Logging { this: HttpClient =>
   implicit def classicActorSystem: ActorSystem
   implicit def executionContext: ExecutionContextExecutor
 
-  private val WS_BUFFER_SIZE: Int = 10
+  val WS_BUFFER_SIZE: Int = 10
 
   var _webSocketSpeaker: ActorRef = _
 
