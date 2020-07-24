@@ -1,7 +1,7 @@
 % Is based on idea of neighbourhood and graph is represented as a list of vertices and its neighbourhood
 % Calcola il peso del percorso più breve dal nodo di partenza +Start a tutti i nodi del grafo
-% ?- min_dist([0-[1-1], 1-[2-1, 3-1], 2-[], 3-[]], 0, X).
-% Result: X = [3-2, 2-2, 1-1, 0-0]    X / ['-'(3,2),'-'(2,2),'-'(1,1),'-'(0,0)]
+% ?- min_dist([0-[1-1], 1-[2-1, 3-1], 2-[], 3-[]], 0, 3, X).
+% Result: X = [0, 1, 3]    X / [0,1,3]
 
 % edge(Graph,V1,V2,Value):-
 %    member(V1-NB-[V1],Graph),
@@ -11,11 +11,10 @@ neighbourhood(Graph,V,NB):-
    member(V-NB,Graph).
 
 % min_dist(+Graph,+Start,+End,-Path)
-%min_dist(Graph,Start,End,Path):-
-%   dijkstra(Graph,[],[Start-0-[Start]], End, Path).
-% min_dist(+Graph,+Start,-MinDist)
-min_dist(Graph,Start,MinDist):-
-   dijkstra(Graph,[],[Start-0-[Start]],MinDist).
+min_dist(Graph,Start,End,Path):-
+   dijkstra(Graph,[],[Start-0-[Start]],MinDist),
+   member(End-_-ReversePath, MinDist),
+   reverse(ReversePath, Path).
 
 % dijkstra(+Graph,+ClosedVertices,+OpenVertices,+End,-Path)
 dijkstra(_,MinDist,[],MinDist).
@@ -28,6 +27,7 @@ dijkstra(Graph,Closed,Open,MinDist):-
    merge(NBP,RestOpen,D,NewOpen),
    dijkstra(Graph,[V-D-P|Closed],NewOpen,MinDist).
 
+% add_path(+Neighbourhood,+Path,-NeighbourhoodWithPath)
 add_path([], _, []).
 add_path([V-D|T], P, [V-D-[V|P]|NewT]):-
     add_path(T, P, NewT).
@@ -58,7 +58,13 @@ merge([V1-D1-P1|T],Open,D,NewOpen):-
    NewOpen=[V1-VD-VP|SubOpen],
    merge(T,RestOpen,D,SubOpen).
 
+% remove(+List, +ElementToRemove, -Rest)
 remove([H|T],H,T).
 remove([H|T],X,[H|NT]):-
    H\=X,
    remove(T,X,NT).
+
+% reverse(+List, -RevertedList)
+reverse(L1,L2):- reverse(L1,L2,[]).
+reverse([],Z,Z).
+reverse([H|T],Z,Acc) :- reverse(T,Z,[H|Acc]).
