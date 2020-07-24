@@ -7,6 +7,7 @@ sealed trait UserAction extends Action
 object Action {
   case object START_GAME extends UserIntention
   case object END_GAME extends UserIntention
+  case object SUBSCRIBE_TO_GAME_UPDATES extends UserIntention
   case object EXIT_APP extends UserIntention
   case object CHANGE_VIEW extends UserIntention
   case object SAVE_KEY_MAP extends UserIntention
