@@ -2,7 +2,7 @@ package it.unibo.scalapacman.client.gui
 
 import java.awt.{BorderLayout, Color, Font, GridLayout}
 
-import it.unibo.scalapacman.client.controller.Action.CHANGE_VIEW
+import it.unibo.scalapacman.client.controller.Action.{CHANGE_VIEW, END_GAME, START_GAME}
 import it.unibo.scalapacman.client.controller.Controller
 import it.unibo.scalapacman.client.input.{KeyBinder, KeyMap, UserInput}
 import it.unibo.scalapacman.client.gui.View.MENU
@@ -16,6 +16,8 @@ class PlayView(implicit controller: Controller) extends PanelImpl with KeyBinder
   private val TITLE_LABEL: String = "Play View"
   private val POINTS_LABEL: String = "Punteggio"
   private val LIVES_LABEL: String = "Vite"
+  private val START_GAME_BUTTON_LABEL: String = "Inizia partita"
+  private val END_GAME_BUTTON_LABEL: String = "Fine partita"
   private val BACK_BUTTON_LABEL: String = "Indietro"
   private val PLAY_PANEL_BORDER: Int = 5
   private val MAIN_LABELS_FONT: Int = 24
@@ -36,6 +38,8 @@ class PlayView(implicit controller: Controller) extends PanelImpl with KeyBinder
   private val placeholderLabel: JLabel = createTitleLabel(TITLE_LABEL)
   private val pointsLabel: JLabel = createLabel(POINTS_LABEL)
   private val livesLabel: JLabel = createLabel(LIVES_LABEL)
+  private val startGameButton: JButton = createButton(START_GAME_BUTTON_LABEL)
+  private val endGameButton: JButton = createButton(END_GAME_BUTTON_LABEL)
   private val backButton: JButton = createButton(BACK_BUTTON_LABEL)
 
   // Applico mappatura di default
@@ -54,12 +58,19 @@ class PlayView(implicit controller: Controller) extends PanelImpl with KeyBinder
   pointsCount setFont new Font(MAIN_FONT_NAME, Font.BOLD, SUB_LABELS_FONT)
   livesCount setFont new Font(MAIN_FONT_NAME, Font.BOLD, SUB_LABELS_FONT)
 
-  backButton addActionListener (_ => controller.handleAction(CHANGE_VIEW, Some(MENU)))
+  startGameButton addActionListener (_ => controller.handleAction(START_GAME, None))
+  endGameButton addActionListener (_ => controller.handleAction(END_GAME, None))
+  backButton addActionListener (_ => {
+    controller.handleAction(END_GAME, None)
+    controller.handleAction(CHANGE_VIEW, Some(MENU))
+  })
 
   private val playPanel: PanelImpl = PanelImpl()
   private val buttonsPanel: PanelImpl = PanelImpl()
   private val labelsPanel: PanelImpl = PanelImpl()
 
+  buttonsPanel add startGameButton
+  buttonsPanel add endGameButton
   buttonsPanel add backButton
 
   labelsPanel setLayout new GridLayout(LABELS_LAYOUT_ROWS,LABELS_LAYOUT_COLS)
