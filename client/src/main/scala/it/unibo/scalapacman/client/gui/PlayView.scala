@@ -2,7 +2,7 @@ package it.unibo.scalapacman.client.gui
 
 import java.awt.{BorderLayout, Color, Font, GridLayout}
 
-import it.unibo.scalapacman.client.controller.Action.{CHANGE_VIEW, END_GAME, START_GAME}
+import it.unibo.scalapacman.client.controller.Action.{END_GAME, START_GAME}
 import it.unibo.scalapacman.client.controller.Controller
 import it.unibo.scalapacman.client.input.{KeyBinder, KeyMap, UserInput}
 import it.unibo.scalapacman.client.gui.View.MENU

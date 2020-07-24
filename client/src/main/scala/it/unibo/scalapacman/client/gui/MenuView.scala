@@ -2,7 +2,7 @@ package it.unibo.scalapacman.client.gui
 
 import java.awt.{BorderLayout, Component, Dimension}
 
-import it.unibo.scalapacman.client.controller.Action.{CHANGE_VIEW, EXIT_APP}
+import it.unibo.scalapacman.client.controller.Action.EXIT_APP
 import it.unibo.scalapacman.client.controller.Controller
 import it.unibo.scalapacman.client.gui.View.{OPTIONS, PLAY, STATS}
 import javax.swing.{Box, BoxLayout, JButton, JLabel, JSplitPane, SwingConstants}

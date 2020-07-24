@@ -2,7 +2,6 @@ package it.unibo.scalapacman.client.gui
 
 import java.awt.{BorderLayout, Component}
 
-import it.unibo.scalapacman.client.controller.Action.CHANGE_VIEW
 import it.unibo.scalapacman.client.controller.Controller
 import it.unibo.scalapacman.client.gui.View.MENU
 import javax.swing.{JButton, JLabel, SwingConstants}

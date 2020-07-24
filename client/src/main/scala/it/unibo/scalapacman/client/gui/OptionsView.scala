@@ -3,7 +3,7 @@ package it.unibo.scalapacman.client.gui
 import java.awt.event.{KeyEvent, KeyListener}
 import java.awt.{BorderLayout, GridLayout}
 
-import it.unibo.scalapacman.client.controller.Action.{CHANGE_VIEW, RESET_KEY_MAP, SAVE_KEY_MAP}
+import it.unibo.scalapacman.client.controller.Action.{RESET_KEY_MAP, SAVE_KEY_MAP}
 import it.unibo.scalapacman.client.controller.Controller
 import it.unibo.scalapacman.client.gui.View.MENU
 import it.unibo.scalapacman.client.input.{KeyBinder, KeyMap}
