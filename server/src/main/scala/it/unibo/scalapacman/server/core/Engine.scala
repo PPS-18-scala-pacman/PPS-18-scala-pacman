@@ -5,9 +5,10 @@ import akka.actor.typed.{ActorRef, Behavior}
 import it.unibo.scalapacman.common._
 import it.unibo.scalapacman.lib.engine.{GameMovement, GameTick}
 import it.unibo.scalapacman.lib.math.Point2D
-import it.unibo.scalapacman.lib.model.{Direction, Dot, Fruit, GameState, Ghost, GhostType, Pacman, Map}
+import it.unibo.scalapacman.lib.model.Direction._
+import it.unibo.scalapacman.lib.model.{Direction, Dot, Fruit, GameState, Ghost, GhostType, Map, Pacman}
 import it.unibo.scalapacman.server.core.Engine._
-import it.unibo.scalapacman.server.model.MoveDirection.MoveDirection
+import it.unibo.scalapacman.server.model.MoveDirection._
 import it.unibo.scalapacman.server.model.{EngineModel, GameParticipant, Players, StarterModel}
 import it.unibo.scalapacman.server.util.Settings
 
@@ -92,8 +93,8 @@ private class Engine(setup: Setup) {
           setup.context.log.info("Pause id: " + setup.gameId)
           pauseRoutine(model)
         case RegisterWatcher(actor) => ???
-        case ChangeDirectionCur(_) => ???
-        case ChangeDirectionReq(_, _) => ???
+        case ChangeDirectionCur(actRef) => clearDesiredDir(model, actRef)
+        case ChangeDirectionReq(actRef, dir) => changeDesiredDir(model, actRef, dir)
         case SwitchGameState() => ???
       }
     }
@@ -158,13 +159,17 @@ private class Engine(setup: Setup) {
     val inky = updateChar(oldModel.players.inky)
     val clyde = updateChar(oldModel.players.clyde)
     val blinky = updateChar(oldModel.players.blinky)
+    val players = Players(pacman = pacman, pinky = pinky, inky = inky, clyde = clyde, blinky = blinky)
 
     val characters = pacman.character :: pinky.character :: inky.character :: clyde.character :: blinky.character :: Nil
 
-    GameTick.calculateGameState(GameTick.collisions(characters))
+    val collisions = GameTick.collisions(characters)
+    val state = GameTick.calculateGameState(collisions)
 
-    //FIXME update di tutti gli osservatori
-    val model: EngineModel = oldModel.copy(???)
+    //TODO aggiunrere calcolo personaggi vivi, update della mappa, calcolo delle velocità
+    // da valutare: calcolo direzioni fantasmi(per energizer pacman)
+
+    val model: EngineModel = oldModel.copy(players = players, state = state)
     updateWatcher(model)
     mainRoutine(model)
   }
@@ -172,5 +177,30 @@ private class Engine(setup: Setup) {
   private def updateChar(participant: GameParticipant)(implicit map: Map): GameParticipant = {
     val newChar = GameMovement.move(participant.character, setup.gameRefreshRate, participant.desiredDir)
     participant.copy(character = newChar)
+  }
+
+  private def updateDesDir(model:EngineModel, actRef:ActorRef[UpdateCommand], dir:Option[Direction]): Behavior[EngineCommand] = {
+    val players = model.players
+    val updatePl:Players = actRef match {
+      case players.blinky.actRef => players.copy(blinky = players.blinky.copy(desiredDir = dir))
+      case players.blinky.actRef => players.copy(blinky = players.blinky.copy(desiredDir = dir))
+      case players.blinky.actRef => players.copy(blinky = players.blinky.copy(desiredDir = dir))
+      case players.blinky.actRef => players.copy(blinky = players.blinky.copy(desiredDir = dir))
+      case players.blinky.actRef => players.copy(blinky = players.blinky.copy(desiredDir = dir))
+    }
+    mainRoutine(model.copy(players = updatePl))
+  }
+
+  private def clearDesiredDir(model:EngineModel, actRef:ActorRef[UpdateCommand]): Behavior[EngineCommand] =
+    updateDesDir(model, actRef, None)
+
+  private def changeDesiredDir(model:EngineModel, actRef:ActorRef[UpdateCommand], move:MoveDirection): Behavior[EngineCommand] = {
+    val dir: Direction = move match {
+      case UP     => NORTH
+      case DOWN   => SOUTH
+      case LEFT   => WEST
+      case RIGHT  => EAST
+    }
+    updateDesDir(model, actRef, Some(dir))
   }
 }
