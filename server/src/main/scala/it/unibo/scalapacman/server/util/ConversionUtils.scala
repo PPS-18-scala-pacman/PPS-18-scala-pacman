@@ -10,6 +10,7 @@ import grizzled.slf4j.Logging
 import it.unibo.scalapacman.common.{Command, CommandType, CommandTypeHolder, MoveCommandType, MoveCommandTypeHolder, UpdateModel}
 import it.unibo.scalapacman.server.core.Engine
 import it.unibo.scalapacman.server.core.Engine.UpdateCommand
+import it.unibo.scalapacman.server.model.MoveDirection
 
 object ConversionUtils extends Logging{
 
@@ -39,13 +40,13 @@ object ConversionUtils extends Logging{
   private def convertMoveDataMsg(data: String, actRef: ActorRef[UpdateCommand]): Option[Engine.GameEntityCommand] = {
     mapper.readValue(data, classOf[MoveCommandTypeHolder]) match {
       case MoveCommandTypeHolder(MoveCommandType.UP) =>
-        Some(Engine.ChangeDirectionReq(actRef, Engine.MoveDirection.UP))
+        Some(Engine.ChangeDirectionReq(actRef, MoveDirection.UP))
       case MoveCommandTypeHolder(MoveCommandType.DOWN) =>
-        Some(Engine.ChangeDirectionReq(actRef, Engine.MoveDirection.DOWN))
+        Some(Engine.ChangeDirectionReq(actRef, MoveDirection.DOWN))
       case MoveCommandTypeHolder(MoveCommandType.LEFT) =>
-        Some(Engine.ChangeDirectionReq(actRef, Engine.MoveDirection.LEFT))
+        Some(Engine.ChangeDirectionReq(actRef, MoveDirection.LEFT))
       case MoveCommandTypeHolder(MoveCommandType.RIGHT) =>
-        Some(Engine.ChangeDirectionReq(actRef, Engine.MoveDirection.RIGHT))
+        Some(Engine.ChangeDirectionReq(actRef, MoveDirection.RIGHT))
       case MoveCommandTypeHolder(MoveCommandType.NONE) =>
         Some(Engine.ChangeDirectionCur(actRef))
       case _ => error("Comando di movimento non riconosciuto"); None

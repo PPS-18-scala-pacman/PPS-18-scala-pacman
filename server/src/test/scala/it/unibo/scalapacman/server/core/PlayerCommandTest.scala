@@ -3,7 +3,8 @@ package it.unibo.scalapacman.server.core
 import akka.actor.testkit.typed.scaladsl.{ScalaTestWithActorTestKit, TestProbe}
 import akka.actor.typed.ActorRef
 import akka.http.scaladsl.model.ws.{Message, TextMessage}
-import it.unibo.scalapacman.server.core.Engine.{MoveDirection, UpdateCommand}
+import it.unibo.scalapacman.server.core.Engine.UpdateCommand
+import it.unibo.scalapacman.server.model.MoveDirection
 import org.scalatest.wordspec.AnyWordSpecLike
 
 class PlayerCommandTest  extends ScalaTestWithActorTestKit with AnyWordSpecLike {
