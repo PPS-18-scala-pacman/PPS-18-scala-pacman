@@ -1,78 +1,78 @@
 package it.unibo.scalapacman.server.core
 
-import akka.actor.typed.{ActorRef, Behavior}
 import akka.actor.typed.scaladsl.{ActorContext, Behaviors}
-import it.unibo.scalapacman.common.{DirectionHolder, DotHolder, FruitHolder, GameCharacter, GameCharacterHolder}
-import it.unibo.scalapacman.common.{GameEntity, GameState, Item, Pellet, UpdateModel}
+import akka.actor.typed.{ActorRef, Behavior}
+import it.unibo.scalapacman.common._
+import it.unibo.scalapacman.lib.engine.{GameMovement, GameTick}
 import it.unibo.scalapacman.lib.math.Point2D
-import it.unibo.scalapacman.lib.model.{Direction, Dot, Fruit, GhostType}
-import it.unibo.scalapacman.server.core.Engine.MoveDirection.MoveDirection
-import it.unibo.scalapacman.server.core.Engine.{ChangeDirectionCur, ChangeDirectionReq, EngineCommand,
-  Model, Participant, Pause, RegisterGhost, RegisterPlayer, RegisterWatcher, Resume, Setup,
-  SwitchGameState, UpdateMsg, WakeUp}
+import it.unibo.scalapacman.lib.model.{Direction, Dot, Fruit, GameState, Ghost, GhostType, Pacman, Map}
+import it.unibo.scalapacman.server.core.Engine._
+import it.unibo.scalapacman.server.model.MoveDirection.MoveDirection
+import it.unibo.scalapacman.server.model.{EngineModel, GameParticipant, Players, StarterModel}
 import it.unibo.scalapacman.server.util.Settings
+
+import scala.concurrent.duration.FiniteDuration
 
 object Engine {
 
+  def apply(gameId: String): Behavior[EngineCommand] =
+    Behaviors.setup { context =>
+      new Engine(Setup(gameId, context, Settings.gameRefreshRate)).idleRoutine(StarterModel())
+    }
+
   sealed trait EngineCommand
-  case class WakeUp() extends EngineCommand
-  case class Pause() extends EngineCommand
-  case class Resume() extends EngineCommand
 
   // TODO valutare questa gestione che non mi fa impazzire
   sealed trait GameEntityCommand extends EngineCommand
-  case class SwitchGameState() extends GameEntityCommand
+
   sealed trait DirectionCommand extends GameEntityCommand
-  case class ChangeDirectionReq(id:ActorRef[UpdateCommand], direction:MoveDirection) extends DirectionCommand
-  case class ChangeDirectionCur(id:ActorRef[UpdateCommand]) extends DirectionCommand
 
+  sealed trait UpdateCommand
 
-  //FIXME SPOSTARE IN PACMAN-LIB???
-  object MoveDirection extends Enumeration {
-    type MoveDirection = Value
-    val UP, DOWN, RIGHT, LEFT = Value
-  }
+  case class WakeUp() extends EngineCommand
+
+  case class Pause() extends EngineCommand
+
+  case class Resume() extends EngineCommand
+
+  case class SwitchGameState() extends GameEntityCommand
+
+  case class ChangeDirectionReq(id: ActorRef[UpdateCommand], direction: MoveDirection) extends DirectionCommand
+
+  case class ChangeDirectionCur(id: ActorRef[UpdateCommand]) extends DirectionCommand
 
   //TODO gestire logica di registrazione e update
   case class RegisterGhost(actor: ActorRef[UpdateCommand], ghostType: GhostType) extends EngineCommand
+
   case class RegisterPlayer(actor: ActorRef[UpdateCommand]) extends EngineCommand
+
+  //TODO aggiunto Util o def al object model per vedere se è pieno?
+
   case class RegisterWatcher(actor: ActorRef[UpdateCommand]) extends EngineCommand
 
-  private case class Setup(gameId: String, context: ActorContext[EngineCommand])
-
-  //TODO gestire in maniera adeguata la struttura del Model (aggiungere anche wathcer e player)
-  private case class Model(blinky: Option[Participant], pinky: Option[Participant], inky: Option[Participant],
-                           clyde: Option[Participant], player: Option[Participant])
-  //TODO aggiunto Util o def al object model per vedere se è pieno?
-  //TODO a fine registrazione lo converto in un modello senza Option?
-  //TODO il model non lo passo alal classe ma ad ogni Routine?
-
-  private case class Participant(actor: ActorRef[UpdateCommand])
-
-  sealed trait UpdateCommand
   case class UpdateMsg(model: UpdateModel) extends UpdateCommand
 
-  def apply(gameId: String): Behavior[EngineCommand] =
-    Behaviors.setup { context =>
-      new Engine(Setup(gameId, context)).idleRoutine()
-    }
+  private case class Setup(gameId: String, context: ActorContext[EngineCommand], gameRefreshRate: FiniteDuration)
+
 }
 
 private class Engine(setup: Setup) {
 
-  private def idleRoutine(): Behavior[EngineCommand] =
+  private def idleRoutine(model: StarterModel): Behavior[EngineCommand] =
     Behaviors.receiveMessage {
       //TODO ad ogni registrazione guardo se sono arrivati tutti nel caso cambio stato
       case RegisterGhost(actor, ghostType) => ???
       case RegisterPlayer(actor) =>
-        //FIXME lo logica va corretta
-        mainRoutine(Model(Option.empty, Option.empty, None, Option.empty, Some(Participant(actor))))
+
+        //FIXME  cambiare stato solo dopo che tutti i ghost e il player si sono registrati e crere il EngineModel
+        //TODO aggiungere StarterModel un metodo isComplete???
+        mainRoutine( initEngineModel(model) )
       case RegisterWatcher(actor) => ???
       case SwitchGameState() => ???
     }
 
 
-  private def pauseRoutine(model: Model): Behavior[EngineCommand] =
+  private def pauseRoutine(model: EngineModel): Behavior[EngineCommand] =
     Behaviors.receiveMessage {
       case Resume() =>
         setup.context.log.info("Go id: " + setup.gameId)
@@ -81,16 +81,13 @@ private class Engine(setup: Setup) {
       case SwitchGameState() => ???
     }
 
-  private def mainRoutine(model: Model): Behavior[EngineCommand] =
+  private def mainRoutine(model: EngineModel): Behavior[EngineCommand] =
     Behaviors.withTimers { timers =>
-      timers.startTimerWithFixedDelay(WakeUp(), WakeUp(), Settings.gameRefreshRate)
+      timers.startTimerWithFixedDelay(WakeUp(), WakeUp(), setup.gameRefreshRate)
 
       Behaviors.receiveMessage {
         case WakeUp() =>
-          setup.context.log.info("WakeUp id: " + setup.gameId)
-          //FIXME update di tutti gli osservatori
-          if(model.player.isDefined) model.player.get.actor ! UpdateMsg(elaborateModel())
-          Behaviors.same
+          updateGame(model)
         case Pause() =>
           setup.context.log.info("Pause id: " + setup.gameId)
           pauseRoutine(model)
@@ -101,25 +98,79 @@ private class Engine(setup: Setup) {
       }
     }
 
-  private def elaborateModel(): UpdateModel = {
+  private def elaborateUpdateModel(model: EngineModel): UpdateModel = {
     //FIXME gestire creazione modello da inviare
 
     // scalastyle:off magic.number
-    val gameEntities:List[GameEntity] =
-      GameEntity(GameCharacterHolder(GameCharacter.PACMAN), Point2D(1,2), isDead=false, DirectionHolder(Direction.NORTH)) ::
-        GameEntity(GameCharacterHolder(GameCharacter.PACMAN), Point2D(3,4), isDead=false, DirectionHolder(Direction.NORTH)) ::
-        GameEntity(GameCharacterHolder(GameCharacter.PACMAN), Point2D(5,6), isDead=false, DirectionHolder(Direction.NORTH)) ::
+    //TODO fare trasformatore da model.players a List[GameEntity]
+    val gameEntities: List[GameEntity] =
+      GameEntity(GameCharacterHolder(GameCharacter.PACMAN), Point2D(1, 2), isDead = false, DirectionHolder(Direction.NORTH)) ::
+        GameEntity(GameCharacterHolder(GameCharacter.BLINKY), Point2D(3, 4), isDead = false, DirectionHolder(Direction.NORTH)) ::
+        GameEntity(GameCharacterHolder(GameCharacter.INKY), Point2D(5, 6), isDead = false, DirectionHolder(Direction.NORTH)) ::
         Nil
-    val gs: GameState = GameState(ghostInFear=false, pacmanEmpowered=false)
+
+    //TODO creare due metodi nella pacman-lib che data la mappa danno List[Pellet], Option[Fruit]
     val pellets: List[Pellet] =
-      Pellet(DotHolder(Dot.SMALL_DOT), Point2D(5,6)) ::
-        Pellet(DotHolder(Dot.SMALL_DOT), Point2D(6,6)) ::
-        Pellet(DotHolder(Dot.SMALL_DOT), Point2D(7,6)) ::
-        Pellet(DotHolder(Dot.SMALL_DOT), Point2D(8,6)) ::
+      Pellet(DotHolder(Dot.SMALL_DOT), Point2D(5, 6)) ::
+        Pellet(DotHolder(Dot.SMALL_DOT), Point2D(6, 6)) ::
+        Pellet(DotHolder(Dot.SMALL_DOT), Point2D(7, 6)) ::
+        Pellet(DotHolder(Dot.SMALL_DOT), Point2D(8, 6)) ::
         Nil
-    val fruit = Some(Item(FruitHolder(Fruit.APPLE), Point2D(9,9)))
+    val fruit = Some(Item(FruitHolder(Fruit.APPLE), Point2D(9, 9)))
     // scalastyle:on magic.number
 
-    UpdateModel(gameEntities, 2, gs, pellets, fruit)
+    UpdateModel(gameEntities, model.state, pellets, fruit)
+  }
+
+  private def initEngineModel(startMod: StarterModel) = {
+
+    // scalastyle:off magic.number
+    //FIXME Gio aggiungerà metodi di creazione con default
+    val players = Players(
+      pacman = GameParticipant(Pacman(Point2D(1, 0), 1.0, Direction.SOUTH), startMod.pacman.get.actor),
+      blinky = GameParticipant(Ghost(GhostType.BLINKY, Point2D(9, 9), 0.9, Direction.EAST), startMod.blinky.get.actor),
+      clyde  = GameParticipant(Ghost(GhostType.CLYDE, Point2D(9, 9), 0.9, Direction.EAST), startMod.clyde.get.actor),
+      inky   = GameParticipant(Ghost(GhostType.INKY, Point2D(9, 9), 0.9, Direction.EAST), startMod.inky.get.actor),
+      pinky  = GameParticipant(Ghost(GhostType.PINKY, Point2D(9, 9), 0.9, Direction.EAST), startMod.pinky.get.actor),
+    )
+    // scalastyle:on magic.number
+
+    EngineModel(players, Map.classic, GameState(score = 0))
+  }
+
+  private def updateWatcher(model: EngineModel): Unit = {
+    val upMsg = UpdateMsg(elaborateUpdateModel(model))
+
+    //TODO fare un implicit che aggiunge metodo foreach a Player?
+    model.players.blinky.actRef ! upMsg
+    model.players.clyde.actRef ! upMsg
+    model.players.inky.actRef ! upMsg
+    model.players.pinky.actRef ! upMsg
+    model.players.pacman.actRef ! upMsg
+  }
+
+  private def updateGame(oldModel: EngineModel) : Behavior[EngineCommand] = {
+    setup.context.log.info("updateGame id: " + setup.gameId)
+    implicit val map: Map = oldModel.map
+
+    val pacman = updateChar(oldModel.players.pacman)
+    val pinky = updateChar(oldModel.players.pinky)
+    val inky = updateChar(oldModel.players.inky)
+    val clyde = updateChar(oldModel.players.clyde)
+    val blinky = updateChar(oldModel.players.blinky)
+
+    val characters = pacman.character :: pinky.character :: inky.character :: clyde.character :: blinky.character :: Nil
+
+    GameTick.calculateGameState(GameTick.collisions(characters))
+
+    //FIXME update di tutti gli osservatori
+    val model: EngineModel = oldModel.copy(???)
+    updateWatcher(model)
+    mainRoutine(model)
+  }
+
+  private def updateChar(participant: GameParticipant)(implicit map: Map): GameParticipant = {
+    val newChar = GameMovement.move(participant.character, setup.gameRefreshRate, participant.desiredDir)
+    participant.copy(character = newChar)
   }
 }
