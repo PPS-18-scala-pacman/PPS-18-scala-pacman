@@ -2,14 +2,14 @@ package it.unibo.scalapacman.client.communication
 
 import java.io.IOException
 
-import akka.{Done, NotUsed}
+import akka.Done
 import akka.actor.{ActorRef, ActorSystem}
 import akka.http.scaladsl.client.RequestBuilding.{Delete, Post}
-import akka.http.scaladsl.model.ws.{Message, TextMessage, WebSocketRequest, WebSocketUpgradeResponse}
+import akka.http.scaladsl.model.ws.{Message, TextMessage, WebSocketRequest}
 import akka.http.scaladsl.model.{HttpRequest, HttpResponse, StatusCodes}
 import akka.http.scaladsl.unmarshalling.Unmarshal
 import akka.stream.OverflowStrategy
-import akka.stream.scaladsl.{Flow, Keep, Sink, Source}
+import akka.stream.scaladsl.{Keep, Sink, Source}
 import grizzled.slf4j.Logging
 
 import scala.concurrent.{ExecutionContextExecutor, Future}
@@ -17,6 +17,8 @@ import scala.concurrent.{ExecutionContextExecutor, Future}
 trait PacmanRestClient extends Logging { this: HttpClient =>
   implicit def classicActorSystem: ActorSystem
   implicit def executionContext: ExecutionContextExecutor
+
+  val WS_BUFFER_SIZE: Int = 10
 
   var _webSocketSpeaker: ActorRef = _
 
@@ -47,7 +49,7 @@ trait PacmanRestClient extends Logging { this: HttpClient =>
     val request = WebSocketRequest(s"${PacmanRestClient.GAMES_WS_URL}/$gameId")
 
     val messageSource: Source[Message, ActorRef] =
-      Source.actorRef[TextMessage.Strict](bufferSize = 10, OverflowStrategy.fail)
+      Source.actorRef[TextMessage.Strict](bufferSize = WS_BUFFER_SIZE, OverflowStrategy.fail)
 
     val messageSink: Sink[Message, Future[Done]] = Sink.foreach[Message] {
       case message: TextMessage.Strict => serverMessageHandler(message.text)

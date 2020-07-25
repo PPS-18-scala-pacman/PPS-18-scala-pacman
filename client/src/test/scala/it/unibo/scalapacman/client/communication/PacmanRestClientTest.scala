@@ -9,7 +9,6 @@ import akka.http.scaladsl.model.ws.{Message, WebSocketRequest, WebSocketUpgradeR
 import akka.http.scaladsl.model.{HttpEntity, HttpMethods, HttpRequest, HttpResponse, StatusCodes}
 import akka.stream.scaladsl.Flow
 import akka.util.ByteString
-import grizzled.slf4j.Logging
 import org.scalamock.function.MockFunction1
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.concurrent.ScalaFutures
@@ -21,8 +20,7 @@ class PacmanRestClientTest
   extends ScalaTestWithActorTestKit
     with AsyncWordSpecLike
     with ScalaFutures
-    with MockFactory
-    with Logging {
+    with MockFactory {
 
   trait MockClientHandler extends HttpClient {
     val mockHttp: MockFunction1[HttpRequest, Future[HttpResponse]] = mockFunction[HttpRequest, Future[HttpResponse]]
@@ -123,26 +121,5 @@ class PacmanRestClientTest
         }
       }
     }
-
-//    TODO come si fa?
-//    "handle websocket connection" in {
-//      var _toBeTested: String = ""
-//
-//      def handleWebSocketMessage(message: String): Unit = {
-//        _toBeTested = message
-//        debug("messaggio arrivato")
-//      }
-//
-//      debug("Apro websocket")
-//      // GAME_ID_EXAMPLE è inutile poiché impongo che la websocket si connetta ad un server diverso dal nostro
-//      pacmanRestClient.openWS(GAME_ID_EXAMPLE, handleWebSocketMessage)
-//
-//      debug("Invio testo di prova")
-//      val firstMessage = "Prova"
-//      pacmanRestClient.sendOverWebSocket(firstMessage)
-//
-//
-//      assert(firstMessage)(_toBeTested)
-//    }
   }
 }

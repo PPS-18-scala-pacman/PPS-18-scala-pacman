@@ -2,17 +2,17 @@ package it.unibo.scalapacman.client.gui
 
 import java.awt.{BorderLayout, Color, Font, GridLayout}
 
-import it.unibo.scalapacman.client.controller.Action.{CHANGE_VIEW, END_GAME, START_GAME}
+import it.unibo.scalapacman.client.controller.Action.{END_GAME, START_GAME}
 import it.unibo.scalapacman.client.controller.Controller
 import it.unibo.scalapacman.client.input.{KeyBinder, KeyMap, UserInput}
 import it.unibo.scalapacman.client.gui.View.MENU
 import javax.swing.{BorderFactory, JButton, JComponent, JLabel, JTextPane, SwingConstants}
 
 object PlayView {
-  def apply()(implicit controller: Controller): PlayView = new PlayView()
+  def apply()(implicit controller: Controller, viewChanger: ViewChanger): PlayView = new PlayView()
 }
 
-class PlayView(implicit controller: Controller) extends PanelImpl with KeyBinder {
+class PlayView(implicit controller: Controller, viewChanger: ViewChanger) extends PanelImpl with KeyBinder {
   private val TITLE_LABEL: String = "Play View"
   private val POINTS_LABEL: String = "Punteggio"
   private val LIVES_LABEL: String = "Vite"
@@ -62,7 +62,7 @@ class PlayView(implicit controller: Controller) extends PanelImpl with KeyBinder
   endGameButton addActionListener (_ => controller.handleAction(END_GAME, None))
   backButton addActionListener (_ => {
     controller.handleAction(END_GAME, None)
-    controller.handleAction(CHANGE_VIEW, Some(MENU))
+    viewChanger.changeView(MENU)
   })
 
   private val playPanel: PanelImpl = PanelImpl()
