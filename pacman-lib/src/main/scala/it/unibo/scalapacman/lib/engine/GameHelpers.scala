@@ -1,7 +1,8 @@
 package it.unibo.scalapacman.lib.engine
 
 import it.unibo.scalapacman.lib.math.{Point2D, TileGeography, Vector2D}
-import it.unibo.scalapacman.lib.model.{Character, Direction, Ghost, Map, Pacman, Tile}
+import it.unibo.scalapacman.lib.model.{Character, Ghost, Map, Pacman, Tile}
+import it.unibo.scalapacman.lib.model.Direction.Direction
 import it.unibo.scalapacman.lib.model.Direction.{EAST, NORTH, SOUTH, WEST}
 import it.unibo.scalapacman.lib.engine.CircularMovement.{moveFor, moveUntil}
 
