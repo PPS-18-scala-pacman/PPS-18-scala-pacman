@@ -61,6 +61,8 @@ object GameHelpers {
     def nextTile: Tile = map.tile(character.position, Some(character.direction).map(CharacterMovement.unitVector))
 
     def nextTile(direction: Direction): Tile = map.tile(character.position, Some(direction).map(CharacterMovement.unitVector))
+
+    def tileIndexes: (Int, Int) = map.tileIndexes(character.position)
   }
 
   implicit class MapHelper(map: Map) {
@@ -72,15 +74,24 @@ object GameHelpers {
     def tile(position: Point2D, watchOut: Option[Vector2D]): Tile =
       map.tiles(pacmanEffect(tileIndex(position.y, watchOut.map(_.y)), height))(pacmanEffect(tileIndex(position.x, watchOut.map(_.x)), width))
 
-    @scala.annotation.tailrec
-    private def pacmanEffect(x: Int, max: Int): Int = x match {
-      case x: Int if x > 0 => x % max
-      case x: Int => pacmanEffect(x + max, max)
-    }
+    def tile(indexes: (Int, Int)): Tile = map.tiles(indexes._2)(indexes._1)
+
+    def tileIndexes(position: Point2D): (Int, Int) = (tileIndex(position.x, None), tileIndex(position.y, None))
 
     def tileOrigin(position: Point2D, watchOut: Option[Vector2D]): Point2D = Point2D(
       pacmanEffect(tileIndex(position.x, watchOut.map(_.x)), width) * TileGeography.SIZE,
       pacmanEffect(tileIndex(position.y, watchOut.map(_.y)), height) * TileGeography.SIZE
     )
+
+    def tileIndexes(indexes: (Int, Int)): (Int, Int) = (
+      pacmanEffect(indexes._1, width),
+      pacmanEffect(indexes._2, height)
+    )
+
+    @scala.annotation.tailrec
+    private def pacmanEffect(x: Int, max: Int): Int = x match {
+      case x: Int if x > 0 => x % max
+      case x: Int => pacmanEffect(x + max, max)
+    }
   }
 }

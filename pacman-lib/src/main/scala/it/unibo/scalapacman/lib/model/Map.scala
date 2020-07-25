@@ -12,13 +12,13 @@ case class Map(tiles: List[List[it.unibo.scalapacman.lib.model.Tile]])
 
 case object Map {
 
-  private def emptyTrack(f: Int = 0): Track = Track(None)
+  def emptyTrack(f: Int = 0): Track = Track(None)
 
-  private def smallDot(f: Int = 0): Track = Track(Some(SMALL_DOT))
+  def smallDot(f: Int = 0): Track = Track(Some(SMALL_DOT))
 
-  private def energizerDot(f: Int = 0): Track = Track(Some(ENERGIZER_DOT))
+  def energizerDot(f: Int = 0): Track = Track(Some(ENERGIZER_DOT))
 
-  private def wall(f: Int = 0): Wall = Wall()
+  def wall(f: Int = 0): Wall = Wall()
 
   /**
    *
