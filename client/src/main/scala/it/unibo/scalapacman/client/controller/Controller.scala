@@ -3,8 +3,10 @@ package it.unibo.scalapacman.client.controller
 import grizzled.slf4j.Logging
 import it.unibo.scalapacman.client.communication.PacmanRestClient
 import Action.{END_GAME, EXIT_APP, MOVEMENT, RESET_KEY_MAP, SAVE_KEY_MAP, START_GAME, SUBSCRIBE_TO_GAME_UPDATES}
+import it.unibo.scalapacman.client.event.{GameUpdate, PacmanPublisher, PacmanSubscriber}
 import it.unibo.scalapacman.client.input.JavaKeyBinding.DefaultJavaKeyBinding
 import it.unibo.scalapacman.client.input.KeyMap
+import it.unibo.scalapacman.client.map.MapBuilder
 
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor}
 import scala.util.{Failure, Success}
@@ -46,11 +48,12 @@ private case class ControllerImpl(pacmanRestClient: PacmanRestClient) extends Co
   var _keyMap: KeyMap = _defaultKeyMap
   var _gameId: Option[String] = None
   var _prevUserAction: Option[UserAction] = None
+  val _publisher: PacmanPublisher = PacmanPublisher()
 
   def handleAction(action: Action, param: Option[Any]): Unit = action match {
     case START_GAME => evalStartGame()
     case END_GAME => evalEndGame()
-    case SUBSCRIBE_TO_GAME_UPDATES => evalSubscribeToGameUpdates() // Come parametro avrà il Subscriber? Controller diventerà un Publisher
+    case SUBSCRIBE_TO_GAME_UPDATES => evalSubscribeToGameUpdates(param.asInstanceOf[Option[PacmanSubscriber]])
     case MOVEMENT => evalSendMovement(param.asInstanceOf[Option[UserAction]])
     case SAVE_KEY_MAP => evalSaveKeyMap(param.asInstanceOf[Option[KeyMap]])
     case RESET_KEY_MAP => evalSaveKeyMap(Some(_defaultKeyMap))
@@ -67,7 +70,7 @@ private case class ControllerImpl(pacmanRestClient: PacmanRestClient) extends Co
         _prevUserAction = None
         info(s"Partita creata con successo: id $value") // scalastyle:ignore multiple.string.literals
         _gameId = Some(value)
-        evalSubscribeToGameUpdates()
+        pacmanRestClient.openWS(value, handleWebSocketMessage)
       case Failure(exception) => error(s"Errore nella creazione della partita: ${exception.getMessage}") // scalastyle:ignore multiple.string.literals
     }
     case Some(_) => error("Impossibile creare nuova partita quando ce n'è già una in corso")
@@ -85,12 +88,15 @@ private case class ControllerImpl(pacmanRestClient: PacmanRestClient) extends Co
     case None => info("Nessuna partita da dover terminare")
   }
 
-  private def evalSubscribeToGameUpdates(): Unit = _gameId match {
-    case None => error("Impossibile restare in ascolto se non c'è una partita avviata")
-    case Some(id) => pacmanRestClient.openWS(id, handleWebSocketMessage)
+  private def evalSubscribeToGameUpdates(maybeSubscriber: Option[PacmanSubscriber]): Unit = maybeSubscriber match {
+    case None => error("Subscriber mancante, impossibile registrarsi")
+    case Some(subscriber) => _publisher.subscribe(subscriber)
   }
 
-  private def handleWebSocketMessage(message: String): Unit = debug(s"Ricevuto messaggio dal server: $message")
+  private def handleWebSocketMessage(message: String): Unit = {
+    debug(s"Ricevuto messaggio dal server: $message")
+    _publisher.notifySubscribers(GameUpdate(MapBuilder.buildClassic()))
+  }
 
   private def evalSendMovement(newUserAction: Option[UserAction]): Unit = (newUserAction, _prevUserAction) match {
     case (Some(newInt), Some(prevInt)) if newInt == prevInt => info("Non invio aggiornamento al server")
