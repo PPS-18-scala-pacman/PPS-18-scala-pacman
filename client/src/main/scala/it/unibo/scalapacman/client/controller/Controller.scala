@@ -1,10 +1,8 @@
 package it.unibo.scalapacman.client.controller
 
-import akka.actor.ActorSystem
 import grizzled.slf4j.Logging
-import it.unibo.scalapacman.client.communication.{ClientHandler, PacmanRestClient}
-import Action.{CHANGE_VIEW, END_GAME, EXIT_APP, MOVEMENT, RESET_KEY_MAP, SAVE_KEY_MAP, START_GAME}
-import it.unibo.scalapacman.client.gui.{GUI, View}
+import it.unibo.scalapacman.client.communication.PacmanRestClient
+import Action.{END_GAME, EXIT_APP, MOVEMENT, RESET_KEY_MAP, SAVE_KEY_MAP, START_GAME, SUBSCRIBE_TO_GAME_UPDATES}
 import it.unibo.scalapacman.client.input.JavaKeyBinding.DefaultJavaKeyBinding
 import it.unibo.scalapacman.client.input.KeyMap
 
@@ -33,31 +31,26 @@ trait Controller {
 }
 
 object Controller {
-  def apply(): Controller = ControllerImpl()
+  def apply(pacmanRestClient: PacmanRestClient): Controller = ControllerImpl(pacmanRestClient)
 }
 
-private case class ControllerImpl() extends Controller with Logging {
+private case class ControllerImpl(pacmanRestClient: PacmanRestClient) extends Controller with Logging {
   implicit val ec: ExecutionContextExecutor = ExecutionContext.global
-  private val UNKNOWN_ACTION = "Azione non riconosciuta"
+  val UNKNOWN_ACTION = "Azione non riconosciuta"
   /**
    * Mappatura dei tasti iniziale, prende i valori di default di DefaultJavaKeyBinding.
    * Viene utilizzata in PlayView per applicare la mappatura iniziale della board di gioco.
    * Viene utilizzata in OptionsView per inizializzare i campi di testo.
    */
-  private val _defaultKeyMap = KeyMap(DefaultJavaKeyBinding.UP, DefaultJavaKeyBinding.DOWN, DefaultJavaKeyBinding.RIGHT, DefaultJavaKeyBinding.LEFT)
-  private var _keyMap: KeyMap = _defaultKeyMap
-  private var _gameId: Option[String] = None
-  private var _prevUserAction: Option[UserAction] = None
-
-  private val pacmanRestClient = new PacmanRestClient() with ClientHandler {
-    override implicit def classicActorSystem: ActorSystem = ActorSystem()
-    override implicit def executionContext: ExecutionContextExecutor = classicActorSystem.dispatcher
-  }
+  val _defaultKeyMap: KeyMap = KeyMap(DefaultJavaKeyBinding.UP, DefaultJavaKeyBinding.DOWN, DefaultJavaKeyBinding.RIGHT, DefaultJavaKeyBinding.LEFT)
+  var _keyMap: KeyMap = _defaultKeyMap
+  var _gameId: Option[String] = None
+  var _prevUserAction: Option[UserAction] = None
 
   def handleAction(action: Action, param: Option[Any]): Unit = action match {
     case START_GAME => evalStartGame()
     case END_GAME => evalEndGame()
-    case CHANGE_VIEW => evalChangeView(param.asInstanceOf[Option[View]])
+    case SUBSCRIBE_TO_GAME_UPDATES => evalSubscribeToGameUpdates() // Come parametro avrà il Subscriber? Controller diventerà un Publisher
     case MOVEMENT => evalSendMovement(param.asInstanceOf[Option[UserAction]])
     case SAVE_KEY_MAP => evalSaveKeyMap(param.asInstanceOf[Option[KeyMap]])
     case RESET_KEY_MAP => evalSaveKeyMap(Some(_defaultKeyMap))
@@ -73,7 +66,8 @@ private case class ControllerImpl() extends Controller with Logging {
       case Success(value) =>
         _prevUserAction = None
         info(s"Partita creata con successo: id $value") // scalastyle:ignore multiple.string.literals
-        Some(value)
+        _gameId = Some(value)
+        evalSubscribeToGameUpdates()
       case Failure(exception) => error(s"Errore nella creazione della partita: ${exception.getMessage}") // scalastyle:ignore multiple.string.literals
     }
     case Some(_) => error("Impossibile creare nuova partita quando ce n'è già una in corso")
@@ -82,7 +76,7 @@ private case class ControllerImpl() extends Controller with Logging {
   private def evalEndGame(): Unit = _gameId match {
     case Some(id) => pacmanRestClient.endGame(id) onComplete  {
       case Success(message) =>
-        info(s"Partita terminata con successo: $message")
+        info(s"Partita $id terminata con successo: $message")
         _gameId = None
       case Failure(exception) =>
         error(s"Errore nella terminazione della partita: ${exception.getMessage}")
@@ -91,10 +85,12 @@ private case class ControllerImpl() extends Controller with Logging {
     case None => info("Nessuna partita da dover terminare")
   }
 
-  private def evalChangeView(view: Option[View]): Unit = view match {
-    case Some(view) => GUI.changeView(view.name)
-    case None => error("Nessuna view scelta, impossibile cambiare finestra")
+  private def evalSubscribeToGameUpdates(): Unit = _gameId match {
+    case None => error("Impossibile restare in ascolto se non c'è una partita avviata")
+    case Some(id) => pacmanRestClient.openWS(id, handleWebSocketMessage)
   }
+
+  private def handleWebSocketMessage(message: String): Unit = debug(s"Ricevuto messaggio dal server: $message")
 
   private def evalSendMovement(newUserAction: Option[UserAction]): Unit = (newUserAction, _prevUserAction) match {
     case (Some(newInt), Some(prevInt)) if newInt == prevInt => info("Non invio aggiornamento al server")
@@ -102,6 +98,7 @@ private case class ControllerImpl() extends Controller with Logging {
     case _ =>
       info("Invio aggiornamento al server")
       debug(s"Invio al server l'azione ${newUserAction.get} dell'utente")
+      pacmanRestClient.sendOverWebSocket(newUserAction.get.toString)
       _prevUserAction = newUserAction
   }
 

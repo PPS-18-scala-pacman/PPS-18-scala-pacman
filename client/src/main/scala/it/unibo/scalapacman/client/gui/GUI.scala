@@ -7,8 +7,12 @@ import it.unibo.scalapacman.client.gui.View.{MENU, OPTIONS, PLAY, STATS}
 import javax.swing.{JFrame, JPanel, WindowConstants}
 
 object GUI {
+  def apply(implicit controller: Controller): GUIImpl = new GUIImpl()
+}
 
-  implicit val controller: Controller = Controller()
+class GUIImpl(implicit val controller: Controller) extends ViewChanger {
+
+  implicit val viewChanger: ViewChanger = this
 
   private val frame: JFrame = new JFrame
 
@@ -28,7 +32,7 @@ object GUI {
   mainPanel add(optionsView, OPTIONS.name)
   mainPanel add(statsView, STATS.name)
 
-  changeView(MENU.name)
+  changeView(MENU)
 
   frame add(mainPanel, BorderLayout.CENTER)
 
@@ -39,5 +43,5 @@ object GUI {
   frame setLocationRelativeTo null // scalastyle:ignore null
   frame setVisible true
 
-  def changeView(viewName: String): Unit = mainLayout show (mainPanel, viewName)
+  def changeView(view: View): Unit = mainLayout show (mainPanel, view.name)
 }
