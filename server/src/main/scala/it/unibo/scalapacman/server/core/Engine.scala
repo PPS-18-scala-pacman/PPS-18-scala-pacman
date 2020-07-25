@@ -7,7 +7,7 @@ import it.unibo.scalapacman.common.{GameEntity, GameState, Item, Pellet, UpdateM
 import it.unibo.scalapacman.lib.math.Point2D
 import it.unibo.scalapacman.lib.model.{Direction, Dot, Fruit, GhostType}
 import it.unibo.scalapacman.server.core.Engine.MoveDirection.MoveDirection
-import it.unibo.scalapacman.server.core.Engine.{ChangeDirectionAbort, ChangeDirectionReq, EngineCommand,
+import it.unibo.scalapacman.server.core.Engine.{ChangeDirectionCur, ChangeDirectionReq, EngineCommand,
   Model, Participant, Pause, RegisterGhost, RegisterPlayer, RegisterWatcher, Resume, Setup,
   SwitchGameState, UpdateMsg, WakeUp}
 import it.unibo.scalapacman.server.util.Settings
@@ -24,7 +24,7 @@ object Engine {
   case class SwitchGameState() extends GameEntityCommand
   sealed trait DirectionCommand extends GameEntityCommand
   case class ChangeDirectionReq(id:ActorRef[UpdateCommand], direction:MoveDirection) extends DirectionCommand
-  case class ChangeDirectionAbort(id:ActorRef[UpdateCommand]) extends DirectionCommand
+  case class ChangeDirectionCur(id:ActorRef[UpdateCommand]) extends DirectionCommand
 
 
   //FIXME SPOSTARE IN PACMAN-LIB???
@@ -95,7 +95,7 @@ private class Engine(setup: Setup) {
           setup.context.log.info("Pause id: " + setup.gameId)
           pauseRoutine(model)
         case RegisterWatcher(actor) => ???
-        case ChangeDirectionAbort(_) => ???
+        case ChangeDirectionCur(_) => ???
         case ChangeDirectionReq(_, _) => ???
         case SwitchGameState() => ???
       }

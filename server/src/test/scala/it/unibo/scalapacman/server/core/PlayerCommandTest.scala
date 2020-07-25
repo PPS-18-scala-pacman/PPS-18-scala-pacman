@@ -17,6 +17,9 @@ class PlayerCommandTest  extends ScalaTestWithActorTestKit with AnyWordSpecLike 
   private var testCommandDOWNJSON: String = _
   private var testCommandLEFTJSON: String = _
   private var testCommandRIGHTJSON: String = _
+  private var testCommandNONEJSON: String = _
+  private var testCommandFakeCmdJSON: String = _
+  private var testCommandFakeDataCmdJSON: String = _
 
   override def beforeAll(): Unit = {
     // creazione e registrazione attore player
@@ -42,6 +45,9 @@ class PlayerCommandTest  extends ScalaTestWithActorTestKit with AnyWordSpecLike 
     testCommandDOWNJSON = "{\"id\":{\"commandType\":\"MOVE\"},\"data\":\"{\\\"moveCommandType\\\":\\\"DOWN\\\"}\"}"
     testCommandLEFTJSON = "{\"id\":{\"commandType\":\"MOVE\"},\"data\":\"{\\\"moveCommandType\\\":\\\"LEFT\\\"}\"}"
     testCommandRIGHTJSON = "{\"id\":{\"commandType\":\"MOVE\"},\"data\":\"{\\\"moveCommandType\\\":\\\"RIGHT\\\"}\"}"
+    testCommandNONEJSON = "{\"id\":{\"commandType\":\"MOVE\"},\"data\":\"{\\\"moveCommandType\\\":\\\"NONE\\\"}\"}"
+    testCommandFakeCmdJSON = "{\"id\":{\"commandType\":\"FAKE\"},\"data\":null}"
+    testCommandFakeDataCmdJSON = "{\"id\":{\"commandType\":\"MOVE\"},\"data\":null}"
   }
 
   "A Player actor" must {
@@ -84,6 +90,24 @@ class PlayerCommandTest  extends ScalaTestWithActorTestKit with AnyWordSpecLike 
         case Engine.ChangeDirectionReq(playerUpRef, MoveDirection.RIGHT) => playerUpRef shouldEqual playerUpdAdapter
         case _ => fail()
       }
+    }
+
+    "handle Move None command" in {
+      playerCmdAdapter ! TextMessage(testCommandNONEJSON)
+      engineProbe.receiveMessage() match {
+        case Engine.ChangeDirectionCur(playerUpRef) => playerUpRef shouldEqual playerUpdAdapter
+        case _ => fail()
+      }
+    }
+
+    "handle Unknown command" in {
+      playerCmdAdapter ! TextMessage(testCommandFakeCmdJSON)
+      engineProbe.expectNoMessage()
+    }
+
+    "handle Unknown Move data command" in {
+      playerCmdAdapter ! TextMessage(testCommandFakeDataCmdJSON)
+      engineProbe.expectNoMessage()
     }
   }
 }
