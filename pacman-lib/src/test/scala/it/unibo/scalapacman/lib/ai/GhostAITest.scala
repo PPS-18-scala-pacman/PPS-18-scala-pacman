@@ -19,14 +19,18 @@ class GhostAITest extends AnyWordSpec {
   val ORIGIN: Point2D = Point2D(TileGeography.SIZE, TileGeography.SIZE)
 
   "Ghost AI" should {
-    "work" in {
-      // One step
-      assert(GhostAI.shortestPath(Pacman(ORIGIN, 1.0, Direction.WEST), (2, 1)) == (1, 1) :: (2, 1) :: Nil)
-      // Pacman effect
-      assert(GhostAI.shortestPath(Pacman(ORIGIN + Point2D(0, TileGeography.SIZE), 1.0, Direction.WEST), (3, 2)) == (1, 2) :: (0, 2) :: (4, 2) :: (3, 2) :: Nil)
-      // Unwalkable tiles
-      val path = GhostAI.shortestPath(Pacman(ORIGIN + Point2D(TileGeography.SIZE, 0), 1.0, Direction.WEST), (2, 3))
-      assert(path == (2, 1) :: (3, 1) :: (3, 2) :: (3, 3) :: (2, 1) :: Nil || path == (2, 1) :: (1, 1) :: (1, 2) :: (1, 3) :: (2, 3) :: Nil)
+    "calculate the shortest path" when {
+      "target tile is next to starting one" in {
+        assert(GhostAI.shortestPath(Pacman(ORIGIN, 1.0, Direction.WEST), (2, 1)) == (1, 1) :: (2, 1) :: Nil)
+      }
+      "target tile is after the tunnel" in {
+        val path = GhostAI.shortestPath(Pacman(ORIGIN + Point2D(0, TileGeography.SIZE), 1.0, Direction.WEST), (3, 2))
+        assert(path == (1, 2) :: (0, 2) :: (4, 2) :: (3, 2) :: Nil)
+      }
+      "target tile is behind a wall" in {
+        val path = GhostAI.shortestPath(Pacman(ORIGIN + Point2D(TileGeography.SIZE, 0), 1.0, Direction.WEST), (2, 3))
+        assert(path == (2, 1) :: (3, 1) :: (3, 2) :: (3, 3) :: (2, 1) :: Nil || path == (2, 1) :: (1, 1) :: (1, 2) :: (1, 3) :: (2, 3) :: Nil)
+      }
     }
   }
 }

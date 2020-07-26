@@ -1,10 +1,12 @@
-package it.unibo.scalapacman.lib.engine
+package it.unibo.scalapacman.lib.prolog
 
-import alice.tuprolog.{Prolog, SolveInfo, Struct, Term, Theory}
+import alice.tuprolog._
 
 object Scala2P {
 
   def extractTerm(t: Term, i: Integer): Term = t.asInstanceOf[Struct].getArg(i).getTerm
+
+  implicit def termableToTerm(t: Termable): Term = t.toProlog
 
   implicit def stringToTerm(s: String): Term = Term.createTerm(s)
 

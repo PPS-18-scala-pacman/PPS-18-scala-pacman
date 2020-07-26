@@ -2,7 +2,7 @@ package it.unibo.scalapacman.lib.engine
 
 import alice.tuprolog.{Struct, Term, Var}
 import it.unibo.scalapacman.lib.Utility
-import it.unibo.scalapacman.lib.engine.Scala2P.{extractTerm, mkPrologEngine, seqToTerm, stringToTerm}
+import it.unibo.scalapacman.lib.prolog.Scala2P.{extractTerm, mkPrologEngine, seqToTerm, stringToTerm}
 import org.scalatest.wordspec.AnyWordSpec
 
 import scala.collection.mutable
