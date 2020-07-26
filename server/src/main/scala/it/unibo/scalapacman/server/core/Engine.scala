@@ -63,13 +63,13 @@ private class Engine(setup: Setup) {
       case RegisterWatcher(actor) => ???
     }
 
-
   private def pauseRoutine(model: EngineModel): Behavior[EngineCommand] =
     Behaviors.receiveMessage {
       case Resume() =>
-        setup.context.log.info("Go id: " + setup.gameId)
+        setup.context.log.info("Resume id: " + setup.gameId)
         mainRoutine(model)
       case RegisterWatcher(actor) => ???
+      case Pause() => Behaviors.same
     }
 
   private def mainRoutine(model: EngineModel): Behavior[EngineCommand] =
@@ -81,6 +81,7 @@ private class Engine(setup: Setup) {
           updateGame(model)
         case Pause() =>
           setup.context.log.info("Pause id: " + setup.gameId)
+          timers.cancel(WakeUp())
           pauseRoutine(model)
         case RegisterWatcher(actor) => ???
         case ChangeDirectionCur(actRef) => clearDesiredDir(model, actRef)
