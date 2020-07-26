@@ -14,6 +14,7 @@ class PlayerCommandTest  extends ScalaTestWithActorTestKit with AnyWordSpecLike 
   private var engineProbe: TestProbe[Engine.EngineCommand] = _
 
   private var testCommandPauseJSON: String = _
+  private var testCommandResumeJSON: String = _
   private var testCommandUPJSON: String = _
   private var testCommandDOWNJSON: String = _
   private var testCommandLEFTJSON: String = _
@@ -42,6 +43,7 @@ class PlayerCommandTest  extends ScalaTestWithActorTestKit with AnyWordSpecLike 
 
     //mockup comandi
     testCommandPauseJSON = "{\"id\":{\"commandType\":\"PAUSE\"},\"data\":null}"
+    testCommandResumeJSON = "{\"id\":{\"commandType\":\"RESUME\"},\"data\":null}"
     testCommandUPJSON = "{\"id\":{\"commandType\":\"MOVE\"},\"data\":\"{\\\"moveCommandType\\\":\\\"UP\\\"}\"}"
     testCommandDOWNJSON = "{\"id\":{\"commandType\":\"MOVE\"},\"data\":\"{\\\"moveCommandType\\\":\\\"DOWN\\\"}\"}"
     testCommandLEFTJSON = "{\"id\":{\"commandType\":\"MOVE\"},\"data\":\"{\\\"moveCommandType\\\":\\\"LEFT\\\"}\"}"
@@ -56,7 +58,15 @@ class PlayerCommandTest  extends ScalaTestWithActorTestKit with AnyWordSpecLike 
     "handle Pause command" in {
       playerCmdAdapter ! TextMessage(testCommandPauseJSON)
       engineProbe.receiveMessage() match {
-        case Engine.SwitchGameState() =>
+        case Engine.Pause() =>
+        case _ => fail()
+      }
+    }
+
+    "handle Resume command" in {
+      playerCmdAdapter ! TextMessage(testCommandResumeJSON)
+      engineProbe.receiveMessage() match {
+        case Engine.Resume() =>
         case _ => fail()
       }
     }

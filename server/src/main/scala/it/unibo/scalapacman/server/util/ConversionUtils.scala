@@ -23,10 +23,11 @@ object ConversionUtils extends Logging{
     out.toString
   }
 
-  def convertClientMsg(jsonMsg: String, actRef: ActorRef[UpdateCommand]): Option[Engine.GameEntityCommand] = {
+  def convertClientMsg(jsonMsg: String, actRef: ActorRef[UpdateCommand]): Option[Engine.EngineCommand] = {
     try {
       mapper.readValue(jsonMsg, classOf[Command]) match {
-        case Command(CommandTypeHolder(CommandType.PAUSE), None) => Some(Engine.SwitchGameState())
+        case Command(CommandTypeHolder(CommandType.PAUSE), None) => Some(Engine.Pause())
+        case Command(CommandTypeHolder(CommandType.RESUME), None) => Some(Engine.Resume())
         case Command(CommandTypeHolder(CommandType.MOVE), Some(data)) => convertMoveDataMsg(data, actRef)
         case _ => error("Comando non riconosciuto"); None
       }
@@ -37,7 +38,7 @@ object ConversionUtils extends Logging{
     }
   }
 
-  private def convertMoveDataMsg(data: String, actRef: ActorRef[UpdateCommand]): Option[Engine.GameEntityCommand] = {
+  private def convertMoveDataMsg(data: String, actRef: ActorRef[UpdateCommand]): Option[Engine.EngineCommand] = {
     mapper.readValue(data, classOf[MoveCommandTypeHolder]) match {
       case MoveCommandTypeHolder(MoveCommandType.UP) =>
         Some(Engine.ChangeDirectionReq(actRef, MoveDirection.UP))

@@ -16,45 +16,28 @@ import scala.concurrent.duration.FiniteDuration
 
 object Engine {
 
-  def apply(gameId: String): Behavior[EngineCommand] =
-    Behaviors.setup { context =>
-      new Engine(Setup(gameId, context, Settings.gameRefreshRate)).idleRoutine(StarterModel())
-    }
-
   sealed trait EngineCommand
 
-  // TODO valutare questa gestione che non mi fa impazzire
-  sealed trait GameEntityCommand extends EngineCommand
-
-  sealed trait DirectionCommand extends GameEntityCommand
-
-  sealed trait UpdateCommand
-
   case class WakeUp() extends EngineCommand
-
   case class Pause() extends EngineCommand
-
   case class Resume() extends EngineCommand
-
-  case class SwitchGameState() extends GameEntityCommand
-
-  case class ChangeDirectionReq(id: ActorRef[UpdateCommand], direction: MoveDirection) extends DirectionCommand
-
-  case class ChangeDirectionCur(id: ActorRef[UpdateCommand]) extends DirectionCommand
+  case class ChangeDirectionReq(id: ActorRef[UpdateCommand], direction: MoveDirection) extends EngineCommand
+  case class ChangeDirectionCur(id: ActorRef[UpdateCommand]) extends EngineCommand
 
   //TODO gestire logica di registrazione e update
   case class RegisterGhost(actor: ActorRef[UpdateCommand], ghostType: GhostType) extends EngineCommand
-
   case class RegisterPlayer(actor: ActorRef[UpdateCommand]) extends EngineCommand
-
-  //TODO aggiunto Util o def al object model per vedere se è pieno?
-
   case class RegisterWatcher(actor: ActorRef[UpdateCommand]) extends EngineCommand
 
+  sealed trait UpdateCommand
   case class UpdateMsg(model: UpdateModel) extends UpdateCommand
 
   private case class Setup(gameId: String, context: ActorContext[EngineCommand], gameRefreshRate: FiniteDuration)
 
+  def apply(gameId: String): Behavior[EngineCommand] =
+    Behaviors.setup { context =>
+      new Engine(Setup(gameId, context, Settings.gameRefreshRate)).idleRoutine(StarterModel())
+    }
 }
 
 private class Engine(setup: Setup) {
@@ -67,14 +50,17 @@ private class Engine(setup: Setup) {
 
         //FIXME  cambiare stato solo dopo che tutti i ghost e il player si sono registrati e creare EngineModel
         //TODO aggiungere StarterModel un metodo isComplete???
+        //TODO aggiunto Util o def al object model per vedere se è pieno?
+
+        //FIXME
         val upModel = model.copy(pacman = Some(RegisteredParticipant(actor)),
           blinky = Some(RegisteredParticipant(actor)),
           pinky = Some(RegisteredParticipant(actor)),
           clyde = Some(RegisteredParticipant(actor)),
           inky = Some(RegisteredParticipant(actor)))
+
         mainRoutine( initEngineModel(upModel) )
       case RegisterWatcher(actor) => ???
-      case SwitchGameState() => ???
     }
 
 
@@ -84,7 +70,6 @@ private class Engine(setup: Setup) {
         setup.context.log.info("Go id: " + setup.gameId)
         mainRoutine(model)
       case RegisterWatcher(actor) => ???
-      case SwitchGameState() => ???
     }
 
   private def mainRoutine(model: EngineModel): Behavior[EngineCommand] =
@@ -100,7 +85,6 @@ private class Engine(setup: Setup) {
         case RegisterWatcher(actor) => ???
         case ChangeDirectionCur(actRef) => clearDesiredDir(model, actRef)
         case ChangeDirectionReq(actRef, dir) => changeDesiredDir(model, actRef, dir)
-        case SwitchGameState() => ???
       }
     }
 
