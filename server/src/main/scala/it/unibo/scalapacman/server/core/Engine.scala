@@ -2,14 +2,17 @@ package it.unibo.scalapacman.server.core
 
 import akka.actor.typed.scaladsl.{ActorContext, Behaviors}
 import akka.actor.typed.{ActorRef, Behavior}
-import it.unibo.scalapacman.common._
+import it.unibo.scalapacman.common.{DirectionHolder, DotHolder, FruitHolder, GameCharacter, GameCharacterHolder,
+  GameEntity, Item, Pellet, UpdateModel}
 import it.unibo.scalapacman.lib.engine.{GameMovement, GameTick}
 import it.unibo.scalapacman.lib.math.Point2D
-import it.unibo.scalapacman.lib.model.Direction._
+import it.unibo.scalapacman.lib.model.Direction.Direction
 import it.unibo.scalapacman.lib.model.{Direction, Dot, Fruit, GameState, Ghost, GhostType, Map, Pacman}
-import it.unibo.scalapacman.server.core.Engine._
-import it.unibo.scalapacman.server.model.MoveDirection._
-import it.unibo.scalapacman.server.model.{EngineModel, GameParticipant, Players, RegisteredParticipant, StarterModel}
+import it.unibo.scalapacman.server.core.Engine.{ChangeDirectionCur, ChangeDirectionReq, EngineCommand, Pause,
+  RegisterGhost, RegisterPlayer, RegisterWatcher, Resume, Setup, UpdateCommand, UpdateMsg, WakeUp}
+import it.unibo.scalapacman.server.model.MoveDirection.MoveDirection
+import it.unibo.scalapacman.server.model.{EngineModel, GameParticipant, MoveDirection, Players, RegisteredParticipant,
+  StarterModel}
 import it.unibo.scalapacman.server.util.Settings
 
 import scala.concurrent.duration.FiniteDuration
@@ -186,10 +189,10 @@ private class Engine(setup: Setup) {
 
   private def changeDesiredDir(model:EngineModel, actRef:ActorRef[UpdateCommand], move:MoveDirection): Behavior[EngineCommand] = {
     val dir: Direction = move match {
-      case UP     => NORTH
-      case DOWN   => SOUTH
-      case LEFT   => WEST
-      case RIGHT  => EAST
+      case MoveDirection.UP     => Direction.NORTH
+      case MoveDirection.DOWN   => Direction.SOUTH
+      case MoveDirection.LEFT   => Direction.WEST
+      case MoveDirection.RIGHT  => Direction.EAST
     }
     updateDesDir(model, actRef, Some(dir))
   }
