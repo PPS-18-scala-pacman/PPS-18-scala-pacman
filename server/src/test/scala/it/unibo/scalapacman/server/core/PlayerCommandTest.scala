@@ -31,11 +31,11 @@ class PlayerCommandTest  extends ScalaTestWithActorTestKit with AnyWordSpecLike 
     val regReqSender = createTestProbe[Player.PlayerRegistration]()
     val clientProbe = createTestProbe[Message]()
 
+    playerActor ! Player.RegisterUser(regReqSender.ref, clientProbe.ref)
     engineProbe.receiveMessage() match {
       case Engine.RegisterPlayer(updateRef) => playerUpdAdapter = updateRef
       case _ => fail()
     }
-    playerActor ! Player.RegisterUser(regReqSender.ref, clientProbe.ref)
     regReqSender.receiveMessage() match {
       case Player.RegistrationAccepted(ref) => playerCmdAdapter = ref
       case _ => fail()

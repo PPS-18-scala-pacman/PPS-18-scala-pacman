@@ -34,11 +34,10 @@ class Player(setup: Setup) {
   val clientMsgAdapter: ActorRef[Message] = setup.context.messageAdapter(WrapRespMessage)
   val updateMsgAdapter: ActorRef[Engine.UpdateCommand] = setup.context.messageAdapter(WrapRespUpdate)
 
-  setup.engine ! Engine.RegisterPlayer(updateMsgAdapter)
-
   private def initRoutine(): Behavior[PlayerCommand] =
     Behaviors.receiveMessage {
       case RegisterUser(replyTo, sourceAct) =>
+        setup.engine ! Engine.RegisterPlayer(updateMsgAdapter)
         replyTo ! RegistrationAccepted(clientMsgAdapter)
         mainRoutine(sourceAct)
       case WrapRespMessage(_) =>
