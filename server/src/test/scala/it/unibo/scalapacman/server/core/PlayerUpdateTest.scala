@@ -32,12 +32,12 @@ class PlayerUpdateTest extends ScalaTestWithActorTestKit with AnyWordSpecLike {
     val fruit = Some(Item(FruitHolder(Fruit.APPLE), Point2D(9,9)))
     // scalastyle:on magic.number
 
-    testModel = UpdateModel(gameEntities, GameState(score = 0), pellets, fruit)
+    testModel = UpdateModel(gameEntities, GameState(score = 2), pellets, fruit)
 
     testModelJSON = "{\"gameEntities\":[{\"id\":{\"gameChar\":\"PACMAN\"},\"pos\":{\"x\":1.0,\"y\":2.0},\"isDead\":" +
-      "false,\"dir\":{\"direction\":\"NORTH\"}},{\"id\":{\"gameChar\":\"PACMAN\"},\"pos\":{\"x\":3.0,\"y\":4.0}," +
-      "\"isDead\":false,\"dir\":{\"direction\":\"NORTH\"}},{\"id\":{\"gameChar\":\"PACMAN\"},\"pos\":{\"x\":5.0,\"y\"" +
-      ":6.0},\"isDead\":false,\"dir\":{\"direction\":\"NORTH\"}}],\"points\":2,\"state\":{\"ghostInFear\":false,\"" +
+      "false,\"dir\":{\"direction\":\"NORTH\"}},{\"id\":{\"gameChar\":\"PACMAN\"},\"pos\":{\"x\":3.0,\"y\":4.0},\"" +
+      "isDead\":false,\"dir\":{\"direction\":\"NORTH\"}},{\"id\":{\"gameChar\":\"PACMAN\"},\"pos\":{\"x\":5.0,\"y\":" +
+      "6.0},\"isDead\":false,\"dir\":{\"direction\":\"NORTH\"}}],\"state\":{\"score\":2,\"ghostInFear\":false,\"" +
       "pacmanEmpowered\":false},\"pellets\":[{\"pelletType\":{\"dot\":\"SMALL_DOT\"},\"pos\":{\"x\":5.0,\"y\":6.0}}," +
       "{\"pelletType\":{\"dot\":\"SMALL_DOT\"},\"pos\":{\"x\":6.0,\"y\":6.0}},{\"pelletType\":{\"dot\":\"SMALL_DOT\"" +
       "},\"pos\":{\"x\":7.0,\"y\":6.0}},{\"pelletType\":{\"dot\":\"SMALL_DOT\"},\"pos\":{\"x\":8.0,\"y\":6.0}}],\"" +

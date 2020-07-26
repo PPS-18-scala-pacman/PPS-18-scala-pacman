@@ -9,7 +9,7 @@ import it.unibo.scalapacman.lib.model.Direction._
 import it.unibo.scalapacman.lib.model.{Direction, Dot, Fruit, GameState, Ghost, GhostType, Map, Pacman}
 import it.unibo.scalapacman.server.core.Engine._
 import it.unibo.scalapacman.server.model.MoveDirection._
-import it.unibo.scalapacman.server.model.{EngineModel, GameParticipant, Players, StarterModel}
+import it.unibo.scalapacman.server.model.{EngineModel, GameParticipant, Players, RegisteredParticipant, StarterModel}
 import it.unibo.scalapacman.server.util.Settings
 
 import scala.concurrent.duration.FiniteDuration
@@ -65,9 +65,14 @@ private class Engine(setup: Setup) {
       case RegisterGhost(actor, ghostType) => ???
       case RegisterPlayer(actor) =>
 
-        //FIXME  cambiare stato solo dopo che tutti i ghost e il player si sono registrati e crere il EngineModel
+        //FIXME  cambiare stato solo dopo che tutti i ghost e il player si sono registrati e creare EngineModel
         //TODO aggiungere StarterModel un metodo isComplete???
-        mainRoutine( initEngineModel(model) )
+        val upModel = model.copy(pacman = Some(RegisteredParticipant(actor)),
+          blinky = Some(RegisteredParticipant(actor)),
+          pinky = Some(RegisteredParticipant(actor)),
+          clyde = Some(RegisteredParticipant(actor)),
+          inky = Some(RegisteredParticipant(actor)))
+        mainRoutine( initEngineModel(upModel) )
       case RegisterWatcher(actor) => ???
       case SwitchGameState() => ???
     }
