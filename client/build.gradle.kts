@@ -27,5 +27,5 @@ tasks.shadowJar {
 
 scoverage {
   excludedPackages.set(listOf("it.unibo.scalapacman.client.gui"))
-  minimumRate.set(BigDecimal("0.5"))
+  minimumRate.set(BigDecimal("0.3"))
 }
