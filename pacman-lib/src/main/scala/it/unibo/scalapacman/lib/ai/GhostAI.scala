@@ -15,7 +15,6 @@ object GhostAI {
     val tileStart = GraphVertex(map.tileIndexes(character.position))
     val tileEnd = GraphVertex(endTileIndexes)
     val quest = MinDistance(graph, tileStart, tileEnd)
-    // println(quest)
 
     engine(quest).headOption
       .map(extractTerm(_, 3))
