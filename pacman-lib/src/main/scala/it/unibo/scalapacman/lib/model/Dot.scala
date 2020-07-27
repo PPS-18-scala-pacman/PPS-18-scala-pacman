@@ -1,16 +1,13 @@
 package it.unibo.scalapacman.lib.model
 
-sealed trait Dot extends Eatable
+object Dot extends Enumeration {
 
-abstract class DotAbstract(val points: Int) extends Dot
-
-object Dot {
+  protected case class Val(points: Int) extends super.Val with Eatable
+  import scala.language.implicitConversions
+  implicit def valueToPlanetVal(x: Value): Val = x.asInstanceOf[Val]
 
   // scalastyle:off magic.number
-
-  case object SMALL_DOT extends DotAbstract(10)
-
-  case object ENERGIZER_DOT extends DotAbstract(50)
-
+  val SMALL_DOT       : Val = Val(10)
+  val ENERGIZER_DOT   : Val = Val(50)
   // scalastyle:on magic.number
 }

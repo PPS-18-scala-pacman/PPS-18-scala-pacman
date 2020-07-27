@@ -1,0 +1,66 @@
+package it.unibo.scalapacman.common
+
+import java.io.StringWriter
+
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.module.scala.DefaultScalaModule
+import it.unibo.scalapacman.lib.math.Point2D
+import it.unibo.scalapacman.lib.model.{Direction, Dot, Fruit}
+import org.scalatest.BeforeAndAfterAll
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.wordspec.AnyWordSpec
+
+class UpdateModelParsingTest extends AnyWordSpec with BeforeAndAfterAll with Matchers {
+
+  var testModel: UpdateModel = _
+  var testModelJSON: String = _
+  var mapper:ObjectMapper = _
+
+  override def beforeAll(): Unit = {
+
+    mapper = new ObjectMapper()
+    mapper.registerModule(DefaultScalaModule)
+
+    // scalastyle:off magic.number
+    val gameEntities:List[GameEntity] =
+      GameEntity(GameCharacterHolder(GameCharacter.PACMAN), Point2D(1,2), isDead=false, DirectionHolder(Direction.NORTH)) ::
+      GameEntity(GameCharacterHolder(GameCharacter.PACMAN), Point2D(3,4), isDead=false, DirectionHolder(Direction.NORTH)) ::
+      GameEntity(GameCharacterHolder(GameCharacter.PACMAN), Point2D(5,6), isDead=false, DirectionHolder(Direction.NORTH)) ::
+      Nil
+    val gs: GameState = GameState(ghostInFear=false, pacmanEmpowered=false)
+    val pellets: List[Pellet] =
+      Pellet(DotHolder(Dot.SMALL_DOT), Point2D(5,6)) ::
+      Pellet(DotHolder(Dot.SMALL_DOT), Point2D(6,6)) ::
+      Pellet(DotHolder(Dot.SMALL_DOT), Point2D(7,6)) ::
+      Pellet(DotHolder(Dot.SMALL_DOT), Point2D(8,6)) ::
+      Nil
+    val fruit = Some(Item(FruitHolder(Fruit.APPLE), Point2D(9,9)))
+    // scalastyle:on magic.number
+
+    testModel = UpdateModel(gameEntities, 2, gs, pellets, fruit)
+
+    testModelJSON = "{\"gameEntities\":[{\"id\":{\"gameChar\":\"PACMAN\"},\"pos\":{\"x\":1.0,\"y\":2.0},\"isDead\":" +
+      "false,\"dir\":{\"direction\":\"NORTH\"}},{\"id\":{\"gameChar\":\"PACMAN\"},\"pos\":{\"x\":3.0,\"y\":4.0}," +
+      "\"isDead\":false,\"dir\":{\"direction\":\"NORTH\"}},{\"id\":{\"gameChar\":\"PACMAN\"},\"pos\":{\"x\":5.0,\"y\"" +
+      ":6.0},\"isDead\":false,\"dir\":{\"direction\":\"NORTH\"}}],\"points\":2,\"state\":{\"ghostInFear\":false,\"" +
+      "pacmanEmpowered\":false},\"pellets\":[{\"pelletType\":{\"dot\":\"SMALL_DOT\"},\"pos\":{\"x\":5.0,\"y\":6.0}}," +
+      "{\"pelletType\":{\"dot\":\"SMALL_DOT\"},\"pos\":{\"x\":6.0,\"y\":6.0}},{\"pelletType\":{\"dot\":\"SMALL_DOT\"" +
+      "},\"pos\":{\"x\":7.0,\"y\":6.0}},{\"pelletType\":{\"dot\":\"SMALL_DOT\"},\"pos\":{\"x\":8.0,\"y\":6.0}}],\"" +
+      "fruit\":{\"id\":{\"fruit\":\"APPLE\"},\"pos\":{\"x\":9.0,\"y\":9.0}}}"
+  }
+
+  "An UpdateModel" must {
+    "be serializeable in a valid json string" in {
+      val out = new StringWriter
+      mapper.writeValue(out, testModel)
+
+      out.toString shouldEqual testModelJSON
+    }
+
+    "be deserializeable in a valid object" in {
+      val model = mapper.readValue(testModelJSON, classOf[UpdateModel])
+
+      model shouldEqual testModel
+    }
+  }
+}
