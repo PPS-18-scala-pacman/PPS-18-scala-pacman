@@ -10,6 +10,7 @@ import grizzled.slf4j.Logging
 import it.unibo.scalapacman.common.{Command, CommandType, CommandTypeHolder, MoveCommandType, MoveCommandTypeHolder, UpdateModel}
 import it.unibo.scalapacman.server.core.Engine
 import it.unibo.scalapacman.server.core.Engine.UpdateCommand
+import it.unibo.scalapacman.server.model.MoveDirection
 
 object ConversionUtils extends Logging{
 
@@ -22,10 +23,11 @@ object ConversionUtils extends Logging{
     out.toString
   }
 
-  def convertClientMsg(jsonMsg: String, actRef: ActorRef[UpdateCommand]): Option[Engine.GameEntityCommand] = {
+  def convertClientMsg(jsonMsg: String, actRef: ActorRef[UpdateCommand]): Option[Engine.EngineCommand] = {
     try {
       mapper.readValue(jsonMsg, classOf[Command]) match {
-        case Command(CommandTypeHolder(CommandType.PAUSE), None) => Some(Engine.SwitchGameState())
+        case Command(CommandTypeHolder(CommandType.PAUSE), None) => Some(Engine.Pause())
+        case Command(CommandTypeHolder(CommandType.RESUME), None) => Some(Engine.Resume())
         case Command(CommandTypeHolder(CommandType.MOVE), Some(data)) => convertMoveDataMsg(data, actRef)
         case _ => error("Comando non riconosciuto"); None
       }
@@ -36,16 +38,16 @@ object ConversionUtils extends Logging{
     }
   }
 
-  private def convertMoveDataMsg(data: String, actRef: ActorRef[UpdateCommand]): Option[Engine.GameEntityCommand] = {
+  private def convertMoveDataMsg(data: String, actRef: ActorRef[UpdateCommand]): Option[Engine.EngineCommand] = {
     mapper.readValue(data, classOf[MoveCommandTypeHolder]) match {
       case MoveCommandTypeHolder(MoveCommandType.UP) =>
-        Some(Engine.ChangeDirectionReq(actRef, Engine.MoveDirection.UP))
+        Some(Engine.ChangeDirectionReq(actRef, MoveDirection.UP))
       case MoveCommandTypeHolder(MoveCommandType.DOWN) =>
-        Some(Engine.ChangeDirectionReq(actRef, Engine.MoveDirection.DOWN))
+        Some(Engine.ChangeDirectionReq(actRef, MoveDirection.DOWN))
       case MoveCommandTypeHolder(MoveCommandType.LEFT) =>
-        Some(Engine.ChangeDirectionReq(actRef, Engine.MoveDirection.LEFT))
+        Some(Engine.ChangeDirectionReq(actRef, MoveDirection.LEFT))
       case MoveCommandTypeHolder(MoveCommandType.RIGHT) =>
-        Some(Engine.ChangeDirectionReq(actRef, Engine.MoveDirection.RIGHT))
+        Some(Engine.ChangeDirectionReq(actRef, MoveDirection.RIGHT))
       case MoveCommandTypeHolder(MoveCommandType.NONE) =>
         Some(Engine.ChangeDirectionCur(actRef))
       case _ => error("Comando di movimento non riconosciuto"); None

@@ -3,7 +3,8 @@ package it.unibo.scalapacman.server.core
 import akka.actor.testkit.typed.scaladsl.{ScalaTestWithActorTestKit, TestProbe}
 import akka.actor.typed.ActorRef
 import akka.http.scaladsl.model.ws.{Message, TextMessage}
-import it.unibo.scalapacman.server.core.Engine.{MoveDirection, UpdateCommand}
+import it.unibo.scalapacman.server.core.Engine.UpdateCommand
+import it.unibo.scalapacman.server.model.MoveDirection
 import org.scalatest.wordspec.AnyWordSpecLike
 
 class PlayerCommandTest  extends ScalaTestWithActorTestKit with AnyWordSpecLike {
@@ -13,6 +14,7 @@ class PlayerCommandTest  extends ScalaTestWithActorTestKit with AnyWordSpecLike 
   private var engineProbe: TestProbe[Engine.EngineCommand] = _
 
   private var testCommandPauseJSON: String = _
+  private var testCommandResumeJSON: String = _
   private var testCommandUPJSON: String = _
   private var testCommandDOWNJSON: String = _
   private var testCommandLEFTJSON: String = _
@@ -29,11 +31,11 @@ class PlayerCommandTest  extends ScalaTestWithActorTestKit with AnyWordSpecLike 
     val regReqSender = createTestProbe[Player.PlayerRegistration]()
     val clientProbe = createTestProbe[Message]()
 
+    playerActor ! Player.RegisterUser(regReqSender.ref, clientProbe.ref)
     engineProbe.receiveMessage() match {
       case Engine.RegisterPlayer(updateRef) => playerUpdAdapter = updateRef
       case _ => fail()
     }
-    playerActor ! Player.RegisterUser(regReqSender.ref, clientProbe.ref)
     regReqSender.receiveMessage() match {
       case Player.RegistrationAccepted(ref) => playerCmdAdapter = ref
       case _ => fail()
@@ -41,6 +43,7 @@ class PlayerCommandTest  extends ScalaTestWithActorTestKit with AnyWordSpecLike 
 
     //mockup comandi
     testCommandPauseJSON = "{\"id\":{\"commandType\":\"PAUSE\"},\"data\":null}"
+    testCommandResumeJSON = "{\"id\":{\"commandType\":\"RESUME\"},\"data\":null}"
     testCommandUPJSON = "{\"id\":{\"commandType\":\"MOVE\"},\"data\":\"{\\\"moveCommandType\\\":\\\"UP\\\"}\"}"
     testCommandDOWNJSON = "{\"id\":{\"commandType\":\"MOVE\"},\"data\":\"{\\\"moveCommandType\\\":\\\"DOWN\\\"}\"}"
     testCommandLEFTJSON = "{\"id\":{\"commandType\":\"MOVE\"},\"data\":\"{\\\"moveCommandType\\\":\\\"LEFT\\\"}\"}"
@@ -55,7 +58,15 @@ class PlayerCommandTest  extends ScalaTestWithActorTestKit with AnyWordSpecLike 
     "handle Pause command" in {
       playerCmdAdapter ! TextMessage(testCommandPauseJSON)
       engineProbe.receiveMessage() match {
-        case Engine.SwitchGameState() =>
+        case Engine.Pause() =>
+        case _ => fail()
+      }
+    }
+
+    "handle Resume command" in {
+      playerCmdAdapter ! TextMessage(testCommandResumeJSON)
+      engineProbe.receiveMessage() match {
+        case Engine.Resume() =>
         case _ => fail()
       }
     }
