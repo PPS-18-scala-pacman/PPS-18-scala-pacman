@@ -1,28 +1,19 @@
 package it.unibo.scalapacman.lib.model
 
-sealed trait Fruit extends Eatable
+object Fruit extends Enumeration {
 
-abstract class FruitAbstract(val points: Int) extends Fruit
-
-object Fruit {
+  protected case class Val(points: Int) extends super.Val with Eatable
+  import scala.language.implicitConversions
+  implicit def valueToPlanetVal(x: Value): Val = x.asInstanceOf[Val]
 
   // scalastyle:off magic.number
-
-  case object CHERRIES extends FruitAbstract(100)
-
-  case object STRAWBERRY extends FruitAbstract(300)
-
-  case object PEACH extends FruitAbstract(500)
-
-  case object APPLE extends FruitAbstract(700)
-
-  case object GRAPES extends FruitAbstract(1000)
-
-  case object GALAXIAN extends FruitAbstract(2000)
-
-  case object BELL extends FruitAbstract(3000)
-
-  case object KEY extends FruitAbstract(5000)
-
+  val CHERRIES    : Val = Val(100)
+  val STRAWBERRY  : Val = Val(300)
+  val PEACH       : Val = Val(500)
+  val APPLE       : Val = Val(700)
+  val GRAPES      : Val = Val(1000)
+  val GALAXIAN    : Val = Val(2000)
+  val BELL        : Val = Val(3000)
+  val KEY         : Val = Val(5000)
   // scalastyle:on magic.number
 }

@@ -2,7 +2,8 @@ package it.unibo.scalapacman.lib.engine
 
 import it.unibo.scalapacman.lib.math.{Motion, Point2D, Vector2D}
 import it.unibo.scalapacman.lib.model.Direction.{EAST, NORTH, NORTHEAST, NORTHWEST, SOUTH, SOUTHEAST, SOUTHWEST, WEST}
-import it.unibo.scalapacman.lib.model.{Character, Direction}
+import it.unibo.scalapacman.lib.model.Character
+import it.unibo.scalapacman.lib.model.Direction.Direction
 
 object CharacterMovement {
   def moveFor(character: Character, timeMs: Double): Point2D =
