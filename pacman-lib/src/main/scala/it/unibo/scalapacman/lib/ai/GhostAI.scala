@@ -2,7 +2,7 @@ package it.unibo.scalapacman.lib.ai
 
 import alice.tuprolog.{Struct, Term}
 import it.unibo.scalapacman.lib.Utility
-import it.unibo.scalapacman.lib.prolog.Scala2P.{extractTerm, mkPrologEngine, termableToTerm}
+import it.unibo.scalapacman.lib.prolog.Scala2P.{extractTerm, mkPrologEngine, convertibleToTerm}
 import it.unibo.scalapacman.lib.model.{Character, Map}
 import it.unibo.scalapacman.lib.prolog.{Graph, GraphVertex, MinDistance}
 import it.unibo.scalapacman.lib.engine.GameHelpers.MapHelper

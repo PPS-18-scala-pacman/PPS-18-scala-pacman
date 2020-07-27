@@ -6,7 +6,7 @@ object Scala2P {
 
   def extractTerm(t: Term, i: Integer): Term = t.asInstanceOf[Struct].getArg(i).getTerm
 
-  implicit def termableToTerm(t: Termable): Term = t.toProlog
+  implicit def convertibleToTerm(t: TermConvertible): Term = t.toTerm
 
   implicit def stringToTerm(s: String): Term = Term.createTerm(s)
 

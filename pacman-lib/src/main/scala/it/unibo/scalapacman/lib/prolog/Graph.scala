@@ -4,23 +4,23 @@ import alice.tuprolog.{Struct, Term, Int => PrologInt}
 import it.unibo.scalapacman.lib.model.{Character, Map}
 import it.unibo.scalapacman.lib.engine.GameHelpers.MapHelper
 
-case class Graph(nodes: List[GraphNode]) extends Termable {
-  def toProlog: Term = new Struct(nodes.map(_.toProlog).toArray)
+case class Graph(nodes: List[GraphNode]) extends TermConvertible {
+  def toTerm: Term = new Struct(nodes.map(_.toTerm).toArray)
 
   def filterWalkable(character: Character)(implicit map: Map): Graph =
     Graph(nodes.map(n => n.copy(neighbourhood = n.neighbourhood.filter(t => map.tile(t.vertex.tileIndexes).walkable(character)))))
 }
 
-case class GraphNode(vertex: GraphVertex, neighbourhood: List[GraphArc]) extends Termable {
-  def toProlog: Term = new Struct("-", vertex.toProlog, new Struct(neighbourhood.map(_.toProlog).toArray))
+case class GraphNode(vertex: GraphVertex, neighbourhood: List[GraphArc]) extends TermConvertible {
+  def toTerm: Term = new Struct("-", vertex.toTerm, new Struct(neighbourhood.map(_.toTerm).toArray))
 }
 
-case class GraphVertex(tileIndexes: (Int, Int)) extends Termable {
-  def toProlog: Term = new Struct("t", new PrologInt(tileIndexes._1), new PrologInt(tileIndexes._2))
+case class GraphVertex(tileIndexes: (Int, Int)) extends TermConvertible {
+  def toTerm: Term = new Struct("t", new PrologInt(tileIndexes._1), new PrologInt(tileIndexes._2))
 }
 
-case class GraphArc(vertex: GraphVertex, weight: Int = 1) extends Termable {
-  def toProlog: Term = new Struct("-", vertex.toProlog, new PrologInt(weight))
+case class GraphArc(vertex: GraphVertex, weight: Int = 1) extends TermConvertible {
+  def toTerm: Term = new Struct("-", vertex.toTerm, new PrologInt(weight))
 }
 
 object Graph {
