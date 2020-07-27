@@ -9,12 +9,14 @@ import scala.language.reflectiveCalls
 object Utility {
   def mirrorList[A](list: List[A]): List[A] = list ::: list.reverse
 
+  // scalastyle:off structural.type
   def using[A <: {def close(): Unit}, B](resource: A)(f: A => B): B =
     try {
       f(resource)
     } finally {
       resource.close()
     }
+  // scalastyle:on structural.type
 
   def readFile(filename: URL): String =
     using(Source.fromURL(filename))(_.getLines.mkString("\n"))

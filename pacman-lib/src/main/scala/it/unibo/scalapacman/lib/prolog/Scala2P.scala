@@ -1,6 +1,6 @@
 package it.unibo.scalapacman.lib.prolog
 
-import alice.tuprolog._
+import alice.tuprolog.{Prolog, SolveInfo, Struct, Term, Theory}
 
 object Scala2P {
 
