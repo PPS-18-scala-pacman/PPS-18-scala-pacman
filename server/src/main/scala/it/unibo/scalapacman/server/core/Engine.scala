@@ -2,15 +2,15 @@ package it.unibo.scalapacman.server.core
 
 import akka.actor.typed.scaladsl.{ActorContext, Behaviors}
 import akka.actor.typed.{ActorRef, Behavior}
-import it.unibo.scalapacman.common.{DirectionHolder, DotHolder, FruitHolder, GameCharacter, GameCharacterHolder, GameEntity, Item, Pellet, UpdateModel}
+import it.unibo.scalapacman.common.{DirectionHolder, DotHolder, FruitHolder, GameCharacter, GameCharacterHolder, GameEntity, Item, Pellet, UpdateModel} // scalastyle:ignore
 import it.unibo.scalapacman.lib.engine.{GameMovement, GameTick}
 import it.unibo.scalapacman.lib.math.Point2D
 import it.unibo.scalapacman.lib.model.Direction.Direction
-import it.unibo.scalapacman.lib.model.GhostType.{BLINKY, CLYDE, INKY, PINKY}
+import it.unibo.scalapacman.lib.model.GhostType.{BLINKY, CLYDE, GhostType, INKY, PINKY}
 import it.unibo.scalapacman.lib.model.{Direction, Dot, Fruit, GameState, Ghost, GhostType, Map, Pacman}
-import it.unibo.scalapacman.server.core.Engine.{ChangeDirectionCur, ChangeDirectionReq, EngineCommand, Pause, RegisterGhost, RegisterPlayer, RegisterWatcher, Resume, Setup, UpdateCommand, UpdateMsg, WakeUp}
+import it.unibo.scalapacman.server.core.Engine.{ChangeDirectionCur, ChangeDirectionReq, EngineCommand, Pause, RegisterGhost, RegisterPlayer, RegisterWatcher, Resume, Setup, UpdateCommand, UpdateMsg, WakeUp} // scalastyle:ignore
 import it.unibo.scalapacman.server.model.MoveDirection.MoveDirection
-import it.unibo.scalapacman.server.model.{EngineModel, GameParticipant, MoveDirection, Players, RegisteredParticipant, StarterModel}
+import it.unibo.scalapacman.server.model.{EngineModel, GameParticipant, MoveDirection, Players, RegisteredParticipant, StarterModel} // scalastyle:ignore
 import it.unibo.scalapacman.server.util.Settings
 
 import scala.concurrent.duration.FiniteDuration
@@ -53,18 +53,18 @@ private class Engine(setup: Setup) {
           case PINKY  => model.copy(pinky  = Some(RegisteredParticipant(actor)))
           case CLYDE  => model.copy(clyde  = Some(RegisteredParticipant(actor)))
         }
-        if(upModel.isFull)
+        if(upModel.isFull) {
           mainRoutine( initEngineModel(upModel) )
-        else
+        } else {
           idleRoutine(upModel)
-
+        }
       case RegisterPlayer(actor) =>
         val upModel = model.copy(pacman = Some(RegisteredParticipant(actor)))
-        if(upModel.isFull)
+        if(upModel.isFull) {
           mainRoutine( initEngineModel(upModel) )
-        else
+        } else {
           idleRoutine(upModel)
-
+        }
       case RegisterWatcher(actor) => ???
     }
 
@@ -100,9 +100,9 @@ private class Engine(setup: Setup) {
     // scalastyle:off magic.number
     //TODO fare trasformatore da model.players a List[GameEntity]
     val gameEntities: List[GameEntity] =
-      GameEntity(GameCharacterHolder(GameCharacter.PACMAN), Point2D(1, 2), isDead = false, DirectionHolder(Direction.NORTH)) ::
-        GameEntity(GameCharacterHolder(GameCharacter.BLINKY), Point2D(3, 4), isDead = false, DirectionHolder(Direction.NORTH)) ::
-        GameEntity(GameCharacterHolder(GameCharacter.INKY), Point2D(5, 6), isDead = false, DirectionHolder(Direction.NORTH)) ::
+      GameEntity(GameCharacterHolder(GameCharacter.PACMAN), Point2D(1, 2), 1, isDead = false, DirectionHolder(Direction.NORTH)) ::
+        GameEntity(GameCharacterHolder(GameCharacter.BLINKY), Point2D(3, 4), 1, isDead = false, DirectionHolder(Direction.NORTH)) ::
+        GameEntity(GameCharacterHolder(GameCharacter.INKY), Point2D(5, 6), 1, isDead = false, DirectionHolder(Direction.NORTH)) ::
         Nil
 
     //TODO creare due metodi nella pacman-lib che data la mappa danno List[Pellet], Option[Fruit]

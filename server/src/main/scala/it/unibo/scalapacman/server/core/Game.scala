@@ -35,10 +35,10 @@ object Game {
       val player = context.spawn(Player(id, engine), "PlayerActor")
       context.watch(player)
 
-      context.spawn(GhostAct(id, engine, GhostType.PINKY), "Pinky")
-      context.spawn(GhostAct(id, engine, GhostType.BLINKY), "Blinky")
-      context.spawn(GhostAct(id, engine, GhostType.INKY), "Inky")
-      context.spawn(GhostAct(id, engine, GhostType.CLYDE), "Clyde")
+      context.spawn(GhostAct(id, engine, GhostType.PINKY), "PinkyActor")
+      context.spawn(GhostAct(id, engine, GhostType.BLINKY), "BlinkyActor")
+      context.spawn(GhostAct(id, engine, GhostType.INKY), "InkyActor")
+      context.spawn(GhostAct(id, engine, GhostType.CLYDE), "ClydeActor")
 
       new Game(Setup(id, context, engine, player)).initRoutine()
         .receiveSignal {
