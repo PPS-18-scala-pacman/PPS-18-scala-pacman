@@ -4,6 +4,7 @@ import akka.actor.typed.{ActorRef, Behavior, ChildFailed}
 import akka.actor.typed.receptionist.{Receptionist, ServiceKey}
 import akka.actor.typed.scaladsl.{ActorContext, Behaviors}
 import akka.http.scaladsl.model.ws.Message
+import it.unibo.scalapacman.lib.model.{Ghost, GhostType}
 import it.unibo.scalapacman.server.core.Engine.EngineCommand
 import it.unibo.scalapacman.server.core.Game.{CloseCommand, GameCommand, RegisterPlayer, Setup}
 import it.unibo.scalapacman.server.core.Player.{PlayerCommand, PlayerRegistration, RegistrationRejected}
@@ -34,15 +35,26 @@ object Game {
       val player = context.spawn(Player(id, engine), "PlayerActor")
       context.watch(player)
 
+      context.spawn(GhostAct(id, engine, GhostType.PINKY), "Pinky")
+      context.spawn(GhostAct(id, engine, GhostType.BLINKY), "Blinky")
+      context.spawn(GhostAct(id, engine, GhostType.INKY), "Inky")
+      context.spawn(GhostAct(id, engine, GhostType.CLYDE), "Clyde")
+
       new Game(Setup(id, context, engine, player)).initRoutine()
         .receiveSignal {
           case (context, ChildFailed(`engine`, _)) =>
             context.log.info("Engine stopped")
             //TODO notificare gli elementi interessati che il game verrà chiuso
             Behaviors.stopped
-          case (context, ChildFailed(_, _)) =>
+          case (context, ChildFailed(`player`, _)) =>
             context.log.info("Player stopped")
             engine ! Engine.Pause()
+            //TODO deregistrare player su engine e crearne uno nuovo
+            Behaviors.same
+          case (context, ChildFailed(_, _)) =>
+            context.log.info("Ghost stopped")
+            engine ! Engine.Pause()
+            //TODO deregistrare ghost su engine e crearne uno nuovo
             Behaviors.same
         }
     }

@@ -5,6 +5,8 @@ import it.unibo.scalapacman.lib.model.Direction.Direction
 import it.unibo.scalapacman.lib.model.{Character, GameState, Map}
 import it.unibo.scalapacman.server.core.Engine.UpdateCommand
 
+import scala.collection.immutable
+
 
 object MoveDirection extends Enumeration {
   type MoveDirection = Value
@@ -19,7 +21,12 @@ case class StarterModel(
                          inky: Option[RegisteredParticipant] = None,
                          clyde: Option[RegisteredParticipant] = None,
                          pacman: Option[RegisteredParticipant] = None
-                       )
+                       ) {
+  def toSeq: immutable.Seq[RegisteredParticipant] =
+    (blinky :: pinky :: inky :: clyde :: pacman :: Nil) filter (_.isDefined) map (_.get)
+
+  def isFull: Boolean = toSeq.size == 5
+}
 
 case class GameParticipant(
                             character: Character,
@@ -33,7 +40,9 @@ case class Players(
                     inky: GameParticipant,
                     clyde: GameParticipant,
                     pacman: GameParticipant
-                  )
+                  ) {
+  def toSeq: immutable.Seq[GameParticipant] = blinky :: pinky :: inky :: clyde :: pacman :: Nil
+}
 
 case class EngineModel(
                         players: Players,

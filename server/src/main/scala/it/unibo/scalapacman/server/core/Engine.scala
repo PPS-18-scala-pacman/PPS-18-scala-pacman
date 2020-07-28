@@ -2,17 +2,15 @@ package it.unibo.scalapacman.server.core
 
 import akka.actor.typed.scaladsl.{ActorContext, Behaviors}
 import akka.actor.typed.{ActorRef, Behavior}
-import it.unibo.scalapacman.common.{DirectionHolder, DotHolder, FruitHolder, GameCharacter, GameCharacterHolder,
-  GameEntity, Item, Pellet, UpdateModel}
+import it.unibo.scalapacman.common.{DirectionHolder, DotHolder, FruitHolder, GameCharacter, GameCharacterHolder, GameEntity, Item, Pellet, UpdateModel}
 import it.unibo.scalapacman.lib.engine.{GameMovement, GameTick}
 import it.unibo.scalapacman.lib.math.Point2D
 import it.unibo.scalapacman.lib.model.Direction.Direction
+import it.unibo.scalapacman.lib.model.GhostType.{BLINKY, CLYDE, INKY, PINKY}
 import it.unibo.scalapacman.lib.model.{Direction, Dot, Fruit, GameState, Ghost, GhostType, Map, Pacman}
-import it.unibo.scalapacman.server.core.Engine.{ChangeDirectionCur, ChangeDirectionReq, EngineCommand, Pause,
-  RegisterGhost, RegisterPlayer, RegisterWatcher, Resume, Setup, UpdateCommand, UpdateMsg, WakeUp}
+import it.unibo.scalapacman.server.core.Engine.{ChangeDirectionCur, ChangeDirectionReq, EngineCommand, Pause, RegisterGhost, RegisterPlayer, RegisterWatcher, Resume, Setup, UpdateCommand, UpdateMsg, WakeUp}
 import it.unibo.scalapacman.server.model.MoveDirection.MoveDirection
-import it.unibo.scalapacman.server.model.{EngineModel, GameParticipant, MoveDirection, Players, RegisteredParticipant,
-  StarterModel}
+import it.unibo.scalapacman.server.model.{EngineModel, GameParticipant, MoveDirection, Players, RegisteredParticipant, StarterModel}
 import it.unibo.scalapacman.server.util.Settings
 
 import scala.concurrent.duration.FiniteDuration
@@ -47,22 +45,26 @@ private class Engine(setup: Setup) {
 
   private def idleRoutine(model: StarterModel): Behavior[EngineCommand] =
     Behaviors.receiveMessage {
-      //TODO ad ogni registrazione guardo se sono arrivati tutti nel caso cambio stato
-      case RegisterGhost(actor, ghostType) => ???
+
+      case RegisterGhost(actor, ghostType) =>
+        val upModel = ghostType match {
+          case BLINKY => model.copy(blinky = Some(RegisteredParticipant(actor)))
+          case INKY   => model.copy(inky   = Some(RegisteredParticipant(actor)))
+          case PINKY  => model.copy(pinky  = Some(RegisteredParticipant(actor)))
+          case CLYDE  => model.copy(clyde  = Some(RegisteredParticipant(actor)))
+        }
+        if(upModel.isFull)
+          mainRoutine( initEngineModel(upModel) )
+        else
+          idleRoutine(upModel)
+
       case RegisterPlayer(actor) =>
+        val upModel = model.copy(pacman = Some(RegisteredParticipant(actor)))
+        if(upModel.isFull)
+          mainRoutine( initEngineModel(upModel) )
+        else
+          idleRoutine(upModel)
 
-        //FIXME  cambiare stato solo dopo che tutti i ghost e il player si sono registrati e creare EngineModel
-        //TODO aggiungere StarterModel un metodo isComplete???
-        //TODO aggiunto Util o def al object model per vedere se è pieno?
-
-        //FIXME
-        val upModel = model.copy(pacman = Some(RegisteredParticipant(actor)),
-          blinky = Some(RegisteredParticipant(actor)),
-          pinky = Some(RegisteredParticipant(actor)),
-          clyde = Some(RegisteredParticipant(actor)),
-          inky = Some(RegisteredParticipant(actor)))
-
-        mainRoutine( initEngineModel(upModel) )
       case RegisterWatcher(actor) => ???
     }
 
@@ -132,16 +134,8 @@ private class Engine(setup: Setup) {
     EngineModel(players, Map.classic, GameState(score = 0))
   }
 
-  private def updateWatcher(model: EngineModel): Unit = {
-    val upMsg = UpdateMsg(elaborateUpdateModel(model))
-
-    //TODO fare un implicit che aggiunge metodo foreach a Player?
-    model.players.blinky.actRef ! upMsg
-    model.players.clyde.actRef ! upMsg
-    model.players.inky.actRef ! upMsg
-    model.players.pinky.actRef ! upMsg
-    model.players.pacman.actRef ! upMsg
-  }
+  private def updateWatcher(model: EngineModel): Unit =
+    model.players.toSeq.foreach( _.actRef ! UpdateMsg(elaborateUpdateModel(model)) )
 
   private def updateGame(oldModel: EngineModel) : Behavior[EngineCommand] = {
     setup.context.log.info("updateGame id: " + setup.gameId)
