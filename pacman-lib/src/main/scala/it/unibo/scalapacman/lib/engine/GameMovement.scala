@@ -5,6 +5,8 @@ import it.unibo.scalapacman.lib.model.Direction.Direction
 import it.unibo.scalapacman.lib.engine.CircularMovement.{moveFor, moveUntil}
 import it.unibo.scalapacman.lib.engine.GameHelpers.CharacterHelper
 
+import scala.concurrent.duration.FiniteDuration
+
 object GameMovement {
 
   /**
@@ -39,5 +41,8 @@ object GameMovement {
     case _ if moveUntil(character, character.nextTileCenter) > timeMs => character changePosition moveFor(character, timeMs)
     case _ => move(character changePosition character.nextTileCenter, timeMs - moveUntil(character, character.nextTileCenter), desiredDirection)
   }
+
+  def move(character: Character, time: FiniteDuration, desiredDirection: Option[Direction])(implicit map: Map): Character =
+    move(character, time.toMillis, desiredDirection getOrElse character.direction)
 
 }

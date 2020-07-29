@@ -6,7 +6,7 @@ import akka.actor.typed.scaladsl.{ActorContext, Behaviors}
 import akka.http.scaladsl.model.ws.Message
 import it.unibo.scalapacman.server.core.Engine.EngineCommand
 import it.unibo.scalapacman.server.core.Game.{CloseCommand, GameCommand, RegisterPlayer, Setup}
-import it.unibo.scalapacman.server.core.Player.{PlayerCommand, PlayerRegistration}
+import it.unibo.scalapacman.server.core.Player.{PlayerCommand, PlayerRegistration, RegistrationRejected}
 
 object Game {
 
@@ -62,6 +62,9 @@ private class Game(setup: Setup) {
   private def coreRoutine(): Behaviors.Receive[Game.GameCommand] =
     Behaviors.receiveMessage {
       case CloseCommand() => close()
+      case RegisterPlayer(replyTo, _) =>
+        replyTo ! RegistrationRejected("Gioco in corso")
+        Behaviors.same
     }
 
   private def close(): Behavior[GameCommand] = {

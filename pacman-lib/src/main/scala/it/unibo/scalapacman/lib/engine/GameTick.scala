@@ -11,6 +11,6 @@ object GameTick {
     character.tile.eatable ++: characters.filter(_ != character).filter(_.tile eq character.tile)
 
   def calculateGameState(collisions: List[GameObject]): GameState = GameState(
-    points = collisions collect { case e: Eatable => e } map (_.points) sum
+    score = collisions collect { case e: Eatable => e } map (_.points) sum
   )
 }
