@@ -14,7 +14,8 @@ dependencies {
   implementation(project(":pacman-lib"))
   implementation(project(":common"))
 
-  testImplementation(group = "org.scalamock", name = "scalamock-scalatest-support_$scalaVersion", version = "3.6.0")
+//  testImplementation(group = "org.scalamock", name = "scalamock-scalatest-support_$scalaVersion", version = "3.6.0")
+  testImplementation(group = "org.scalamock", name = "scalamock_$scalaVersion", version = "4.4.0")
 }
 
 application {
