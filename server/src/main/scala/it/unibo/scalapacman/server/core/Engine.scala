@@ -99,19 +99,18 @@ private class Engine(setup: Setup) {
 
     // scalastyle:off magic.number
     //TODO fare trasformatore da model.players a List[GameEntity]
-    val gameEntities: List[GameEntity] =
-      GameEntity(GameCharacterHolder(GameCharacter.PACMAN), Point2D(1, 2), 1, isDead = false, DirectionHolder(Direction.NORTH)) ::
-        GameEntity(GameCharacterHolder(GameCharacter.BLINKY), Point2D(3, 4), 1, isDead = false, DirectionHolder(Direction.NORTH)) ::
-        GameEntity(GameCharacterHolder(GameCharacter.INKY), Point2D(5, 6), 1, isDead = false, DirectionHolder(Direction.NORTH)) ::
-        Nil
+    val gameEntities: Set[GameEntity] = Set(
+      GameEntity(GameCharacterHolder(GameCharacter.PACMAN), Point2D(1, 2), 1, isDead = false, DirectionHolder(Direction.NORTH)),
+        GameEntity(GameCharacterHolder(GameCharacter.BLINKY), Point2D(3, 4), 1, isDead = false, DirectionHolder(Direction.NORTH)),
+        GameEntity(GameCharacterHolder(GameCharacter.INKY), Point2D(5, 6), 1, isDead = false, DirectionHolder(Direction.NORTH)))
 
     //TODO creare due metodi nella pacman-lib che data la mappa danno List[Pellet], Option[Fruit]
-    val pellets: List[Pellet] =
-      Pellet(DotHolder(Dot.SMALL_DOT), Point2D(5, 6)) ::
-        Pellet(DotHolder(Dot.SMALL_DOT), Point2D(6, 6)) ::
-        Pellet(DotHolder(Dot.SMALL_DOT), Point2D(7, 6)) ::
-        Pellet(DotHolder(Dot.SMALL_DOT), Point2D(8, 6)) ::
-        Nil
+    val pellets: Set[Pellet] = Set(
+      Pellet(DotHolder(Dot.SMALL_DOT), Point2D(5, 6)),
+        Pellet(DotHolder(Dot.SMALL_DOT), Point2D(6, 6)),
+        Pellet(DotHolder(Dot.SMALL_DOT), Point2D(7, 6)),
+        Pellet(DotHolder(Dot.SMALL_DOT), Point2D(8, 6)))
+
     val fruit = Some(Item(FruitHolder(Fruit.APPLE), Point2D(9, 9)))
     // scalastyle:on magic.number
 

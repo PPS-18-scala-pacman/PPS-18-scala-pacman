@@ -21,8 +21,8 @@ case class Pellet(pelletType:DotHolder, pos:Point2D)
 case class Item(id:FruitHolder, pos:Point2D)
 
 case class UpdateModel(
-                        gameEntities: Seq[GameEntity],
+                        gameEntities: Set[GameEntity],
                         state: GameState,
-                        pellets: Seq[Pellet],
+                        pellets: Set[Pellet],
                         fruit: Option[Item]
                       )

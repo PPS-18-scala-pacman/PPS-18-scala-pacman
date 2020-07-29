@@ -17,18 +17,17 @@ class PlayerUpdateTest extends ScalaTestWithActorTestKit with AnyWordSpecLike {
 
   override def beforeAll(): Unit = {
     // scalastyle:off magic.number
-    val gameEntities:List[GameEntity] =
-      GameEntity(GameCharacterHolder(GameCharacter.PACMAN), Point2D(1,2), 1, isDead=false, DirectionHolder(Direction.NORTH)) ::
-        GameEntity(GameCharacterHolder(GameCharacter.PACMAN), Point2D(3,4), 1, isDead=false, DirectionHolder(Direction.NORTH)) ::
-        GameEntity(GameCharacterHolder(GameCharacter.PACMAN), Point2D(5,6), 1, isDead=false, DirectionHolder(Direction.NORTH)) ::
-        Nil
+    val gameEntities:Set[GameEntity] = Set(
+      GameEntity(GameCharacterHolder(GameCharacter.PACMAN), Point2D(1,2), 1, isDead=false, DirectionHolder(Direction.NORTH)),
+        GameEntity(GameCharacterHolder(GameCharacter.PACMAN), Point2D(3,4), 1, isDead=false, DirectionHolder(Direction.NORTH)),
+        GameEntity(GameCharacterHolder(GameCharacter.PACMAN), Point2D(5,6), 1, isDead=false, DirectionHolder(Direction.NORTH)))
 
-    val pellets: List[Pellet] =
-      Pellet(DotHolder(Dot.SMALL_DOT), Point2D(5,6)) ::
-        Pellet(DotHolder(Dot.SMALL_DOT), Point2D(6,6)) ::
-        Pellet(DotHolder(Dot.SMALL_DOT), Point2D(7,6)) ::
-        Pellet(DotHolder(Dot.SMALL_DOT), Point2D(8,6)) ::
-        Nil
+    val pellets: Set[Pellet] = Set(
+      Pellet(DotHolder(Dot.SMALL_DOT), Point2D(5,6)),
+        Pellet(DotHolder(Dot.SMALL_DOT), Point2D(6,6)),
+        Pellet(DotHolder(Dot.SMALL_DOT), Point2D(7,6)),
+        Pellet(DotHolder(Dot.SMALL_DOT), Point2D(8,6)))
+
     val fruit = Some(Item(FruitHolder(Fruit.APPLE), Point2D(9,9)))
     // scalastyle:on magic.number
 
