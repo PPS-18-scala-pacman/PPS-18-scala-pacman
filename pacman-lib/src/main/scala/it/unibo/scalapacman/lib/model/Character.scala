@@ -7,4 +7,5 @@ trait Character extends GameObject {
   val position: Point2D
   val speed: Double
   val direction: Direction
+  val isDead: Boolean
 }

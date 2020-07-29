@@ -13,8 +13,10 @@ class CommandParsingTest extends AnyWordSpec with BeforeAndAfterAll with Matcher
   var testCommandUP: Command = _
   var testCommandUPData: MoveCommandTypeHolder = _
   var testCommandPause: Command = _
+  var testCommandResume: Command = _
   var testCommandUPJSON: String = _
   var testCommandPauseJSON: String = _
+  var testCommandResumeJSON: String = _
   var testCommandUPDataJSON: String = _
 
   var mapper:ObjectMapper = _
@@ -30,10 +32,12 @@ class CommandParsingTest extends AnyWordSpec with BeforeAndAfterAll with Matcher
     testCommandUP = Command(CommandTypeHolder(CommandType.MOVE), Some(out.toString))
 
     testCommandPause = Command(CommandTypeHolder(CommandType.PAUSE), None)
+    testCommandResume = Command(CommandTypeHolder(CommandType.RESUME), None)
 
     testCommandUPDataJSON = "{\"moveCommandType\":\"UP\"}"
     testCommandUPJSON = "{\"id\":{\"commandType\":\"MOVE\"},\"data\":\"{\\\"moveCommandType\\\":\\\"UP\\\"}\"}"
     testCommandPauseJSON = "{\"id\":{\"commandType\":\"PAUSE\"},\"data\":null}"
+    testCommandResumeJSON = "{\"id\":{\"commandType\":\"RESUME\"},\"data\":null}"
   }
 
   "A PauseCommand" must {
@@ -51,8 +55,23 @@ class CommandParsingTest extends AnyWordSpec with BeforeAndAfterAll with Matcher
     }
   }
 
-  "A MoveCommand" must {
+  "A ResumeCommand" must {
     "be serializeable in a valid json string" in {
+      val out = new StringWriter
+      mapper.writeValue(out, testCommandResume)
+
+      out.toString shouldEqual testCommandResumeJSON
+    }
+
+    "be deserializeable in a valid object" in {
+      val pauseCommand = mapper.readValue(testCommandResumeJSON, classOf[Command])
+
+      pauseCommand shouldEqual testCommandResume
+    }
+  }
+
+  "A MoveCommand" must {
+    "be serializeable in a valid json message" in {
       var out = new StringWriter
 
       mapper.writeValue(out, testCommandUPData)
@@ -63,7 +82,7 @@ class CommandParsingTest extends AnyWordSpec with BeforeAndAfterAll with Matcher
       out.toString shouldEqual testCommandUPJSON
     }
 
-    "be deserializeable in a valid object" in {
+    "be deserializeable in a valid command" in {
       val commandUP = mapper.readValue(testCommandUPJSON, classOf[Command])
       commandUP shouldEqual testCommandUP
       assert(commandUP.data.isDefined)

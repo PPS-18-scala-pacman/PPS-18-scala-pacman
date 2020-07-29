@@ -22,21 +22,21 @@ object Tile {
 
   case class TrackSafe() extends TileAbstract() {
     override def walkable(character: Character): Boolean = character match {
-      case Pacman(_, _, _) => true
+      case Pacman(_, _, _, _) => true
       case _ => false
     }
   }
 
   case class TrackTunnel() extends TileAbstract() {
     override def speedModifier(character: Character, speed: Double): Double = character match {
-      case Ghost(_, _, _, _) => speed / 2
+      case Ghost(_, _, _, _, _) => speed / 2
       case _ => super.speedModifier(character, speed)
     }
   }
 
   case class GhostSpawn() extends TileAbstract() {
     override def walkable(character: Character): Boolean = character match {
-      case Ghost(_, _, _, _) => true
+      case Ghost(_, _, _, _, _) => true
       case _ => false
     }
   }

@@ -80,20 +80,20 @@ class GameTickTest extends AnyWordSpec {
     "evaluate the new game state" which {
       "calculate gained points" when {
         "pacman collide with a small dot" in {
-          assertResult(OLD_GAME_STATE.points + Dot.SMALL_DOT.points)((OLD_GAME_STATE + GameTick.calculateGameState(Dot.SMALL_DOT :: Nil)).points)
+          assertResult(OLD_GAME_STATE.score + Dot.SMALL_DOT.points)((OLD_GAME_STATE + GameTick.calculateGameState(Dot.SMALL_DOT :: Nil)).score)
         }
         "pacman collide with an energizer dot" in {
-          assertResult(OLD_GAME_STATE.points + Dot.ENERGIZER_DOT.points)((OLD_GAME_STATE + GameTick.calculateGameState(Dot.ENERGIZER_DOT :: Nil)).points)
+          assertResult(OLD_GAME_STATE.score + Dot.ENERGIZER_DOT.points)((OLD_GAME_STATE + GameTick.calculateGameState(Dot.ENERGIZER_DOT :: Nil)).score)
         }
         "pacman collide with a fruit" in {
-          assertResult(OLD_GAME_STATE.points + Fruit.APPLE.points)((OLD_GAME_STATE + GameTick.calculateGameState(Fruit.APPLE :: Nil)).points)
-          assertResult(OLD_GAME_STATE.points + Fruit.BELL.points)((OLD_GAME_STATE + GameTick.calculateGameState(Fruit.BELL :: Nil)).points)
-          assertResult(OLD_GAME_STATE.points + Fruit.CHERRIES.points)((OLD_GAME_STATE + GameTick.calculateGameState(Fruit.CHERRIES :: Nil)).points)
-          assertResult(OLD_GAME_STATE.points + Fruit.GALAXIAN.points)((OLD_GAME_STATE + GameTick.calculateGameState(Fruit.GALAXIAN :: Nil)).points)
-          assertResult(OLD_GAME_STATE.points + Fruit.GRAPES.points)((OLD_GAME_STATE + GameTick.calculateGameState(Fruit.GRAPES :: Nil)).points)
-          assertResult(OLD_GAME_STATE.points + Fruit.KEY.points)((OLD_GAME_STATE + GameTick.calculateGameState(Fruit.KEY :: Nil)).points)
-          assertResult(OLD_GAME_STATE.points + Fruit.PEACH.points)((OLD_GAME_STATE + GameTick.calculateGameState(Fruit.PEACH :: Nil)).points)
-          assertResult(OLD_GAME_STATE.points + Fruit.STRAWBERRY.points)((OLD_GAME_STATE + GameTick.calculateGameState(Fruit.STRAWBERRY :: Nil)).points)
+          assertResult(OLD_GAME_STATE.score + Fruit.APPLE.points)((OLD_GAME_STATE + GameTick.calculateGameState(Fruit.APPLE :: Nil)).score)
+          assertResult(OLD_GAME_STATE.score + Fruit.BELL.points)((OLD_GAME_STATE + GameTick.calculateGameState(Fruit.BELL :: Nil)).score)
+          assertResult(OLD_GAME_STATE.score + Fruit.CHERRIES.points)((OLD_GAME_STATE + GameTick.calculateGameState(Fruit.CHERRIES :: Nil)).score)
+          assertResult(OLD_GAME_STATE.score + Fruit.GALAXIAN.points)((OLD_GAME_STATE + GameTick.calculateGameState(Fruit.GALAXIAN :: Nil)).score)
+          assertResult(OLD_GAME_STATE.score + Fruit.GRAPES.points)((OLD_GAME_STATE + GameTick.calculateGameState(Fruit.GRAPES :: Nil)).score)
+          assertResult(OLD_GAME_STATE.score + Fruit.KEY.points)((OLD_GAME_STATE + GameTick.calculateGameState(Fruit.KEY :: Nil)).score)
+          assertResult(OLD_GAME_STATE.score + Fruit.PEACH.points)((OLD_GAME_STATE + GameTick.calculateGameState(Fruit.PEACH :: Nil)).score)
+          assertResult(OLD_GAME_STATE.score + Fruit.STRAWBERRY.points)((OLD_GAME_STATE + GameTick.calculateGameState(Fruit.STRAWBERRY :: Nil)).score)
         }
       }
     }

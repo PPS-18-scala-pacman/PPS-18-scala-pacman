@@ -3,9 +3,9 @@ package it.unibo.scalapacman.server.core
 import akka.actor.testkit.typed.scaladsl.ScalaTestWithActorTestKit
 import akka.http.scaladsl.model.ws.{Message, TextMessage}
 import it.unibo.scalapacman.common.{DirectionHolder, DotHolder, FruitHolder, GameCharacter, GameCharacterHolder}
-import it.unibo.scalapacman.common.{GameEntity, GameState, Item, Pellet, UpdateModel}
+import it.unibo.scalapacman.common.{GameEntity, Item, Pellet, UpdateModel}
 import it.unibo.scalapacman.lib.math.Point2D
-import it.unibo.scalapacman.lib.model.{Direction, Dot, Fruit}
+import it.unibo.scalapacman.lib.model.{Direction, Dot, Fruit, GameState}
 import org.scalatest.wordspec.AnyWordSpecLike
 
 class PlayerUpdateTest extends ScalaTestWithActorTestKit with AnyWordSpecLike {
@@ -22,7 +22,7 @@ class PlayerUpdateTest extends ScalaTestWithActorTestKit with AnyWordSpecLike {
         GameEntity(GameCharacterHolder(GameCharacter.PACMAN), Point2D(3,4), isDead=false, DirectionHolder(Direction.NORTH)) ::
         GameEntity(GameCharacterHolder(GameCharacter.PACMAN), Point2D(5,6), isDead=false, DirectionHolder(Direction.NORTH)) ::
         Nil
-    val gs: GameState = GameState(ghostInFear=false, pacmanEmpowered=false)
+
     val pellets: List[Pellet] =
       Pellet(DotHolder(Dot.SMALL_DOT), Point2D(5,6)) ::
         Pellet(DotHolder(Dot.SMALL_DOT), Point2D(6,6)) ::
@@ -32,12 +32,12 @@ class PlayerUpdateTest extends ScalaTestWithActorTestKit with AnyWordSpecLike {
     val fruit = Some(Item(FruitHolder(Fruit.APPLE), Point2D(9,9)))
     // scalastyle:on magic.number
 
-    testModel = UpdateModel(gameEntities, 2, gs, pellets, fruit)
+    testModel = UpdateModel(gameEntities, GameState(score = 2), pellets, fruit)
 
     testModelJSON = "{\"gameEntities\":[{\"id\":{\"gameChar\":\"PACMAN\"},\"pos\":{\"x\":1.0,\"y\":2.0},\"isDead\":" +
-      "false,\"dir\":{\"direction\":\"NORTH\"}},{\"id\":{\"gameChar\":\"PACMAN\"},\"pos\":{\"x\":3.0,\"y\":4.0}," +
-      "\"isDead\":false,\"dir\":{\"direction\":\"NORTH\"}},{\"id\":{\"gameChar\":\"PACMAN\"},\"pos\":{\"x\":5.0,\"y\"" +
-      ":6.0},\"isDead\":false,\"dir\":{\"direction\":\"NORTH\"}}],\"points\":2,\"state\":{\"ghostInFear\":false,\"" +
+      "false,\"dir\":{\"direction\":\"NORTH\"}},{\"id\":{\"gameChar\":\"PACMAN\"},\"pos\":{\"x\":3.0,\"y\":4.0},\"" +
+      "isDead\":false,\"dir\":{\"direction\":\"NORTH\"}},{\"id\":{\"gameChar\":\"PACMAN\"},\"pos\":{\"x\":5.0,\"y\":" +
+      "6.0},\"isDead\":false,\"dir\":{\"direction\":\"NORTH\"}}],\"state\":{\"score\":2,\"ghostInFear\":false,\"" +
       "pacmanEmpowered\":false},\"pellets\":[{\"pelletType\":{\"dot\":\"SMALL_DOT\"},\"pos\":{\"x\":5.0,\"y\":6.0}}," +
       "{\"pelletType\":{\"dot\":\"SMALL_DOT\"},\"pos\":{\"x\":6.0,\"y\":6.0}},{\"pelletType\":{\"dot\":\"SMALL_DOT\"" +
       "},\"pos\":{\"x\":7.0,\"y\":6.0}},{\"pelletType\":{\"dot\":\"SMALL_DOT\"},\"pos\":{\"x\":8.0,\"y\":6.0}}],\"" +

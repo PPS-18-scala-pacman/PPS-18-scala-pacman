@@ -34,44 +34,37 @@ class Player(setup: Setup) {
   val clientMsgAdapter: ActorRef[Message] = setup.context.messageAdapter(WrapRespMessage)
   val updateMsgAdapter: ActorRef[Engine.UpdateCommand] = setup.context.messageAdapter(WrapRespUpdate)
 
-  setup.engine ! Engine.RegisterPlayer(updateMsgAdapter)
-
   private def initRoutine(): Behavior[PlayerCommand] =
     Behaviors.receiveMessage {
       case RegisterUser(replyTo, sourceAct) =>
+        setup.engine ! Engine.RegisterPlayer(updateMsgAdapter)
         replyTo ! RegistrationAccepted(clientMsgAdapter)
         mainRoutine(sourceAct)
-      case WrapRespMessage(_) =>
-        setup.context.log.warn("Ricevuto messaggio, game non avviato")
-        Behaviors.same
       case WrapRespUpdate(Engine.UpdateMsg(updateMsg)) =>
         setup.context.log.info("Ricevuto update: " + updateMsg)
         Behaviors.same
-      case WrapRespUpdate(_) =>
-        setup.context.log.warn("Ricevuto update non gestito")
+      case _ =>
+        setup.context.log.warn("Ricevuto messaggio non gestito")
         Behaviors.same
     }
 
   private def mainRoutine(sourceAct: ActorRef[Message]): Behavior[PlayerCommand] =
     Behaviors.receiveMessage {
       case RegisterUser(replyTo, _) =>
-        replyTo ! RegistrationRejected("Player occupato") //FIXME
+        replyTo ! RegistrationRejected("Player occupato")
         Behaviors.same
       case WrapRespMessage(TextMessage.Strict(msg)) =>
         setup.context.log.info("Ricevuto messaggio: " + msg)
         val command = ConversionUtils.convertClientMsg(msg, updateMsgAdapter)
         if(command.isDefined) setup.engine ! command.get
         Behaviors.same
-      case WrapRespMessage(_) =>
-        setup.context.log.warn("Ricevuto messaggio non gestito")
-        Behaviors.same
       case WrapRespUpdate(Engine.UpdateMsg(model)) =>
         setup.context.log.debug("Ricevuto update: " + model)
         val msg = ConversionUtils.convertModel(model)
         sourceAct ! TextMessage(msg)
         Behaviors.same
-      case WrapRespUpdate(_) =>
-        setup.context.log.warn("Ricevuto update non gestito")
+      case _ =>
+        setup.context.log.warn("Ricevuto messaggio non gestito")
         Behaviors.same
     }
 }
