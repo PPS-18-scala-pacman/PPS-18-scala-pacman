@@ -2,17 +2,15 @@ package it.unibo.scalapacman.server.core
 
 import akka.actor.typed.scaladsl.{ActorContext, Behaviors}
 import akka.actor.typed.{ActorRef, Behavior}
-import it.unibo.scalapacman.common.{DirectionHolder, DotHolder, FruitHolder, GameCharacter, GameCharacterHolder,
-  GameEntity, Item, Pellet, UpdateModel}
+import it.unibo.scalapacman.common.{DirectionHolder, DotHolder, FruitHolder, GameCharacter, GameCharacterHolder, GameEntity, Item, Pellet, UpdateModel} // scalastyle:ignore
 import it.unibo.scalapacman.lib.engine.{GameMovement, GameTick}
 import it.unibo.scalapacman.lib.math.Point2D
 import it.unibo.scalapacman.lib.model.Direction.Direction
+import it.unibo.scalapacman.lib.model.GhostType.{BLINKY, CLYDE, GhostType, INKY, PINKY}
 import it.unibo.scalapacman.lib.model.{Direction, Dot, Fruit, GameState, Ghost, GhostType, Map, Pacman}
-import it.unibo.scalapacman.server.core.Engine.{ChangeDirectionCur, ChangeDirectionReq, EngineCommand, Pause,
-  RegisterGhost, RegisterPlayer, RegisterWatcher, Resume, Setup, UpdateCommand, UpdateMsg, WakeUp}
+import it.unibo.scalapacman.server.core.Engine.{ChangeDirectionCur, ChangeDirectionReq, EngineCommand, Pause, RegisterGhost, RegisterPlayer, RegisterWatcher, Resume, Setup, UpdateCommand, UpdateMsg, WakeUp} // scalastyle:ignore
 import it.unibo.scalapacman.server.model.MoveDirection.MoveDirection
-import it.unibo.scalapacman.server.model.{EngineModel, GameParticipant, MoveDirection, Players, RegisteredParticipant,
-  StarterModel}
+import it.unibo.scalapacman.server.model.{EngineModel, GameParticipant, MoveDirection, Players, RegisteredParticipant, StarterModel} // scalastyle:ignore
 import it.unibo.scalapacman.server.util.Settings
 
 import scala.concurrent.duration.FiniteDuration
@@ -47,22 +45,26 @@ private class Engine(setup: Setup) {
 
   private def idleRoutine(model: StarterModel): Behavior[EngineCommand] =
     Behaviors.receiveMessage {
-      //TODO ad ogni registrazione guardo se sono arrivati tutti nel caso cambio stato
-      case RegisterGhost(actor, ghostType) => ???
+
+      case RegisterGhost(actor, ghostType) =>
+        val upModel = ghostType match {
+          case BLINKY => model.copy(blinky = Some(RegisteredParticipant(actor)))
+          case INKY   => model.copy(inky   = Some(RegisteredParticipant(actor)))
+          case PINKY  => model.copy(pinky  = Some(RegisteredParticipant(actor)))
+          case CLYDE  => model.copy(clyde  = Some(RegisteredParticipant(actor)))
+        }
+        if(upModel.isFull) {
+          mainRoutine( initEngineModel(upModel) )
+        } else {
+          idleRoutine(upModel)
+        }
       case RegisterPlayer(actor) =>
-
-        //FIXME  cambiare stato solo dopo che tutti i ghost e il player si sono registrati e creare EngineModel
-        //TODO aggiungere StarterModel un metodo isComplete???
-        //TODO aggiunto Util o def al object model per vedere se è pieno?
-
-        //FIXME
-        val upModel = model.copy(pacman = Some(RegisteredParticipant(actor)),
-          blinky = Some(RegisteredParticipant(actor)),
-          pinky = Some(RegisteredParticipant(actor)),
-          clyde = Some(RegisteredParticipant(actor)),
-          inky = Some(RegisteredParticipant(actor)))
-
-        mainRoutine( initEngineModel(upModel) )
+        val upModel = model.copy(pacman = Some(RegisteredParticipant(actor)))
+        if(upModel.isFull) {
+          mainRoutine( initEngineModel(upModel) )
+        } else {
+          idleRoutine(upModel)
+        }
       case RegisterWatcher(actor) => ???
     }
 
@@ -97,19 +99,18 @@ private class Engine(setup: Setup) {
 
     // scalastyle:off magic.number
     //TODO fare trasformatore da model.players a List[GameEntity]
-    val gameEntities: List[GameEntity] =
-      GameEntity(GameCharacterHolder(GameCharacter.PACMAN), Point2D(1, 2), isDead = false, DirectionHolder(Direction.NORTH)) ::
-        GameEntity(GameCharacterHolder(GameCharacter.BLINKY), Point2D(3, 4), isDead = false, DirectionHolder(Direction.NORTH)) ::
-        GameEntity(GameCharacterHolder(GameCharacter.INKY), Point2D(5, 6), isDead = false, DirectionHolder(Direction.NORTH)) ::
-        Nil
+    val gameEntities: Set[GameEntity] = Set(
+      GameEntity(GameCharacterHolder(GameCharacter.PACMAN), Point2D(1, 2), 1, isDead = false, DirectionHolder(Direction.NORTH)),
+        GameEntity(GameCharacterHolder(GameCharacter.BLINKY), Point2D(3, 4), 1, isDead = false, DirectionHolder(Direction.NORTH)),
+        GameEntity(GameCharacterHolder(GameCharacter.INKY), Point2D(5, 6), 1, isDead = false, DirectionHolder(Direction.NORTH)))
 
     //TODO creare due metodi nella pacman-lib che data la mappa danno List[Pellet], Option[Fruit]
-    val pellets: List[Pellet] =
-      Pellet(DotHolder(Dot.SMALL_DOT), Point2D(5, 6)) ::
-        Pellet(DotHolder(Dot.SMALL_DOT), Point2D(6, 6)) ::
-        Pellet(DotHolder(Dot.SMALL_DOT), Point2D(7, 6)) ::
-        Pellet(DotHolder(Dot.SMALL_DOT), Point2D(8, 6)) ::
-        Nil
+    val pellets: Set[Pellet] = Set(
+      Pellet(DotHolder(Dot.SMALL_DOT), Point2D(5, 6)),
+        Pellet(DotHolder(Dot.SMALL_DOT), Point2D(6, 6)),
+        Pellet(DotHolder(Dot.SMALL_DOT), Point2D(7, 6)),
+        Pellet(DotHolder(Dot.SMALL_DOT), Point2D(8, 6)))
+
     val fruit = Some(Item(FruitHolder(Fruit.APPLE), Point2D(9, 9)))
     // scalastyle:on magic.number
 
@@ -132,16 +133,8 @@ private class Engine(setup: Setup) {
     EngineModel(players, Map.classic, GameState(score = 0))
   }
 
-  private def updateWatcher(model: EngineModel): Unit = {
-    val upMsg = UpdateMsg(elaborateUpdateModel(model))
-
-    //TODO fare un implicit che aggiunge metodo foreach a Player?
-    model.players.blinky.actRef ! upMsg
-    model.players.clyde.actRef ! upMsg
-    model.players.inky.actRef ! upMsg
-    model.players.pinky.actRef ! upMsg
-    model.players.pacman.actRef ! upMsg
-  }
+  private def updateWatcher(model: EngineModel): Unit =
+    model.players.toSeq.foreach( _.actRef ! UpdateMsg(elaborateUpdateModel(model)) )
 
   private def updateGame(oldModel: EngineModel) : Behavior[EngineCommand] = {
     setup.context.log.info("updateGame id: " + setup.gameId)
