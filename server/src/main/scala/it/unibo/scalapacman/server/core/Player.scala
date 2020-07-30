@@ -3,8 +3,9 @@ package it.unibo.scalapacman.server.core
 import akka.actor.typed.scaladsl.{ActorContext, Behaviors}
 import akka.actor.typed.{ActorRef, Behavior}
 import akka.http.scaladsl.model.ws.{Message, TextMessage}
-import it.unibo.scalapacman.server.core.Engine.UpdateMsg
-import it.unibo.scalapacman.server.core.Player.{PlayerCommand, RegisterUser, RegistrationAccepted, RegistrationRejected, Setup, WrapRespMessage, WrapRespUpdate}
+import it.unibo.scalapacman.server.core.Player.{PlayerCommand, RegisterUser, RegistrationAccepted, RegistrationRejected,
+  Setup, WrapRespMessage, WrapRespUpdate}
+import it.unibo.scalapacman.server.util.ConversionUtils
 
 object Player {
 
@@ -33,45 +34,37 @@ class Player(setup: Setup) {
   val clientMsgAdapter: ActorRef[Message] = setup.context.messageAdapter(WrapRespMessage)
   val updateMsgAdapter: ActorRef[Engine.UpdateCommand] = setup.context.messageAdapter(WrapRespUpdate)
 
-  setup.engine ! Engine.RegisterPlayer(updateMsgAdapter)
-
   private def initRoutine(): Behavior[PlayerCommand] =
     Behaviors.receiveMessage {
       case RegisterUser(replyTo, sourceAct) =>
+        setup.engine ! Engine.RegisterPlayer(updateMsgAdapter)
         replyTo ! RegistrationAccepted(clientMsgAdapter)
         mainRoutine(sourceAct)
-      case WrapRespMessage(TextMessage.Strict(msg)) =>
-        setup.context.log.info("Ricevuto messaggio: " + msg)
-        Behaviors.same
-      case WrapRespMessage(_) =>
-        setup.context.log.warn("Ricevuto messaggio non gestito")
-        Behaviors.same
-      case WrapRespUpdate(UpdateMsg(updateMsg)) =>
+      case WrapRespUpdate(Engine.UpdateMsg(updateMsg)) =>
         setup.context.log.info("Ricevuto update: " + updateMsg)
         Behaviors.same
-      case WrapRespUpdate(_) =>
-        setup.context.log.warn("Ricevuto update non gestito")
+      case _ =>
+        setup.context.log.warn("Ricevuto messaggio non gestito")
         Behaviors.same
     }
 
   private def mainRoutine(sourceAct: ActorRef[Message]): Behavior[PlayerCommand] =
     Behaviors.receiveMessage {
-      //TODO gestire messaggi client ed engine
       case RegisterUser(replyTo, _) =>
-        replyTo ! RegistrationRejected("Player occupato") //FIXME
+        replyTo ! RegistrationRejected("Player occupato")
         Behaviors.same
       case WrapRespMessage(TextMessage.Strict(msg)) =>
         setup.context.log.info("Ricevuto messaggio: " + msg)
+        val command = ConversionUtils.convertClientMsg(msg, updateMsgAdapter)
+        if(command.isDefined) setup.engine ! command.get
         Behaviors.same
-      case WrapRespMessage(_) =>
+      case WrapRespUpdate(Engine.UpdateMsg(model)) =>
+        setup.context.log.debug("Ricevuto update: " + model)
+        val msg = ConversionUtils.convertModel(model)
+        sourceAct ! TextMessage(msg)
+        Behaviors.same
+      case _ =>
         setup.context.log.warn("Ricevuto messaggio non gestito")
-        Behaviors.same
-      case WrapRespUpdate(UpdateMsg(updateMsg)) =>
-        setup.context.log.info("Ricevuto update: " + updateMsg)
-        sourceAct ! TextMessage(updateMsg)
-        Behaviors.same
-      case WrapRespUpdate(_) =>
-        setup.context.log.warn("Ricevuto update non gestito")
         Behaviors.same
     }
 }

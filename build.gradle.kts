@@ -52,6 +52,9 @@ allprojects {
     implementation(group = "com.typesafe.akka", name = "akka-slf4j_$scalaVersion", version = akkaVersion)
     implementation(group = "org.clapper", name = "grizzled-slf4j_$scalaVersion", version = "1.3.4")
 
+    implementation(group = "com.fasterxml.jackson.core", name = "jackson-databind", version = "2.11.1")
+    implementation(group = "com.fasterxml.jackson.module", name = "jackson-module-scala_2.12", version = "2.11.1")
+
     testImplementation(group = "org.scalatest", name = "scalatest_$scalaVersion", version = "3.1.2")
     testImplementation(group = "com.typesafe.akka", name = "akka-actor-testkit-typed_$scalaVersion", version = akkaVersion)
     testImplementation(group = "com.typesafe.akka", name = "akka-http-testkit_$scalaVersion", version = akkaHttpVersion)

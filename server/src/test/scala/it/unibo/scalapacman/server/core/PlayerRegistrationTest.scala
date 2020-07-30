@@ -1,19 +1,17 @@
 package it.unibo.scalapacman.server.core
 
-import akka.actor.testkit.typed.scaladsl.{ScalaTestWithActorTestKit, TestProbe}
+import akka.actor.testkit.typed.scaladsl.ScalaTestWithActorTestKit
 import akka.actor.typed.ActorRef
 import akka.http.scaladsl.model.ws.Message
 import org.scalatest.wordspec.AnyWordSpecLike
 
-class PlayerTest extends ScalaTestWithActorTestKit with AnyWordSpecLike {
-
-  val fakeGameId = "fakeCreateGameId"
+class PlayerRegistrationTest extends ScalaTestWithActorTestKit with AnyWordSpecLike {
 
   private var playerActor: ActorRef[Player.PlayerCommand] = _
-  private var engineProbe: TestProbe[Engine.EngineCommand] = _
 
   override def beforeAll(): Unit = {
-    engineProbe = createTestProbe[Engine.EngineCommand]()
+    val engineProbe = createTestProbe[Engine.EngineCommand]()
+    val fakeGameId = "fakeCreateGameId"
     playerActor = spawn(Player(fakeGameId, engineProbe.ref))
   }
 

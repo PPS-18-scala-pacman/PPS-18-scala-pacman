@@ -3,17 +3,17 @@ package it.unibo.scalapacman.client.gui
 import java.awt.event.{KeyEvent, KeyListener}
 import java.awt.{BorderLayout, GridLayout}
 
-import it.unibo.scalapacman.client.controller.Action.{CHANGE_VIEW, RESET_KEY_MAP, SAVE_KEY_MAP}
+import it.unibo.scalapacman.client.controller.Action.{RESET_KEY_MAP, SAVE_KEY_MAP}
 import it.unibo.scalapacman.client.controller.Controller
 import it.unibo.scalapacman.client.gui.View.MENU
 import it.unibo.scalapacman.client.input.{KeyBinder, KeyMap}
 import javax.swing.{BorderFactory, JButton, JLabel, JTextField, SwingConstants}
 
 object OptionsView {
-  def apply(keyBinder: KeyBinder)(implicit controller: Controller): OptionsView = new OptionsView(keyBinder)
+  def apply(keyBinder: KeyBinder)(implicit controller: Controller, viewChanger: ViewChanger): OptionsView = new OptionsView(keyBinder)
 }
 
-class OptionsView(keyBinder: KeyBinder)(implicit controller: Controller) extends PanelImpl {
+class OptionsView(keyBinder: KeyBinder)(implicit controller: Controller, viewChanger: ViewChanger) extends PanelImpl {
   private val TITLE_LABEL: String = "Imposta tasti"
   private val SAVE_BUTTON_LABEL: String = "Salva"
   private val RESET_BUTTON_LABEL: String = "Reimposta"
@@ -134,8 +134,8 @@ class OptionsView(keyBinder: KeyBinder)(implicit controller: Controller) extends
   )
 
   private def goBack(): Unit = {
-    controller.handleAction(CHANGE_VIEW, Some(MENU))
     resetTextFields()
+    viewChanger.changeView(MENU)
   }
 
   private def resetKeyMap(keyBinder: KeyBinder): Unit = {

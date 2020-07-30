@@ -2,16 +2,23 @@ package it.unibo.scalapacman.lib.model
 
 import it.unibo.scalapacman.lib.Utility
 import it.unibo.scalapacman.lib.model.Dot.{ENERGIZER_DOT, SMALL_DOT}
-import it.unibo.scalapacman.lib.model.Tile.{GhostSpawn, Tile, Track, TrackSafe, TrackTunnel, Wall}
+import it.unibo.scalapacman.lib.model.Tile.{GhostSpawn, Track, TrackSafe, TrackTunnel, Wall}
 
 /**
  *
  * @param tiles A matrix of tiles
  */
-case class Map(tiles: List[List[Tile]])
-
+case class Map(tiles: List[List[it.unibo.scalapacman.lib.model.Tile]])
 
 case object Map {
+
+  def emptyTrack(f: Int = 0): Track = Track(None)
+
+  def smallDot(f: Int = 0): Track = Track(Some(SMALL_DOT))
+
+  def energizerDot(f: Int = 0): Track = Track(Some(ENERGIZER_DOT))
+
+  def wall(f: Int = 0): Wall = Wall()
 
   /**
    *
@@ -21,37 +28,37 @@ case object Map {
 
     tiles = List[List[Tile]](
       // scalastyle:off
-      List.fill(14)(Wall()),
-      Wall() :: List.fill(12)(Track(Some(SMALL_DOT))) ::: Wall() :: Nil,
-      Wall() :: Track(Some(SMALL_DOT)) :: List.fill(4)(Wall()) ::: Track(Some(SMALL_DOT)) :: List.fill(5)(Wall()) ::: Track(Some(SMALL_DOT)) :: Wall() :: Nil,
-      Wall() :: Track(Some(ENERGIZER_DOT)) :: List.fill(4)(Wall()) ::: Track(Some(SMALL_DOT)) :: List.fill(5)(Wall()) ::: Track(Some(SMALL_DOT)) :: Wall() :: Nil,
-      Wall() :: Track(Some(SMALL_DOT)) :: List.fill(4)(Wall()) ::: Track(Some(SMALL_DOT)) :: List.fill(5)(Wall()) ::: Track(Some(SMALL_DOT)) :: Wall() :: Nil,
-      Wall() :: List.fill(13)(Track(Some(SMALL_DOT))),
-      Wall() :: Track(Some(SMALL_DOT)) :: List.fill(4)(Wall()) ::: Track(Some(SMALL_DOT)) :: Wall() :: Wall() :: Track(Some(SMALL_DOT)) :: List.fill(4)(Wall()),
-      Wall() :: Track(Some(SMALL_DOT)) :: List.fill(4)(Wall()) ::: Track(Some(SMALL_DOT)) :: Wall() :: Wall() :: Track(Some(SMALL_DOT)) :: List.fill(4)(Wall()),
-      Wall() :: List.fill(6)(Track(Some(SMALL_DOT))) ::: Wall() :: Wall() :: List.fill(4)(Track(Some(SMALL_DOT))) ::: Wall() :: Nil,
-      List.fill(6)(Wall()) ::: Track(Some(SMALL_DOT)) :: List.fill(5)(Wall()) ::: Track(None) :: Wall() :: Nil,
-      List.fill(6)(Wall()) ::: Track(Some(SMALL_DOT)) :: List.fill(5)(Wall()) ::: Track(None) :: Wall() :: Nil,
-      List.fill(6)(Wall()) ::: Track(Some(SMALL_DOT)) :: Wall() :: Wall() :: Track(None) :: Track(None) :: List.fill(3)(TrackSafe()),
-      List.fill(6)(Wall()) ::: Track(Some(SMALL_DOT)) :: Wall() :: Wall() :: Track(None) :: Wall() :: Wall() :: Wall() :: GhostSpawn() :: Nil,
-      List.fill(6)(Wall()) ::: Track(Some(SMALL_DOT)) :: Wall() :: Wall() :: Track(None) :: Wall() :: List.fill(3)(GhostSpawn()),
-      List.fill(6)(TrackTunnel()) ::: Track(Some(SMALL_DOT)) :: List.fill(3)(Track(None)) ::: Wall() :: List.fill(3)(GhostSpawn()),
-      List.fill(6)(Wall()) ::: Track(Some(SMALL_DOT)) :: Wall() :: Wall() :: Track(None) :: Wall() :: List.fill(3)(GhostSpawn()),
-      List.fill(6)(Wall()) ::: Track(Some(SMALL_DOT)) :: Wall() :: Wall() :: Track(None) :: List.fill(4)(Wall()),
-      List.fill(6)(Wall()) ::: Track(Some(SMALL_DOT)) :: Wall() :: Wall() :: Track(None) :: Track(None) :: List.fill(3)(TrackSafe()),
-      List.fill(6)(Wall()) ::: Track(Some(SMALL_DOT)) :: Wall() :: Wall() :: Track(None) :: List.fill(4)(Wall()),
-      List.fill(6)(Wall()) ::: Track(Some(SMALL_DOT)) :: Wall() :: Wall() :: Track(None) :: List.fill(4)(Wall()),
-      Wall() :: List.fill(12)(Track(Some(SMALL_DOT))) ::: Wall() :: Nil,
-      Wall() :: Track(Some(SMALL_DOT)) :: List.fill(4)(Wall()) ::: Track(Some(SMALL_DOT)) :: List.fill(5)(Wall()) ::: Track(Some(SMALL_DOT)) :: Wall() :: Nil,
-      Wall() :: Track(Some(SMALL_DOT)) :: List.fill(4)(Wall()) ::: Track(Some(SMALL_DOT)) :: List.fill(5)(Wall()) ::: Track(Some(SMALL_DOT)) :: Wall() :: Nil,
-      Wall() :: Track(Some(ENERGIZER_DOT)) :: List.fill(2)(Track(Some(SMALL_DOT))) ::: Wall() :: Wall() :: List.fill(7)(Track(Some(SMALL_DOT))) ::: Track(None) :: Nil,
-      List.fill(3)(Wall()) ::: Track(Some(SMALL_DOT)) :: Wall() :: Wall() :: Track(Some(SMALL_DOT)) :: Wall() :: Wall() :: Track(Some(SMALL_DOT)) :: List.fill(4)(Wall()),
-      List.fill(3)(Wall()) ::: Track(Some(SMALL_DOT)) :: Wall() :: Wall() :: Track(Some(SMALL_DOT)) :: Wall() :: Wall() :: Track(Some(SMALL_DOT)) :: List.fill(4)(Wall()),
-      Wall() :: List.fill(6)(Track(Some(SMALL_DOT))) ::: Wall() :: Wall() :: List.fill(4)(Track(Some(SMALL_DOT))) ::: Wall() :: Nil,
-      Wall() :: Track(Some(SMALL_DOT)) :: List.fill(10)(Wall()) ::: Track(Some(SMALL_DOT)) :: Wall() :: Nil,
-      Wall() :: Track(Some(SMALL_DOT)) :: List.fill(10)(Wall()) ::: Track(Some(SMALL_DOT)) :: Wall() :: Nil,
-      Wall() :: List.fill(13)(Track(Some(SMALL_DOT))),
-      List.fill(14)(Wall())
+      List.tabulate(14)(wall),
+      wall() :: List.tabulate(12)(smallDot) ::: wall() :: Nil,
+      wall() :: smallDot() :: List.tabulate(4)(wall) ::: smallDot() :: List.tabulate(5)(wall) ::: smallDot() :: wall() :: Nil,
+      wall() :: energizerDot() :: List.tabulate(4)(wall) ::: smallDot() :: List.tabulate(5)(wall) ::: smallDot() :: wall() :: Nil,
+      wall() :: smallDot() :: List.tabulate(4)(wall) ::: smallDot() :: List.tabulate(5)(wall) ::: smallDot() :: wall() :: Nil,
+      wall() :: List.tabulate(13)(smallDot),
+      wall() :: smallDot() :: List.tabulate(4)(wall) ::: smallDot() :: wall() :: wall() :: smallDot() :: List.tabulate(4)(wall),
+      wall() :: smallDot() :: List.tabulate(4)(wall) ::: smallDot() :: wall() :: wall() :: smallDot() :: List.tabulate(4)(wall),
+      wall() :: List.tabulate(6)(smallDot) ::: wall() :: wall() :: List.tabulate(4)(smallDot) ::: wall() :: Nil,
+      List.tabulate(6)(wall) ::: smallDot() :: List.tabulate(5)(wall) ::: emptyTrack() :: wall() :: Nil,
+      List.tabulate(6)(wall) ::: smallDot() :: List.tabulate(5)(wall) ::: emptyTrack() :: wall() :: Nil,
+      List.tabulate(6)(wall) ::: smallDot() :: wall() :: wall() :: emptyTrack() :: emptyTrack() :: List.tabulate(3)(_ => TrackSafe()),
+      List.tabulate(6)(wall) ::: smallDot() :: wall() :: wall() :: emptyTrack() :: wall() :: wall() :: wall() :: GhostSpawn() :: Nil,
+      List.tabulate(6)(wall) ::: smallDot() :: wall() :: wall() :: emptyTrack() :: wall() :: List.tabulate(3)(_ => GhostSpawn()),
+      List.tabulate(6)(_ => TrackTunnel()) ::: smallDot() :: List.tabulate(3)(emptyTrack) ::: wall() :: List.tabulate(3)(_ => GhostSpawn()),
+      List.tabulate(6)(wall) ::: smallDot() :: wall() :: wall() :: emptyTrack() :: wall() :: List.tabulate(3)(_ => GhostSpawn()),
+      List.tabulate(6)(wall) ::: smallDot() :: wall() :: wall() :: emptyTrack() :: List.tabulate(4)(wall),
+      List.tabulate(6)(wall) ::: smallDot() :: wall() :: wall() :: emptyTrack() :: emptyTrack() :: List.tabulate(3)(_ => TrackSafe()),
+      List.tabulate(6)(wall) ::: smallDot() :: wall() :: wall() :: emptyTrack() :: List.tabulate(4)(wall),
+      List.tabulate(6)(wall) ::: smallDot() :: wall() :: wall() :: emptyTrack() :: List.tabulate(4)(wall),
+      wall() :: List.tabulate(12)(smallDot) ::: wall() :: Nil,
+      wall() :: smallDot() :: List.tabulate(4)(wall) ::: smallDot() :: List.tabulate(5)(wall) ::: smallDot() :: wall() :: Nil,
+      wall() :: smallDot() :: List.tabulate(4)(wall) ::: smallDot() :: List.tabulate(5)(wall) ::: smallDot() :: wall() :: Nil,
+      wall() :: energizerDot() :: List.tabulate(2)(smallDot) ::: wall() :: wall() :: List.tabulate(7)(smallDot) ::: emptyTrack() :: Nil,
+      List.tabulate(3)(wall) ::: smallDot() :: wall() :: wall() :: smallDot() :: wall() :: wall() :: smallDot() :: List.tabulate(4)(wall),
+      List.tabulate(3)(wall) ::: smallDot() :: wall() :: wall() :: smallDot() :: wall() :: wall() :: smallDot() :: List.tabulate(4)(wall),
+      wall() :: List.tabulate(6)(smallDot) ::: wall() :: wall() :: List.tabulate(4)(smallDot) ::: wall() :: Nil,
+      wall() :: smallDot() :: List.tabulate(10)(wall) ::: smallDot() :: wall() :: Nil,
+      wall() :: smallDot() :: List.tabulate(10)(wall) ::: smallDot() :: wall() :: Nil,
+      wall() :: List.tabulate(13)(smallDot),
+      List.tabulate(14)(wall)
       // scalastyle:on
     ).map(Utility.mirrorList)
   )
