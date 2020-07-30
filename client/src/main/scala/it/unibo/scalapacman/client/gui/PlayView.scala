@@ -8,6 +8,7 @@ import it.unibo.scalapacman.client.event.{GameUpdate, PacmanEvent, PacmanSubscri
 import it.unibo.scalapacman.client.input.{KeyBinder, KeyMap, UserInput}
 import it.unibo.scalapacman.client.gui.View.MENU
 import it.unibo.scalapacman.client.map.ElementsCharCode
+import it.unibo.scalapacman.client.map.PacmanMap.PacmanMap
 import javax.swing.text.{Style, StyleConstants, StyleContext, StyledDocument}
 import javax.swing.{BorderFactory, JButton, JComponent, JLabel, JTextPane, SwingConstants}
 
@@ -27,8 +28,8 @@ class PlayView(implicit controller: Controller, viewChanger: ViewChanger) extend
   private val SUB_LABELS_FONT: Int = 16
   private val EMPTY_BORDER_SIZE_Y: Int = 0
   private val EMPTY_BORDER_SIZE_X: Int = 5
-  private val LABELS_LAYOUT_ROWS: Int = 4
-  private val LABELS_LAYOUT_COLS: Int = 1
+  private val LABELS_LAYOUT_ROWS: Int = 2
+  private val LABELS_LAYOUT_COLS: Int = 2
   private val STARTING_LIVES_COUNT: Int = 3
   private val STARTING_POINTS_COUNT: Int = 0
   private val START_MESSAGE: String = "Per iniziare una nuova partita, cliccare sul pulsante 'Inizia partita'"
@@ -36,7 +37,7 @@ class PlayView(implicit controller: Controller, viewChanger: ViewChanger) extend
   /* TextPane constants */
   private val FONT_PATH = "font/unifont/unifont.ttf"
   private val UNIFONT: Font = loadFont(FONT_PATH)
-  private val PLAY_FONT_SIZE: Float = 26f
+  private val PLAY_FONT_SIZE: Float = 24f
   private val PLAY_BACKGROUND_COLOR: Color = Color.DARK_GRAY
   private val PACMAN_SN = "pacman"
   private val PACMAN_COLOR: Color = Color.YELLOW
@@ -49,7 +50,7 @@ class PlayView(implicit controller: Controller, viewChanger: ViewChanger) extend
 
   // Stile di default, root degli stili personalizzati che andremo ad aggiungere
   private val default: Style = StyleContext.getDefaultStyleContext.getStyle(StyleContext.DEFAULT_STYLE)
-  private var _prevMap: List[List[Char]] = _
+  private var _prevMap: PacmanMap = _
 
   private val IFW = JComponent.WHEN_IN_FOCUSED_WINDOW
 
@@ -112,7 +113,7 @@ class PlayView(implicit controller: Controller, viewChanger: ViewChanger) extend
   playPanel add (textPane, BorderLayout.CENTER)
 
   setLayout(new BorderLayout)
-  add(labelsPanel, BorderLayout.WEST)
+  add(labelsPanel, BorderLayout.PAGE_START)
   add(playPanel, BorderLayout.CENTER)
   add(buttonsPanel, BorderLayout.PAGE_END)
 
@@ -144,17 +145,17 @@ class PlayView(implicit controller: Controller, viewChanger: ViewChanger) extend
     StyleConstants.setForeground(doc.addStyle(charStyle.styleName, default), charStyle.foregroundColor)
   }
 
-  private def printMap(map: List[List[Char]], tp: JTextPane): Unit = if (map != _prevMap) {
+  private def printMap(map: PacmanMap, tp: JTextPane): Unit = if (map != _prevMap) {
      _prevMap = map
     tp.setText("")
     doPrint(map, tp.getStyledDocument)
   }
 
-  private def doPrint(map: List[List[Char]], doc: StyledDocument): Unit = map foreach { row =>
+  private def doPrint(map: PacmanMap, doc: StyledDocument): Unit = map foreach { row =>
     row foreach {
-      case char @ ElementsCharCode.WALL_CODE => insertInDocument(doc, "" + char, doc.getStyle(WALL_SN))
-      case char @ (ElementsCharCode.DOT_CODE | ElementsCharCode.ENERGIZED_DOT_CODE) => insertInDocument(doc, "" + char, doc.getStyle(DOT_SN))
-      case char @ ElementsCharCode.EMPTY_SPACE_CODE => insertInDocument(doc, "" + char, null)// scalastyle:ignore null
+      case char @ ElementsCharCode.WALL_CODE => insertInDocument(doc, char, doc.getStyle(WALL_SN))
+      case char @ (ElementsCharCode.DOT_CODE | ElementsCharCode.ENERGIZED_DOT_CODE) => insertInDocument(doc, char, doc.getStyle(DOT_SN))
+      case char @ ElementsCharCode.EMPTY_SPACE_CODE => insertInDocument(doc, char, null)// scalastyle:ignore null
     }
     // A fine riga aggiunge un newline per disegnare correttamente la mappa
     insertInDocument(doc, "\n", null)// scalastyle:ignore null

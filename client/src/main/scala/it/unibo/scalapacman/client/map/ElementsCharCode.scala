@@ -7,12 +7,13 @@ object ElementsCharCode {
   val PACMAN_UP_CODE = "ᗢ"
   val PACMAN_DOWN_CODE = "ᗣ"
   /* Spazio vuoto */
-  val EMPTY_SPACE_CODE = "  "
+//  val EMPTY_SPACE_CODE   = "  " // 2 non breaking spaces
+  val EMPTY_SPACE_CODE = "　" // \u3000
   /* Dot ed Energized Dot */
-  val DOT_CODE = "✲"
+  val DOT_CODE = "・"
   val ENERGIZED_DOT_CODE = "❂"
   /* Muri */
-  val WALL_CODE = "██"
+  val WALL_CODE = "██" // 2 \u2558
   /* Fantasma */
   val GHOST_CODE = "⍾"
 

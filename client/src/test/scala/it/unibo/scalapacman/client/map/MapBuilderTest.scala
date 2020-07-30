@@ -2,12 +2,13 @@ package it.unibo.scalapacman.client.map
 
 import org.scalatest.wordspec.AnyWordSpecLike
 import it.unibo.scalapacman.client.map.ElementsCharCode._
+import it.unibo.scalapacman.client.map.PacmanMap.PacmanMap
 import it.unibo.scalapacman.lib.Utility
 
 class MapBuilderTest
   extends AnyWordSpecLike {
 
-  val mapClassicBuilt: List[List[Char]] = List[List[Char]](
+  val mapClassicBuilt: PacmanMap = List[List[String]](
     List.tabulate(14)(_ => WALL_CODE),
     WALL_CODE :: List.tabulate(12)(_ => DOT_CODE) ::: WALL_CODE :: Nil,
     WALL_CODE :: DOT_CODE :: List.tabulate(4)(_ => WALL_CODE) ::: DOT_CODE :: List.tabulate(5)(_ => WALL_CODE) ::: DOT_CODE :: WALL_CODE :: Nil,
