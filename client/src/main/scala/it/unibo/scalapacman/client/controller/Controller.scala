@@ -6,7 +6,8 @@ import Action.{END_GAME, EXIT_APP, MOVEMENT, RESET_KEY_MAP, SAVE_KEY_MAP, START_
 import it.unibo.scalapacman.client.event.{GameUpdate, PacmanPublisher, PacmanSubscriber}
 import it.unibo.scalapacman.client.input.JavaKeyBinding.DefaultJavaKeyBinding
 import it.unibo.scalapacman.client.input.KeyMap
-import it.unibo.scalapacman.client.map.MapBuilder
+import it.unibo.scalapacman.client.map.PacmanMap
+import it.unibo.scalapacman.client.util.ConversionUtils
 import it.unibo.scalapacman.common.MoveCommandType.MoveCommandType
 import it.unibo.scalapacman.common.{Command, CommandType, CommandTypeHolder, MoveCommandTypeHolder}
 
@@ -95,10 +96,9 @@ private case class ControllerImpl(pacmanRestClient: PacmanRestClient) extends Co
     case Some(subscriber) => _publisher.subscribe(subscriber)
   }
 
-  private def handleWebSocketMessage(message: String): Unit = {
-    debug(s"Ricevuto messaggio dal server: $message")
-    // TODO fare conversione da JSON ad oggetto
-    _publisher.notifySubscribers(GameUpdate(MapBuilder.buildClassic()))
+  private def handleWebSocketMessage(message: String): Unit = ConversionUtils.convertServerMsg(message) match {
+    case None => error("Aggiornamento dati dal server non valido")
+    case Some(model) => debug(model); _publisher.notifySubscribers(GameUpdate(PacmanMap.createMap(model), model.state.score))
   }
 
   private def evalMovement(newUserAction: Option[MoveCommandType]): Unit = (newUserAction, _prevUserAction) match {

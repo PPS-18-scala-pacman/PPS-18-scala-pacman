@@ -12,10 +12,8 @@ object MapBuilder {
   def buildClassic(): PacmanMap = build(mapClassic)
 
   private def build(map: Map): PacmanMap = map.tiles map (row => row map {
-    case GhostSpawn() | TrackSafe() | Track(None) => ElementsCode.EMPTY_SPACE_CODE
-    case Track(Some(SMALL_DOT)) => ElementsCode.DOT_CODE
-    case Track(Some(ENERGIZER_DOT)) => ElementsCode.ENERGIZED_DOT_CODE
     case Wall() => ElementsCode.WALL_CODE
+    case GhostSpawn() | TrackSafe() | Track(None) | Track(Some(SMALL_DOT)) | Track(Some(ENERGIZER_DOT)) => ElementsCode.EMPTY_SPACE_CODE
     case _ => ElementsCode.EMPTY_SPACE_CODE
   })
 }
