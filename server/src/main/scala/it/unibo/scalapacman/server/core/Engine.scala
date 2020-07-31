@@ -168,11 +168,11 @@ private class Engine(setup: Setup) {
   private def updateDesDir(model:EngineModel, actRef:ActorRef[UpdateCommand], dir:Option[Direction]): Behavior[EngineCommand] = {
     val players = model.players
     val updatePl:Players = actRef match {
-      case players.blinky.actRef => players.copy(blinky = players.blinky.copy(desiredDir = dir))
-      case players.blinky.actRef => players.copy(blinky = players.blinky.copy(desiredDir = dir))
-      case players.blinky.actRef => players.copy(blinky = players.blinky.copy(desiredDir = dir))
-      case players.blinky.actRef => players.copy(blinky = players.blinky.copy(desiredDir = dir))
-      case players.blinky.actRef => players.copy(blinky = players.blinky.copy(desiredDir = dir))
+      case players.pacman.actRef  => players.copy(pacman  = players.pacman.copy(desiredDir = dir))
+      case players.blinky.actRef  => players.copy(blinky  = players.blinky.copy(desiredDir = dir))
+      case players.pinky.actRef   => players.copy(pinky   = players.pinky.copy(desiredDir = dir))
+      case players.inky.actRef    => players.copy(inky    = players.inky.copy(desiredDir = dir))
+      case players.clyde.actRef   => players.copy(clyde   = players.clyde.copy(desiredDir = dir))
     }
     mainRoutine(model.copy(players = updatePl))
   }
