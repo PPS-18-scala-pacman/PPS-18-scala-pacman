@@ -10,13 +10,15 @@ object GameHelpers {
 
   implicit class CharacterHelper(character: Character)(implicit map: Map) {
     def changePosition(position: Point2D): Character = character match {
-      case ghost: Ghost => Ghost(ghost.ghostType, position, character.speed, character.direction)
-      case _ => Pacman(position, character.speed, character.direction)
+      case ghost: Ghost => ghost.copy(position = position)
+      case pacman: Pacman => pacman.copy(position = position)
+      case _ => throw new IllegalArgumentException("Unknown character type")
     }
 
     def changeDirection(direction: Direction): Character = character match {
-      case ghost: Ghost => Ghost(ghost.ghostType, character.position, character.speed, direction)
-      case _ => Pacman(character.position, character.speed, direction)
+      case ghost: Ghost => ghost.copy(direction = direction)
+      case pacman: Pacman => pacman.copy(direction = direction)
+      case _ => throw new IllegalArgumentException("Unknown character type")
     }
 
     def revert: Character = character.direction match {
@@ -55,29 +57,32 @@ object GameHelpers {
 
     def tileOrigin: Point2D = map.tileOrigin(character.position, None)
 
-    def nextTileOrigin: Point2D = map.tileOrigin(character.position, Some(character.direction).map(CharacterMovement.unitVector))
+    def nextTileOrigin: Point2D = map.tileOrigin(character.position, Some(character.direction).map(CharacterMovement.vector))
 
     def tile: Tile = map.tile(character.position, None)
 
-    def nextTile: Tile = map.tile(character.position, Some(character.direction).map(CharacterMovement.unitVector))
+    def nextTile: Tile = map.tile(character.position, Some(character.direction).map(CharacterMovement.vector))
 
-    def nextTile(direction: Direction): Tile = map.tile(character.position, Some(direction).map(CharacterMovement.unitVector))
+    def nextTile(direction: Direction): Tile = map.tile(character.position, Some(direction).map(CharacterMovement.vector))
 
     def tileIndexes: (Int, Int) = map.tileIndexes(character.position)
   }
 
   implicit class MapHelper(map: Map) {
-    val width: Int = map.tiles.size
-    val height: Int = map.tiles.head.size
+    val height: Int = map.tiles.size
+    val width: Int = map.tiles.head.size
 
-    private def tileIndex(x: Double, watchOut: Option[Double]): Int = (x / TileGeography.SIZE + watchOut.getOrElse(0.0)).floor.toInt
+    private def tileIndex(x: Double, watchOut: Option[Double]): Int = ((x + watchOut.getOrElse(0.0)) / TileGeography.SIZE).floor.toInt
 
     def tile(position: Point2D, watchOut: Option[Vector2D]): Tile =
       map.tiles(pacmanEffect(tileIndex(position.y, watchOut.map(_.y)), height))(pacmanEffect(tileIndex(position.x, watchOut.map(_.x)), width))
 
-    def tile(indexes: (Int, Int)): Tile = map.tiles(indexes._2)(indexes._1)
+    def tile(indexes: (Int, Int)): Tile = map.tiles(pacmanEffect(indexes._2, height))(pacmanEffect(indexes._1, width))
 
-    def tileIndexes(position: Point2D): (Int, Int) = (tileIndex(position.x, None), tileIndex(position.y, None))
+    def tileIndexes(position: Point2D): (Int, Int) = (
+      pacmanEffect(tileIndex(position.x, None), width),
+      pacmanEffect(tileIndex(position.y, None), height)
+    )
 
     def tileOrigin(position: Point2D, watchOut: Option[Vector2D]): Point2D = Point2D(
       pacmanEffect(tileIndex(position.x, watchOut.map(_.x)), width) * TileGeography.SIZE,
@@ -91,7 +96,7 @@ object GameHelpers {
 
     @scala.annotation.tailrec
     private def pacmanEffect(x: Int, max: Int): Int = x match {
-      case x: Int if x > 0 => x % max
+      case x: Int if x >= 0 => x % max
       case x: Int => pacmanEffect(x + max, max)
     }
   }
