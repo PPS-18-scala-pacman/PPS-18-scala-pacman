@@ -19,14 +19,14 @@ object CircularMovement {
   }
 
   implicit private class MapEnhanced(map: Map) {
-    val width: Double = map.tiles.size * TileGeography.SIZE
-    val height: Double = map.tiles.head.size * TileGeography.SIZE
+    val height: Double = map.tiles.size * TileGeography.SIZE
+    val width: Double = map.tiles.head.size * TileGeography.SIZE
 
     def pacmanEffect(point2D: Point2D): Point2D = Point2D(pacmanEffect(point2D.x, width), pacmanEffect(point2D.y, height))
 
     @scala.annotation.tailrec
     private def pacmanEffect(x: Double, max: Double): Double = x match {
-      case x: Double if x > 0 => x % max
+      case x: Double if x >= 0 => x % max
       case x: Double => pacmanEffect(x + max, max)
     }
   }
