@@ -7,7 +7,7 @@ import it.unibo.scalapacman.client.controller.Controller
 import it.unibo.scalapacman.client.event.{GameUpdate, PacmanEvent, PacmanSubscriber}
 import it.unibo.scalapacman.client.input.{KeyBinder, KeyMap, UserInput}
 import it.unibo.scalapacman.client.gui.View.MENU
-import it.unibo.scalapacman.client.map.ElementsCharCode
+import it.unibo.scalapacman.client.map.ElementsCode
 import it.unibo.scalapacman.client.map.PacmanMap.PacmanMap
 import javax.swing.text.{Style, StyleConstants, StyleContext, StyledDocument}
 import javax.swing.{BorderFactory, JButton, JComponent, JLabel, JTextPane, SwingConstants}
@@ -46,7 +46,8 @@ class PlayView(implicit controller: Controller, viewChanger: ViewChanger) extend
   private val WALL_SN = "wall"
   private val WALL_COLOR: Color = Color.BLUE
 
-  private val charStyles: List[CharStyle] = CharStyle(PACMAN_SN, PACMAN_COLOR) :: CharStyle(DOT_SN, DOT_COLOR) :: CharStyle(WALL_SN, WALL_COLOR) :: Nil
+  private val elementStyles: List[ElementStyle] =
+    ElementStyle(PACMAN_SN, PACMAN_COLOR) :: ElementStyle(DOT_SN, DOT_COLOR) :: ElementStyle(WALL_SN, WALL_COLOR) :: Nil
 
   // Stile di default, root degli stili personalizzati che andremo ad aggiungere
   private val default: Style = StyleContext.getDefaultStyleContext.getStyle(StyleContext.DEFAULT_STYLE)
@@ -128,7 +129,7 @@ class PlayView(implicit controller: Controller, viewChanger: ViewChanger) extend
       setBackground(BACKGROUND_COLOR)
     }
 
-    setupStyles(tp.getStyledDocument, charStyles)
+    setupStyles(tp.getStyledDocument, elementStyles)
     tp
   }
 
@@ -139,11 +140,11 @@ class PlayView(implicit controller: Controller, viewChanger: ViewChanger) extend
 
   /**
    * Aggiunge le informazioni sullo stile al documento
-   * @param doc         il documento di cui espandere lo stile
-   * @param charStyles  la lista di stili personalizzati da inserire
+   * @param doc             il documento di cui espandere lo stile
+   * @param elementStyles   la lista di stili personalizzati da inserire
    */
-  private def setupStyles(doc: StyledDocument, charStyles: List[CharStyle]): Unit = charStyles foreach { charStyle =>
-    StyleConstants.setForeground(doc.addStyle(charStyle.styleName, default), charStyle.foregroundColor)
+  private def setupStyles(doc: StyledDocument, elementStyles: List[ElementStyle]): Unit = elementStyles foreach { elementStyle =>
+    StyleConstants.setForeground(doc.addStyle(elementStyle.styleName, default), elementStyle.foregroundColor)
   }
 
   private def printMap(map: PacmanMap, tp: JTextPane): Unit = _prevMap match {
@@ -156,9 +157,9 @@ class PlayView(implicit controller: Controller, viewChanger: ViewChanger) extend
 
   private def doPrint(map: PacmanMap, doc: StyledDocument): Unit = map foreach { row =>
     row foreach {
-      case char @ ElementsCharCode.WALL_CODE => insertInDocument(doc, char, doc.getStyle(WALL_SN))
-      case char @ (ElementsCharCode.DOT_CODE | ElementsCharCode.ENERGIZED_DOT_CODE) => insertInDocument(doc, char, doc.getStyle(DOT_SN))
-      case char @ ElementsCharCode.EMPTY_SPACE_CODE => insertInDocument(doc, char, null)// scalastyle:ignore null
+      case elem @ ElementsCode.WALL_CODE => insertInDocument(doc, elem, doc.getStyle(WALL_SN))
+      case elem @ (ElementsCode.DOT_CODE | ElementsCode.ENERGIZED_DOT_CODE) => insertInDocument(doc, elem, doc.getStyle(DOT_SN))
+      case elem @ ElementsCode.EMPTY_SPACE_CODE => insertInDocument(doc, elem, null)// scalastyle:ignore null
     }
     // A fine riga aggiunge un newline per disegnare correttamente la mappa
     insertInDocument(doc, "\n", null)// scalastyle:ignore null

@@ -1,6 +1,6 @@
 package it.unibo.scalapacman.client.map
 
-object ElementsCharCode {
+object ElementsCode {
   /* Pacman */
   val PACMAN_RIGHT_CODE = "ᗧ"
   val PACMAN_LEFT_CODE = "ᗤ"
