@@ -10,9 +10,10 @@ import akka.http.scaladsl.model.ws.{Message, WebSocketRequest, WebSocketUpgradeR
 import akka.stream.scaladsl.Flow
 import grizzled.slf4j.Logging
 import it.unibo.scalapacman.client.communication.{HttpClient, PacmanRestClient}
-import it.unibo.scalapacman.client.controller.Action.{MOVEMENT, MOVE_DEFAULT, MOVE_DOWN, MOVE_LEFT, MOVE_RIGHT, MOVE_UP, RESET_KEY_MAP, SAVE_KEY_MAP}
+import it.unibo.scalapacman.client.controller.Action.{MOVEMENT, RESET_KEY_MAP, SAVE_KEY_MAP}
 import it.unibo.scalapacman.client.input.JavaKeyBinding.DefaultJavaKeyBinding
 import it.unibo.scalapacman.client.input.KeyMap
+import it.unibo.scalapacman.common.MoveCommandType
 import org.scalamock.function.MockFunction1
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.BeforeAndAfterEach
@@ -50,6 +51,7 @@ class ControllerTest
   val _notDefaultKeyMap: KeyMap = KeyMap(KeyEvent.VK_W, KeyEvent.VK_S, KeyEvent.VK_D, KeyEvent.VK_A)
   val _pacmanRestClientWithMockClientHandler = new PacmanRestClientWithMockClientHandler()
   var _controller: Controller = _
+  val GAME_ID = "1"
 
   override protected def beforeEach(): Unit = {
     super.beforeEach()
@@ -99,20 +101,20 @@ class ControllerTest
       "be able to save a new valid user action" in {
         assertResult(None)(_controller.getUserAction)
 
-        _controller.handleAction(MOVEMENT, Some(MOVE_UP))
-        assertResult(Some(MOVE_UP))(_controller.getUserAction)
+        _controller.handleAction(MOVEMENT, Some(MoveCommandType.UP))
+        assertResult(Some(MoveCommandType.UP))(_controller.getUserAction)
 
-        _controller.handleAction(MOVEMENT, Some(MOVE_DOWN))
-        assertResult(Some(MOVE_DOWN))(_controller.getUserAction)
+        _controller.handleAction(MOVEMENT, Some(MoveCommandType.DOWN))
+        assertResult(Some(MoveCommandType.DOWN))(_controller.getUserAction)
 
-        _controller.handleAction(MOVEMENT, Some(MOVE_RIGHT))
-        assertResult(Some(MOVE_RIGHT))(_controller.getUserAction)
+        _controller.handleAction(MOVEMENT, Some(MoveCommandType.RIGHT))
+        assertResult(Some(MoveCommandType.RIGHT))(_controller.getUserAction)
 
-        _controller.handleAction(MOVEMENT, Some(MOVE_LEFT))
-        assertResult(Some(MOVE_LEFT))(_controller.getUserAction)
+        _controller.handleAction(MOVEMENT, Some(MoveCommandType.LEFT))
+        assertResult(Some(MoveCommandType.LEFT))(_controller.getUserAction)
 
-        _controller.handleAction(MOVEMENT, Some(MOVE_DEFAULT))
-        assertResult(Some(MOVE_DEFAULT))(_controller.getUserAction)
+        _controller.handleAction(MOVEMENT, Some(MoveCommandType.NONE))
+        assertResult(Some(MoveCommandType.NONE))(_controller.getUserAction)
       }
     }
   }

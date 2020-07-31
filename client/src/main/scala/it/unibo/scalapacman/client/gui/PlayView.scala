@@ -50,7 +50,7 @@ class PlayView(implicit controller: Controller, viewChanger: ViewChanger) extend
 
   // Stile di default, root degli stili personalizzati che andremo ad aggiungere
   private val default: Style = StyleContext.getDefaultStyleContext.getStyle(StyleContext.DEFAULT_STYLE)
-  private var _prevMap: PacmanMap = _
+  private var _prevMap: Option[PacmanMap] = None
 
   private val IFW = JComponent.WHEN_IN_FOCUSED_WINDOW
 
@@ -87,6 +87,7 @@ class PlayView(implicit controller: Controller, viewChanger: ViewChanger) extend
   endGameButton addActionListener (_ => {
     textPane.setText("Partita interrotta dall'utente")
     controller.handleAction(END_GAME, None)
+    _prevMap = None
   })
   backButton addActionListener (_ => {
     controller.handleAction(END_GAME, None)
@@ -145,10 +146,12 @@ class PlayView(implicit controller: Controller, viewChanger: ViewChanger) extend
     StyleConstants.setForeground(doc.addStyle(charStyle.styleName, default), charStyle.foregroundColor)
   }
 
-  private def printMap(map: PacmanMap, tp: JTextPane): Unit = if (map != _prevMap) {
-     _prevMap = map
-    tp.setText("")
-    doPrint(map, tp.getStyledDocument)
+  private def printMap(map: PacmanMap, tp: JTextPane): Unit = _prevMap match {
+    case Some(`map`) => // stessa mappa di prima, non faccio nulla
+    case _ =>
+      _prevMap = Some(map)
+      tp.setText("")
+      doPrint(map, tp.getStyledDocument)
   }
 
   private def doPrint(map: PacmanMap, doc: StyledDocument): Unit = map foreach { row =>
