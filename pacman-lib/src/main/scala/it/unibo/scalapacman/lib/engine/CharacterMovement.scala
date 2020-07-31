@@ -1,6 +1,6 @@
 package it.unibo.scalapacman.lib.engine
 
-import it.unibo.scalapacman.lib.math.{Motion, Point2D, Vector2D}
+import it.unibo.scalapacman.lib.math.{Motion, Point2D, TileGeography, Vector2D}
 import it.unibo.scalapacman.lib.model.Direction.{EAST, NORTH, NORTHEAST, NORTHWEST, SOUTH, SOUTHEAST, SOUTHWEST, WEST}
 import it.unibo.scalapacman.lib.model.Character
 import it.unibo.scalapacman.lib.model.Direction.Direction
@@ -13,13 +13,13 @@ object CharacterMovement {
     Motion.uniformLinearUntil(character.position, endingPoint, character.speedVector)
 
   implicit private class CharacterEnhanced(character: Character) {
-    def speedVector: Vector2D = character.direction * character.speed
+    def speedVector: Vector2D = unitVector(character.direction) * character.speed
   }
 
   /**
    * Versore
    */
-  implicit def unitVector(direction: Direction): Vector2D = direction match {
+  def unitVector(direction: Direction): Vector2D = direction match {
     case NORTH => Vector2D(0, -1)
     case SOUTH => Vector2D(0, 1)
     case WEST => Vector2D(-1, 0)
@@ -30,4 +30,5 @@ object CharacterMovement {
     case SOUTHEAST => unitVector(SOUTH) + unitVector(EAST)
   }
 
+  def vector(direction: Direction): Vector2D = unitVector(direction) * TileGeography.SIZE
 }
