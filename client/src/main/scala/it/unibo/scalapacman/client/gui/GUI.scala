@@ -16,9 +16,6 @@ class GUIImpl(implicit val controller: Controller) extends ViewChanger {
 
   private val frame: JFrame = new JFrame
 
-  private val HEIGHT: Int = 960
-  private val WIDTH: Int = 720
-
   private val mainLayout: CardLayout = new CardLayout
   private val mainPanel = new JPanel(mainLayout)
 
