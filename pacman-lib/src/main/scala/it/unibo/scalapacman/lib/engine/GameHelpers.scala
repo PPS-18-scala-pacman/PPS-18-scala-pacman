@@ -1,11 +1,13 @@
 package it.unibo.scalapacman.lib.engine
 
 import it.unibo.scalapacman.lib.math.{Point2D, TileGeography, Vector2D}
-import it.unibo.scalapacman.lib.model.{Character, Ghost, Map, Pacman, Tile}
+import it.unibo.scalapacman.lib.model.{Character, Eatable, Ghost, Map, Pacman, Tile}
 import it.unibo.scalapacman.lib.model.Direction.Direction
 import it.unibo.scalapacman.lib.model.Direction.{EAST, NORTH, SOUTH, WEST}
 import it.unibo.scalapacman.lib.engine.CircularMovement.{moveFor, moveUntil}
 import it.unibo.scalapacman.lib.model.Tile.Track
+
+import scala.reflect.ClassTag
 
 object GameHelpers {
 
@@ -56,11 +58,11 @@ object GameHelpers {
       character
     }
 
-    def tileOrigin: Point2D = map.tileOrigin(character.position, None)
+    def tileOrigin: Point2D = map.tileOrigin(character.position)
 
     def nextTileOrigin: Point2D = map.tileOrigin(character.position, Some(character.direction).map(CharacterMovement.vector))
 
-    def tile: Tile = map.tile(character.position, None)
+    def tile: Tile = map.tile(character.position)
 
     def nextTile: Tile = map.tile(character.position, Some(character.direction).map(CharacterMovement.vector))
 
@@ -75,26 +77,31 @@ object GameHelpers {
     val height: Int = map.tiles.size
     val width: Int = map.tiles.head.size
 
-    private def tileIndex(x: Double, watchOut: Option[Double]): Int = ((x + watchOut.getOrElse(0.0)) / TileGeography.SIZE).floor.toInt
+    private def tileIndex(x: Double, watchOut: Option[Double] = None): Int = ((x + watchOut.getOrElse(0.0)) / TileGeography.SIZE).floor.toInt
 
-    def tile(position: Point2D, watchOut: Option[Vector2D]): Tile =
+    def tile(position: Point2D, watchOut: Option[Vector2D] = None): Tile =
       map.tiles(pacmanEffect(tileIndex(position.y, watchOut.map(_.y)), height))(pacmanEffect(tileIndex(position.x, watchOut.map(_.x)), width))
 
     def tile(indexes: (Int, Int)): Tile = map.tiles(pacmanEffect(indexes._2, height))(pacmanEffect(indexes._1, width))
 
     def tileIndexes(position: Point2D): (Int, Int) = (
-      pacmanEffect(tileIndex(position.x, None), width),
-      pacmanEffect(tileIndex(position.y, None), height)
-    )
-
-    def tileOrigin(position: Point2D, watchOut: Option[Vector2D]): Point2D = Point2D(
-      pacmanEffect(tileIndex(position.x, watchOut.map(_.x)), width) * TileGeography.SIZE,
-      pacmanEffect(tileIndex(position.y, watchOut.map(_.y)), height) * TileGeography.SIZE
+      pacmanEffect(tileIndex(position.x), width),
+      pacmanEffect(tileIndex(position.y), height)
     )
 
     def tileIndexes(indexes: (Int, Int)): (Int, Int) = (
       pacmanEffect(indexes._1, width),
       pacmanEffect(indexes._2, height)
+    )
+
+    def tileOrigin(position: Point2D, watchOut: Option[Vector2D] = None): Point2D = Point2D(
+      pacmanEffect(tileIndex(position.x, watchOut.map(_.x)), width) * TileGeography.SIZE,
+      pacmanEffect(tileIndex(position.y, watchOut.map(_.y)), height) * TileGeography.SIZE
+    )
+
+    def tileOrigin(indexes: (Int, Int)): Point2D = Point2D(
+      pacmanEffect(indexes._1, width) * TileGeography.SIZE,
+      pacmanEffect(indexes._2, height) * TileGeography.SIZE
     )
 
     @scala.annotation.tailrec
@@ -103,16 +110,25 @@ object GameHelpers {
       case x: Int => pacmanEffect(x + max, max)
     }
 
-    def empty(indexes: (Int, Int)): Map = map.copy(
-      tiles = map.tiles.updated(indexes._2, emptyRow(indexes._1, map.tiles(indexes._2)))
+    def empty(indexes: (Int, Int)): Map = putEatable(indexes, None)
+
+    def putEatable(indexes: (Int, Int), option: Option[Eatable]): Map = map.copy(
+      tiles = map.tiles.updated(indexes._2, putEatableOnRow(indexes._1, map.tiles(indexes._2), option))
     )
 
-    private def emptyRow(index: Int, row: List[Tile]): List[Tile] =
-      row.updated(index, emptyTile(row(index)))
+    private def putEatableOnRow(index: Int, row: List[Tile], option: Option[Eatable]): List[Tile] =
+      row.updated(index, putEatableOnTile(row(index), option))
 
-    private def emptyTile(tile: Tile): Tile = tile match {
-      case Track(Some(_)) => Track(None)
+    private def putEatableOnTile(tile: Tile, option: Option[Eatable]): Tile = tile match {
+      case Track(_) => Track(option)
       case t: Tile => t
     }
+
+    def eatablesToList[A <: Eatable : ClassTag]: Seq[((Int, Int), A)] =
+      for (
+        y <- 0 until map.height;
+        x <- 0 until map.width;
+        eatable <- map.tiles(y)(x).eatable collect { case a: A => a }
+      ) yield ((x, y), eatable)
   }
 }

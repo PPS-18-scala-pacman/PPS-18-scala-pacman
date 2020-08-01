@@ -1,7 +1,7 @@
 package it.unibo.scalapacman.lib.engine
 
 import org.scalatest.wordspec.AnyWordSpec
-import it.unibo.scalapacman.lib.model.{Direction, Dot, Fruit, Ghost, Map, Pacman, Tile}
+import it.unibo.scalapacman.lib.model.{Direction, Dot, Eatable, Fruit, Ghost, Map, Pacman, Tile}
 import it.unibo.scalapacman.lib.engine.GameHelpers.{CharacterHelper, MapHelper}
 import it.unibo.scalapacman.lib.math.{Point2D, TileGeography, Vector2D}
 
@@ -53,8 +53,11 @@ class GameHelpersTest extends AnyWordSpec {
       "calculate a tile origin" in {
         // without watch out
         assertResult(Point2D(0, 0))(MAP.tileOrigin(Point2D(0, 0), None))
+        assertResult(Point2D(0, 0))(MAP.tileOrigin((0, 0)))
         assertResult(Point2D(0, 0))(MAP.tileOrigin(Point2D(MAP_WIDTH * TileGeography.SIZE, MAP_HEIGHT * TileGeography.SIZE), None))
+        assertResult(Point2D(0, 0))(MAP.tileOrigin((MAP_WIDTH, MAP_HEIGHT)))
         assertResult(Point2D(0, TileGeography.SIZE))(MAP.tileOrigin(Point2D(MAP_WIDTH * TileGeography.SIZE, (MAP_HEIGHT + 1) * TileGeography.SIZE), None))
+        assertResult(Point2D(0, TileGeography.SIZE))(MAP.tileOrigin((MAP_WIDTH, MAP_HEIGHT + 1)))
 
         // with watch out
         val halfWatchOut = Some(Vector2D(TileGeography.SIZE / 2, TileGeography.SIZE / 2))
@@ -91,6 +94,30 @@ class GameHelpersTest extends AnyWordSpec {
         assert(map3.empty((0, 0)).tile((0, 0)).eatable.isEmpty)
         val map4 = Map((Tile.Track(Some(Fruit.GALAXIAN)) :: Tile.Track(Some(Dot.ENERGIZER_DOT)) :: Nil) :: Nil)
         assert(map4.empty((1, 0)).tile((1, 0)).eatable.isEmpty)
+      }
+      "change the eatable of a tile" in {
+        val map = Map((Tile.Track(Some(Dot.SMALL_DOT)) :: Nil) :: Nil)
+        assert(map.putEatable((0, 0), Some(Dot.ENERGIZER_DOT)).tile((0, 0)).eatable.contains(Dot.ENERGIZER_DOT))
+        val map2 = Map((Tile.Track(Some(Fruit.GALAXIAN)) :: Nil) :: Nil)
+        assert(map2.putEatable((0, 0), None).tile((0, 0)).eatable.isEmpty)
+        val map3 = Map((Tile.Track(None) :: Nil) :: Nil)
+        assert(map3.putEatable((0, 0), Some(Fruit.GALAXIAN)).tile((0, 0)).eatable.contains(Fruit.GALAXIAN))
+        val map4 = Map((Tile.Track(Some(Fruit.GALAXIAN)) :: Tile.Track(Some(Dot.ENERGIZER_DOT)) :: Nil) :: Nil)
+        assert(map4.putEatable((1, 0), Some(Fruit.KEY)).tile((1, 0)).eatable.contains(Fruit.KEY))
+      }
+      "provide all the eatables" in {
+        val map = Map((Tile.Track(Some(Dot.SMALL_DOT)) :: Nil) :: Nil)
+        assert(map.eatablesToList[Dot.Val] == ((0, 0), Dot.SMALL_DOT) :: Nil)
+        val map2 = Map((Tile.Track(Some(Fruit.GALAXIAN)) :: Nil) :: Nil)
+        assert(map2.eatablesToList[Dot.Val].isEmpty)
+        val map3 = Map((Tile.Track(Some(Dot.SMALL_DOT)) :: Nil) :: Nil)
+        assert(map3.eatablesToList[Fruit.Val].isEmpty)
+        val map4 = Map((Tile.Track(Some(Fruit.GALAXIAN)) :: Nil) :: Nil)
+        assert(map4.eatablesToList[Fruit.Val] == ((0, 0), Fruit.GALAXIAN) :: Nil)
+        val map5 = Map((Tile.Track(None) :: Nil) :: Nil)
+        assert(map5.eatablesToList[Eatable].isEmpty)
+        val map6 = Map((Tile.Track(Some(Fruit.GALAXIAN)) :: Tile.Track(Some(Dot.ENERGIZER_DOT)) :: Nil) :: Nil)
+        assert(map6.eatablesToList[Eatable] == ((0, 0), Fruit.GALAXIAN) :: ((1, 0), Dot.ENERGIZER_DOT) :: Nil)
       }
     }
     "contains a character helper" which {
