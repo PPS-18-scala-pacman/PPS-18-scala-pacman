@@ -133,9 +133,9 @@ object GameHelpers {
         eatable <- map.tiles(y)(x).eatable collect { case a: A => a }
       ) yield ((x, y), eatable)
 
-    def dots: Seq[(MapIndexes, Dot.Val)] = map.eatablesToList[Dot.Val]
+    def dots: Seq[(MapIndexes, Dot.Val)] = map.eatablesToSeq[Dot.Val]
 
-    def fruit: Option[(MapIndexes, Fruit.Val)] = map.eatablesToList[Fruit.Val] match {
+    def fruit: Option[(MapIndexes, Fruit.Val)] = map.eatablesToSeq[Fruit.Val] match {
         case Seq(fruit) => Some(fruit)
         case Seq() => None
       }
