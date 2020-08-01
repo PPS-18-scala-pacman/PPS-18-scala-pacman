@@ -158,28 +158,29 @@ class PlayView(implicit controller: Controller, viewChanger: ViewChanger) extend
 
   private def updateMessage(message: String, textPane: JTextPane): Unit = textPane.setText(message)
 
-  private def printMap(map: PacmanMap, tp: JTextPane): Unit = _prevMap match {
-    case Some(`map`) => // stessa mappa di prima, non faccio nulla
-    case _ =>
-      _prevMap = Some(map)
-      updateMessage("", tp)
-      doPrint(map, tp.getStyledDocument)
+  private def printMap(map: PacmanMap, tp: JTextPane): Unit = if (!_prevMap.contains(map)) {
+    _prevMap = Some(map)
+    updateMessage("", tp)
+    doPrint(map, tp.getStyledDocument)
   }
 
   private def doPrint(map: PacmanMap, doc: StyledDocument): Unit = map foreach { row =>
-    row foreach {
-      case elem@ElementsCode.WALL_CODE => insertInDocument(doc, elem, doc.getStyle(WALL_SN))
-      case elem@(ElementsCode.DOT_CODE | ElementsCode.ENERGIZER_DOT_CODE) => insertInDocument(doc, elem, doc.getStyle(DOT_SN))
-      case elem@ElementsCode.EMPTY_SPACE_CODE => insertInDocument(doc, elem, null) // scalastyle:ignore null
-      case elem: String if ElementsCode.matchPacman(elem) => insertInDocument(doc, elem, doc.getStyle(PACMAN_SN))
-      case elem: String if elem.length == 2 && ElementsCode.matchGhost(elem.substring(0, 1)) => insertInDocument(doc, elem, doc.getStyle(GHOST_SN))
-      case elem: String if ElementsCode.matchFruit(elem) => insertInDocument(doc, elem, doc.getStyle(DOT_SN))
-    }
-    // A fine riga aggiunge un newline per disegnare correttamente la mappa
-    insertInDocument(doc, "\n", null)// scalastyle:ignore null
+    row foreach (elem => insertInDocument(doc, elem, retrieveStyle(elem, doc.getStyle)))
+    insertInDocument(doc, "\n", None)
   }
 
-  private def insertInDocument(doc: StyledDocument, text: String, style: Style): Unit = doc.insertString(doc.getLength, text, style)
+  // scalastyle:off cyclomatic.complexity
+  private def retrieveStyle(elem: String, styleGetter: String => Style): Option[Style] = elem match {
+    case _ if ElementsCode.matchDot(elem) || ElementsCode.matchFruit(elem) => Some(styleGetter(DOT_SN))
+    case _ if ElementsCode.matchPacman(elem) => Some(styleGetter(PACMAN_SN))
+    case _ if elem.length == 2 && ElementsCode.matchGhost(elem.substring(0, 1)) => Some(styleGetter(GHOST_SN))
+    case ElementsCode.WALL_CODE => Some(styleGetter(WALL_SN))
+    case ElementsCode.EMPTY_SPACE_CODE => None
+  }
+  // scalastyle:on cyclomatic.complexity
+
+  private def insertInDocument(doc: StyledDocument, text: String, maybeStyle: Option[Style]): Unit =
+    doc.insertString(doc.getLength, text, maybeStyle.orNull)
 
   private def handlePacmanEvent(pe: PacmanEvent): Unit = pe match {
     case GameUpdate(map, score) => updateScore(score, scoreCount); printMap(map, textPane)

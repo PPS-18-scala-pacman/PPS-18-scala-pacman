@@ -180,6 +180,13 @@ object ElementsCode {
   def matchGhost(code: String): Boolean = matchCode(code, GHOST_CODES_MAP.values.toList)
 
   /**
+   * Controlla se code è uno dei codici usati per rappresentare uno dei dot
+   * @param code  codice da controllare
+   * @return true se è uno dei codici usati per rappresentare uno dei dot, false altrimenti
+   */
+  def matchDot(code: String): Boolean = matchCode(code, DOT_CODES_MAP.values.toList)
+
+  /**
    * Controlla se code è uno dei codici usati per rappresentare un frutto
    * @param code  codice da controllare
    * @return true se è uno dei codici usati per rappresentare un frutto, false altrimenti
