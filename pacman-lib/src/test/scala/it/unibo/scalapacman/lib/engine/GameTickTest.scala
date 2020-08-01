@@ -2,7 +2,7 @@ package it.unibo.scalapacman.lib.engine
 
 import it.unibo.scalapacman.lib.math.{Point2D, TileGeography}
 import it.unibo.scalapacman.lib.model.{Direction, Dot, Fruit, GameState, Ghost, Map, Pacman, Tile}
-import it.unibo.scalapacman.lib.engine.GameTick.{calculateGameState, calculateMap, collisions}
+import it.unibo.scalapacman.lib.engine.GameTick.{calculateGameState, calculateMap, collisions, calculateDeaths}
 import it.unibo.scalapacman.lib.engine.GameHelpers.{CharacterHelper, MapHelper}
 import org.scalatest.wordspec.AnyWordSpec
 
@@ -132,6 +132,27 @@ class GameTickTest extends AnyWordSpec {
         assertResult(MAP)(calculateMap(MAP)(charactersCollisions))
       }
     }
+    "evaluate the new characters" which {
+      "kill pacman" when {
+        "it collide with a ghost not in fear" in {
+          val characters = PACMAN :: GHOST_1 :: Nil
+          val state = GameState(0)
+          val noCollisions = Nil
+          assert(calculateDeaths(characters, state)(noCollisions) == characters)
+          val charactersCollisions = (PACMAN, GHOST_1) :: Nil
+          assert(calculateDeaths(characters, state)(charactersCollisions) == PACMAN.copy(isDead = true) :: GHOST_1 :: Nil)
+        }
+      }
+      "kill pacman" when {
+        "it collide with a ghost in fear" in {
+          val characters = PACMAN :: GHOST_1 :: Nil
+          val state = GameState(0, ghostInFear = true)
+          val noCollisions = Nil
+          assert(calculateDeaths(characters, state)(noCollisions) == characters)
+          val charactersCollisions = (PACMAN, GHOST_1) :: Nil
+          assert(calculateDeaths(characters, state)(charactersCollisions) == PACMAN :: GHOST_1.copy(isDead = true) :: Nil)
+        }
+      }
+    }
   }
-
 }
