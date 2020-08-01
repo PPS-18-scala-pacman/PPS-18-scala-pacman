@@ -103,7 +103,7 @@ class GameTickTest extends AnyWordSpec {
       "remove eaten fruits" in {
         val pacman = PACMAN.copy(position = Point2D(TileGeography.SIZE * 3, TileGeography.SIZE * 3))
         val newMap = calculateMap(MAP)((pacman, Fruit.APPLE) :: Nil)
-        for (y <- 0 until MAP.width; x <- 0 until MAP.height) {
+        for (y <- 0 until MAP.height; x <- 0 until MAP.width) {
           val oldTile = MAP.tiles(y)(x)
           val newTile = newMap.tiles(y)(x)
           if (pacman.tileIndexes == (x, y)) assert(oldTile.eatable.isDefined && newTile.eatable.isEmpty) else assert(oldTile == newTile)
