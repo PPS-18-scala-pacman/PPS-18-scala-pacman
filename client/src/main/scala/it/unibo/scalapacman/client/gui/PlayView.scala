@@ -168,13 +168,12 @@ class PlayView(implicit controller: Controller, viewChanger: ViewChanger) extend
 
   private def doPrint(map: PacmanMap, doc: StyledDocument): Unit = map foreach { row =>
     row foreach {
-      case elem@ElementsCode.GHOST_CODE => insertInDocument(doc, elem, doc.getStyle(GHOST_SN))
       case elem@ElementsCode.WALL_CODE => insertInDocument(doc, elem, doc.getStyle(WALL_SN))
       case elem@(ElementsCode.DOT_CODE | ElementsCode.ENERGIZER_DOT_CODE) => insertInDocument(doc, elem, doc.getStyle(DOT_SN))
       case elem@ElementsCode.EMPTY_SPACE_CODE => insertInDocument(doc, elem, null) // scalastyle:ignore null
       case elem: String if ElementsCode.matchPacman(elem) => insertInDocument(doc, elem, doc.getStyle(PACMAN_SN))
+      case elem: String if elem.length == 2 && ElementsCode.matchGhost(elem.substring(0, 1)) => insertInDocument(doc, elem, doc.getStyle(GHOST_SN))
       case elem: String if ElementsCode.matchFruit(elem) => insertInDocument(doc, elem, doc.getStyle(DOT_SN))
-      case _ => insertInDocument(doc, ElementsCode.EMPTY_SPACE_CODE, null) // scalastyle:ignore null
     }
     // A fine riga aggiunge un newline per disegnare correttamente la mappa
     insertInDocument(doc, "\n", null)// scalastyle:ignore null
