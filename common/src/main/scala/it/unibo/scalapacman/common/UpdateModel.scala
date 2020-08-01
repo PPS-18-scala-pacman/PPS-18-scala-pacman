@@ -2,6 +2,7 @@ package it.unibo.scalapacman.common
 
 import it.unibo.scalapacman.lib.math.Point2D
 import it.unibo.scalapacman.lib.model.GhostType.{BLINKY, CLYDE, INKY, PINKY}
+import it.unibo.scalapacman.lib.model.Map.MapIndexes
 import it.unibo.scalapacman.lib.model.{GameState, Ghost, Pacman}
 
 
@@ -17,8 +18,8 @@ case class GameEntity(id:GameCharacterHolder, position:Point2D, speed: Double, i
     if(id.gameChar == GameCharacter.PACMAN) Some(Pacman(position, speed, dir.direction, isDead)) else None
 }
 
-case class Pellet(pelletType:DotHolder, pos:Point2D)
-case class Item(id:FruitHolder, pos:Point2D)
+case class Pellet(pelletType:DotHolder, pos:MapIndexes)
+case class Item(id:FruitHolder, pos:MapIndexes)
 
 case class UpdateModel(
                         gameEntities: Set[GameEntity],
