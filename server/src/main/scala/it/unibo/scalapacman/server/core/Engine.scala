@@ -35,11 +35,11 @@ object Engine {
   sealed trait UpdateCommand
   case class UpdateMsg(model: UpdateModel) extends UpdateCommand
 
-  private case class Setup(gameId: String, context: ActorContext[EngineCommand], gameRefreshRate: FiniteDuration)
+  private case class Setup(gameId: String, context: ActorContext[EngineCommand], gameRefreshRate: FiniteDuration, level: Int)
 
-  def apply(gameId: String): Behavior[EngineCommand] =
+  def apply(gameId: String, level: Int): Behavior[EngineCommand] =
     Behaviors.setup { context =>
-      new Engine(Setup(gameId, context, Settings.gameRefreshRate)).idleRoutine(StarterModel())
+      new Engine(Setup(gameId, context, Settings.gameRefreshRate, level)).idleRoutine(StarterModel())
     }
 }
 

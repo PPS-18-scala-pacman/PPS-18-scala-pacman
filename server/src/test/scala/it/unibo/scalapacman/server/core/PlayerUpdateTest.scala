@@ -34,9 +34,9 @@ class PlayerUpdateTest extends ScalaTestWithActorTestKit with AnyWordSpecLike {
     testModel = UpdateModel(gameEntities, GameState(score = 2), pellets, fruit)
 
     testModelJSON = "{\"gameEntities\":[{\"id\":{\"gameChar\":\"PACMAN\"},\"position\":{\"x\":1.0,\"y\":2.0},\"speed" +
-      "\":1.0,\"isDead\":false,\"dir\":{\"direction\":\"NORTH\"}},{\"id\":{\"gameChar\":\"PACMAN\"},\"position\":{" +
+      "\":1.0,\"isDead\":false,\"dir\":{\"direction\":\"NORTH\"}},{\"id\":{\"gameChar\":\"BLINKY\"},\"position\":{" +
       "\"x\":3.0,\"y\":4.0},\"speed\":1.0,\"isDead\":false,\"dir\":{\"direction\":\"NORTH\"}},{\"id\":{\"gameChar\"" +
-      ":\"PACMAN\"},\"position\":{\"x\":5.0,\"y\":6.0},\"speed\":1.0,\"isDead\":false,\"dir\":{\"direction\":\"NORTH" +
+      ":\"CLYDE\"},\"position\":{\"x\":5.0,\"y\":6.0},\"speed\":1.0,\"isDead\":false,\"dir\":{\"direction\":\"NORTH" +
       "\"}}],\"state\":{\"score\":2,\"ghostInFear\":false,\"pacmanEmpowered\":false},\"pellets\":[{\"pelletType\":{" +
       "\"dot\":\"SMALL_DOT\"},\"pos\":{\"x\":5.0,\"y\":6.0}},{\"pelletType\":{\"dot\":\"SMALL_DOT\"},\"pos\":{\"x\":" +
       "6.0,\"y\":6.0}},{\"pelletType\":{\"dot\":\"SMALL_DOT\"},\"pos\":{\"x\":7.0,\"y\":6.0}},{\"pelletType\":{\"dot" +

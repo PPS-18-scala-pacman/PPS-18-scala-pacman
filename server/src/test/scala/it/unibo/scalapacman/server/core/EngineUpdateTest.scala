@@ -14,7 +14,7 @@ class EngineUpdateTest extends ScalaTestWithActorTestKit with AnyWordSpecLike {
   private var watcherPlayerProbe: TestProbe[Engine.UpdateCommand] = _
 
   override def beforeAll(): Unit = {
-    engineActor = spawn(Engine(fakeGameId))
+    engineActor = spawn(Engine(fakeGameId, 1))
     watcherPlayerProbe = createTestProbe[Engine.UpdateCommand]()
     val watcherFooProbe = createTestProbe[Engine.UpdateCommand]()
     GhostType.values.foreach(engineActor ! Engine.RegisterGhost(watcherFooProbe.ref, _))
