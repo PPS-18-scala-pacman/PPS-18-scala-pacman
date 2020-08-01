@@ -1,10 +1,11 @@
 package it.unibo.scalapacman.lib.engine
 
+import it.unibo.scalapacman.lib.engine.CircularMovement.{moveFor, moveUntil}
 import it.unibo.scalapacman.lib.math.{Point2D, TileGeography, Vector2D}
-import it.unibo.scalapacman.lib.model.{Character, Eatable, Ghost, Map, Pacman, Tile}
+import it.unibo.scalapacman.lib.model.{Character, Dot, Eatable, Ghost, Map, Pacman, Tile}
 import it.unibo.scalapacman.lib.model.Direction.Direction
 import it.unibo.scalapacman.lib.model.Direction.{EAST, NORTH, SOUTH, WEST}
-import it.unibo.scalapacman.lib.engine.CircularMovement.{moveFor, moveUntil}
+import it.unibo.scalapacman.lib.model.Fruit
 import it.unibo.scalapacman.lib.model.Map.MapIndexes
 import it.unibo.scalapacman.lib.model.Tile.Track
 
@@ -131,5 +132,12 @@ object GameHelpers {
         x <- 0 until map.width;
         eatable <- map.tiles(y)(x).eatable collect { case a: A => a }
       ) yield ((x, y), eatable)
+
+    def dots: Seq[(MapIndexes, Dot.Val)] = map.eatablesToList[Dot.Val]
+
+    def fruit: Option[(MapIndexes, Fruit.Val)] = map.eatablesToList[Fruit.Val] match {
+        case Seq(fruit) => Some(fruit)
+        case Seq() => None
+      }
   }
 }
