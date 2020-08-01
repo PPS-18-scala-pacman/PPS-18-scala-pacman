@@ -2,15 +2,17 @@ package it.unibo.scalapacman.server.core
 
 import akka.actor.typed.scaladsl.{ActorContext, Behaviors}
 import akka.actor.typed.{ActorRef, Behavior}
-import it.unibo.scalapacman.common.{DirectionHolder, DotHolder, FruitHolder, GameCharacter, GameCharacterHolder, GameEntity, Item, Pellet, UpdateModel} // scalastyle:ignore
+import it.unibo.scalapacman.common.{DotHolder, FruitHolder, GameEntity, Item, Pellet, UpdateModel}
 import it.unibo.scalapacman.lib.engine.{GameMovement, GameTick}
 import it.unibo.scalapacman.lib.math.Point2D
+import it.unibo.scalapacman.lib.model.Character
 import it.unibo.scalapacman.lib.model.Direction.Direction
 import it.unibo.scalapacman.lib.model.GhostType.{BLINKY, CLYDE, GhostType, INKY, PINKY}
-import it.unibo.scalapacman.lib.model.{Direction, Dot, Fruit, GameState, Ghost, GhostType, Map, Pacman}
+import it.unibo.scalapacman.lib.model.{Direction, Dot, Fruit, GameObject, GameState, Ghost, GhostType, Map, Pacman}
 import it.unibo.scalapacman.server.core.Engine.{ChangeDirectionCur, ChangeDirectionReq, EngineCommand, Pause, RegisterGhost, RegisterPlayer, RegisterWatcher, Resume, Setup, UpdateCommand, UpdateMsg, WakeUp} // scalastyle:ignore
 import it.unibo.scalapacman.server.model.MoveDirection.MoveDirection
-import it.unibo.scalapacman.server.model.{EngineModel, GameParticipant, MoveDirection, Players, RegisteredParticipant, StarterModel} // scalastyle:ignore
+import it.unibo.scalapacman.server.model.GameParticipant._ // scalastyle:ignore
+import it.unibo.scalapacman.server.model.{EngineModel, GameParticipant, Players, RegisteredParticipant, StarterModel}
 import it.unibo.scalapacman.server.util.Settings
 
 import scala.concurrent.duration.FiniteDuration
@@ -99,11 +101,7 @@ private class Engine(setup: Setup) {
 
     // scalastyle:off magic.number
     //TODO fare trasformatore da model.players a List[GameEntity]
-    val gameEntities: Set[GameEntity] = Set(
-      GameEntity(GameCharacterHolder(GameCharacter.PACMAN), Point2D(1, 2), 1, isDead = false, DirectionHolder(Direction.NORTH)),
-        GameEntity(GameCharacterHolder(GameCharacter.BLINKY), Point2D(3, 4), 1, isDead = false, DirectionHolder(Direction.NORTH)),
-        GameEntity(GameCharacterHolder(GameCharacter.INKY), Point2D(5, 6), 1, isDead = false, DirectionHolder(Direction.NORTH)))
-
+    val gameEntities: Set[GameEntity] = model.players.toSet.map(gameParticipantToGameEntity)
     //TODO creare due metodi nella pacman-lib che data la mappa danno List[Pellet], Option[Fruit]
     val pellets: Set[Pellet] = Set(
       Pellet(DotHolder(Dot.SMALL_DOT), Point2D(5, 6)),
@@ -134,7 +132,7 @@ private class Engine(setup: Setup) {
   }
 
   private def updateWatcher(model: EngineModel): Unit =
-    model.players.toSeq.foreach( _.actRef ! UpdateMsg(elaborateUpdateModel(model)) )
+    model.players.toSet.foreach( _.actRef ! UpdateMsg(elaborateUpdateModel(model)) )
 
   private def updateGame(oldModel: EngineModel) : Behavior[EngineCommand] = {
     setup.context.log.info("updateGame id: " + setup.gameId)
@@ -149,8 +147,8 @@ private class Engine(setup: Setup) {
 
     val characters = pacman.character :: pinky.character :: inky.character :: clyde.character :: blinky.character :: Nil
 
-    val collisions = GameTick.collisions(characters)
-    val state = GameTick.calculateGameState(collisions)
+    implicit val collisions: List[(Character, GameObject)] = GameTick.collisions(characters)
+    val state = GameTick.calculateGameState(GameState(oldModel.state.score))
 
     //TODO aggiunrere calcolo personaggi vivi, update della mappa, calcolo delle velocità
     // da valutare: calcolo direzioni fantasmi(per energizer pacman)
@@ -180,13 +178,6 @@ private class Engine(setup: Setup) {
   private def clearDesiredDir(model:EngineModel, actRef:ActorRef[UpdateCommand]): Behavior[EngineCommand] =
     updateDesDir(model, actRef, None)
 
-  private def changeDesiredDir(model:EngineModel, actRef:ActorRef[UpdateCommand], move:MoveDirection): Behavior[EngineCommand] = {
-    val dir: Direction = move match {
-      case MoveDirection.UP     => Direction.NORTH
-      case MoveDirection.DOWN   => Direction.SOUTH
-      case MoveDirection.LEFT   => Direction.WEST
-      case MoveDirection.RIGHT  => Direction.EAST
-    }
-    updateDesDir(model, actRef, Some(dir))
-  }
+  private def changeDesiredDir(model:EngineModel, actRef:ActorRef[UpdateCommand], move:MoveDirection): Behavior[EngineCommand] =
+    updateDesDir(model, actRef, Some(move))
 }

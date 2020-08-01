@@ -24,7 +24,7 @@ object GhostAI {
   }
 
   def desiredDirection(ghost: Ghost, pacman: Pacman)(implicit engine: PrologEngine, map: Map): Direction =
-    Option(shortestPath(ghost, pacman.tileIndexes).take(2)) filter(_.size == 2) map directionByPath getOrElse ghost.direction
+    Option(shortestPath(ghost, pacman.tileIndexes)(engine, map).take(2)) filter(_.size == 2) map directionByPath getOrElse ghost.direction
 
   private def directionByPath(path: List[(Int, Int)]): Direction = path match {
     case (x, _) :: (x1, _) :: Nil if x < x1 => Direction.EAST
