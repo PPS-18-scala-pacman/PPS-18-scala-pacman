@@ -18,12 +18,12 @@ case class GameEntity(id:GameCharacterHolder, position:Point2D, speed: Double, i
     if(id.gameChar == GameCharacter.PACMAN) Some(Pacman(position, speed, dir.direction, isDead)) else None
 }
 
-case class Pellet(pelletType:DotHolder, pos:Point2D)
+case class Pellet(pelletType:DotHolder, pos:MapIndexes)
 object Pellet {
   implicit def rawToPellet(raw: (MapIndexes, Dot.Val)):Pellet = Pellet(DotHolder(raw._2), Point2D(raw._1._1, raw._1._2))
 }
 
-case class Item(id:FruitHolder, pos:Point2D)
+case class Item(id:FruitHolder, pos:MapIndexes)
 object Item {
   implicit def rawToItem(raw: (MapIndexes, Fruit.Val)):Item = Item(FruitHolder(raw._2), Point2D(raw._1._1, raw._1._2))
 }
