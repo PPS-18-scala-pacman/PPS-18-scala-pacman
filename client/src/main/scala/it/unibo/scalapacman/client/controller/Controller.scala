@@ -6,7 +6,8 @@ import Action.{END_GAME, EXIT_APP, MOVEMENT, RESET_KEY_MAP, SAVE_KEY_MAP, START_
 import it.unibo.scalapacman.client.event.{GameUpdate, PacmanPublisher, PacmanSubscriber}
 import it.unibo.scalapacman.client.input.JavaKeyBinding.DefaultJavaKeyBinding
 import it.unibo.scalapacman.client.input.KeyMap
-import it.unibo.scalapacman.client.map.MapBuilder
+import it.unibo.scalapacman.client.map.PacmanMap
+import it.unibo.scalapacman.client.util.ConversionUtils
 import it.unibo.scalapacman.common.MoveCommandType.MoveCommandType
 import it.unibo.scalapacman.common.{Command, CommandType, CommandTypeHolder, MoveCommandTypeHolder}
 
@@ -32,6 +33,8 @@ trait Controller {
    * @return  l'ultima azione dell'utente avvenuta in partita
    */
   def getUserAction: Option[MoveCommandType]
+
+  // TODO funzione pubblica per ottenere/aggiornare il modello
 }
 
 object Controller {
@@ -47,6 +50,7 @@ private case class ControllerImpl(pacmanRestClient: PacmanRestClient) extends Co
    * Viene utilizzata in OptionsView per inizializzare i campi di testo.
    */
   val _defaultKeyMap: KeyMap = KeyMap(DefaultJavaKeyBinding.UP, DefaultJavaKeyBinding.DOWN, DefaultJavaKeyBinding.RIGHT, DefaultJavaKeyBinding.LEFT)
+  // TODO keyMap, gameId e prevUserAction in un oggetto che definisce il Model dell'applicazione, insieme a Map/Ghosts/Pacman?
   var _keyMap: KeyMap = _defaultKeyMap
   var _gameId: Option[String] = None
   var _prevUserAction: Option[MoveCommandType] = None
@@ -95,10 +99,15 @@ private case class ControllerImpl(pacmanRestClient: PacmanRestClient) extends Co
     case Some(subscriber) => _publisher.subscribe(subscriber)
   }
 
-  private def handleWebSocketMessage(message: String): Unit = {
-    debug(s"Ricevuto messaggio dal server: $message")
-    // TODO fare conversione da JSON ad oggetto
-    _publisher.notifySubscribers(GameUpdate(MapBuilder.buildClassic()))
+  // TODO: CREARE MODELLO CHE MANTIENE LA MAPPA DI GIOELE AGGIORNATA E I MODELLI DEI FANTASMI E DI PACMAN
+  /* TODO:
+      Primo step -> Aggiornare il mio modello con quello ricevuto dal server (utilizo funzioni in common che aggiornano la mappa coi pellet e i frutti)
+      Secondo step -> Passare le informazioni del model MIO al Subscriber che si dovrà preoccupare di convertire il model in List[List[String]]
+      Bonus step -> Chi usa il subscriber dovrà convertire il modello, da solo nì, se usa una classe esterna tanto meglio!! (consigliatissimo)
+  */
+  private def handleWebSocketMessage(message: String): Unit = ConversionUtils.convertServerMsg(message) match {
+    case None => error("Aggiornamento dati dal server non valido")
+    case Some(model) => debug(model); _publisher.notifySubscribers(GameUpdate(PacmanMap.createMap(model), model.state.score))
   }
 
   private def evalMovement(newUserAction: Option[MoveCommandType]): Unit = (newUserAction, _prevUserAction) match {
