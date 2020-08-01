@@ -1,7 +1,7 @@
 package it.unibo.scalapacman.lib.engine
 
 import org.scalatest.wordspec.AnyWordSpec
-import it.unibo.scalapacman.lib.model.{Direction, Ghost, Map, Pacman, Tile}
+import it.unibo.scalapacman.lib.model.{Direction, Dot, Fruit, Ghost, Map, Pacman, Tile}
 import it.unibo.scalapacman.lib.engine.GameHelpers.{CharacterHelper, MapHelper}
 import it.unibo.scalapacman.lib.math.{Point2D, TileGeography, Vector2D}
 
@@ -11,10 +11,10 @@ class GameHelpersTest extends AnyWordSpec {
   val TIME_MS = 1
   implicit val MAP: Map = Map(
     List(
-      List.fill(MAP_WIDTH)(Tile.Track(None)),
-      List.fill(MAP_WIDTH)(Tile.Wall()),
-      List.fill(MAP_WIDTH)(Tile.Track(None)),
-      List.fill(MAP_WIDTH)(Tile.Track(None))
+      List.tabulate(MAP_WIDTH)(Map.emptyTrack),
+      List.tabulate(MAP_WIDTH)(Map.wall),
+      List.tabulate(MAP_WIDTH)(Map.smallDot),
+      List.tabulate(MAP_WIDTH)(Map.emptyTrack)
     )
   )
   val PACMAN: Pacman = Pacman(Point2D(0, 0), 1.0, Direction.EAST)
@@ -82,6 +82,16 @@ class GameHelpersTest extends AnyWordSpec {
         assertResult((0, 0))(MAP.tileIndexes((MAP_WIDTH, 0)))
         assertResult((0, 0))(MAP.tileIndexes((0, MAP_HEIGHT)))
       }
+      "empty a tile" in {
+        val map = Map((Tile.Track(Some(Dot.SMALL_DOT)) :: Nil) :: Nil)
+        assert(map.empty((0, 0)).tile((0, 0)).eatable.isEmpty)
+        val map2 = Map((Tile.Track(Some(Fruit.GALAXIAN)) :: Nil) :: Nil)
+        assert(map2.empty((0, 0)).tile((0, 0)).eatable.isEmpty)
+        val map3 = Map((Tile.Track(None) :: Nil) :: Nil)
+        assert(map3.empty((0, 0)).tile((0, 0)).eatable.isEmpty)
+        val map4 = Map((Tile.Track(Some(Fruit.GALAXIAN)) :: Tile.Track(Some(Dot.ENERGIZER_DOT)) :: Nil) :: Nil)
+        assert(map4.empty((1, 0)).tile((1, 0)).eatable.isEmpty)
+      }
     }
     "contains a character helper" which {
       "move the character if possible" in {
@@ -117,7 +127,7 @@ class GameHelpersTest extends AnyWordSpec {
         )
       }
       "provide current tile" in {
-        assertResult(MAP.tiles(2).head)(PACMAN.tile)
+        assertResult(MAP.tiles(2).head)(PACMAN.copy(position = Point2D(0, TileGeography.SIZE * 2)).tile)
         assertResult(MAP.tiles.head.head)(PACMAN.copy(position = Point2D(MAP_WIDTH * TileGeography.SIZE, MAP_HEIGHT * TileGeography.SIZE)).tile)
         assertResult(MAP.tiles(1)(1))(PACMAN.copy(position = Point2D((MAP_WIDTH + 1) * TileGeography.SIZE, (MAP_HEIGHT + 1) * TileGeography.SIZE)).tile)
       }
@@ -163,6 +173,14 @@ class GameHelpersTest extends AnyWordSpec {
         assertResult(MAP.tiles.last.last)(
           PACMAN.copy(position = Point2D(MAP_WIDTH * TileGeography.SIZE, MAP_HEIGHT * TileGeography.SIZE)).nextTile(Direction.NORTHWEST)
         )
+      }
+      "eat the eatable in the current tile" in {
+        val pacman1 = PACMAN.copy(position = Point2D(0, TileGeography.SIZE * 3))
+        val map1 = pacman1.eat
+        assertResult(None)(map1.tile(pacman1.tileIndexes).eatable)
+        val pacman2 = PACMAN.copy(position = Point2D(0, TileGeography.SIZE * 2))
+        val map2 = pacman2.eat
+        assertResult(None)(map2.tile(pacman2.tileIndexes).eatable)
       }
     }
   }

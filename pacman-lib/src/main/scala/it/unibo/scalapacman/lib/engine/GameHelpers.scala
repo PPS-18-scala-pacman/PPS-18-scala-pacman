@@ -5,6 +5,7 @@ import it.unibo.scalapacman.lib.model.{Character, Ghost, Map, Pacman, Tile}
 import it.unibo.scalapacman.lib.model.Direction.Direction
 import it.unibo.scalapacman.lib.model.Direction.{EAST, NORTH, SOUTH, WEST}
 import it.unibo.scalapacman.lib.engine.CircularMovement.{moveFor, moveUntil}
+import it.unibo.scalapacman.lib.model.Tile.Track
 
 object GameHelpers {
 
@@ -66,6 +67,8 @@ object GameHelpers {
     def nextTile(direction: Direction): Tile = map.tile(character.position, Some(direction).map(CharacterMovement.vector))
 
     def tileIndexes: (Int, Int) = map.tileIndexes(character.position)
+
+    def eat: Map = map.empty(character.tileIndexes)
   }
 
   implicit class MapHelper(map: Map) {
@@ -98,6 +101,18 @@ object GameHelpers {
     private def pacmanEffect(x: Int, max: Int): Int = x match {
       case x: Int if x >= 0 => x % max
       case x: Int => pacmanEffect(x + max, max)
+    }
+
+    def empty(indexes: (Int, Int)): Map = map.copy(
+      tiles = map.tiles.updated(indexes._2, emptyRow(indexes._1, map.tiles(indexes._2)))
+    )
+
+    private def emptyRow(index: Int, row: List[Tile]): List[Tile] =
+      row.updated(index, emptyTile(row(index)))
+
+    private def emptyTile(tile: Tile): Tile = tile match {
+      case Track(Some(_)) => Track(None)
+      case t: Tile => t
     }
   }
 }
