@@ -106,12 +106,12 @@ private class Engine(setup: Setup) {
 
     //TODO creare due metodi nella pacman-lib che data la mappa danno List[Pellet], Option[Fruit]
     val pellets: Set[Pellet] = Set(
-      Pellet(DotHolder(Dot.SMALL_DOT), Point2D(5, 6)),
-        Pellet(DotHolder(Dot.SMALL_DOT), Point2D(6, 6)),
-        Pellet(DotHolder(Dot.SMALL_DOT), Point2D(7, 6)),
-        Pellet(DotHolder(Dot.SMALL_DOT), Point2D(8, 6)))
+      Pellet(DotHolder(Dot.SMALL_DOT), (5, 6)),
+        Pellet(DotHolder(Dot.SMALL_DOT), (6, 6)),
+        Pellet(DotHolder(Dot.SMALL_DOT), (7, 6)),
+        Pellet(DotHolder(Dot.SMALL_DOT), (8, 6)))
 
-    val fruit = Some(Item(FruitHolder(Fruit.APPLE), Point2D(9, 9)))
+    val fruit = Some(Item(FruitHolder(Fruit.APPLE), (9, 9)))
     // scalastyle:on magic.number
 
     UpdateModel(gameEntities, model.state, pellets, fruit)
