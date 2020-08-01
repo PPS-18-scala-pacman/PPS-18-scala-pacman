@@ -10,17 +10,17 @@ import org.scalatest.wordspec.AnyWordSpecLike
 
 class PlayerUpdateTest extends ScalaTestWithActorTestKit with AnyWordSpecLike {
 
-  val fakeGameId = "fakeCreateGameId"
+  private val fakeGameId = "fakeCreateGameId"
 
-  var testModel: UpdateModel = _
-  var testModelJSON: String = _
+  private var testModel: UpdateModel = _
+  private var testModelJSON: String = _
 
   override def beforeAll(): Unit = {
     // scalastyle:off magic.number
     val gameEntities:Set[GameEntity] = Set(
       GameEntity(GameCharacterHolder(GameCharacter.PACMAN), Point2D(1,2), 1, isDead=false, DirectionHolder(Direction.NORTH)),
-        GameEntity(GameCharacterHolder(GameCharacter.PACMAN), Point2D(3,4), 1, isDead=false, DirectionHolder(Direction.NORTH)),
-        GameEntity(GameCharacterHolder(GameCharacter.PACMAN), Point2D(5,6), 1, isDead=false, DirectionHolder(Direction.NORTH)))
+        GameEntity(GameCharacterHolder(GameCharacter.BLINKY), Point2D(3,4), 1, isDead=false, DirectionHolder(Direction.NORTH)),
+        GameEntity(GameCharacterHolder(GameCharacter.CLYDE), Point2D(5,6), 1, isDead=false, DirectionHolder(Direction.NORTH)))
 
     val pellets: Set[Pellet] = Set(
       Pellet(DotHolder(Dot.SMALL_DOT), Point2D(5,6)),

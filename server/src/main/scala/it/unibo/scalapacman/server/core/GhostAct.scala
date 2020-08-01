@@ -41,7 +41,7 @@ private class GhostAct(setup: Setup) {
   private def handleEngineUpdate(model: UpdateModel, myModel: Model): Behavior[Engine.UpdateCommand] ={
     setup.context.log.info("Ricevuto update: " + model)
 
-    val self = model.gameEntities.find(_.id.gameChar == setup.ghostType)
+    val self = model.gameEntities.find(_.id.gameChar == GameCharacter.ghostTypeToGameCharacter(setup.ghostType))
     val pacman = model.gameEntities.find(_.id.gameChar == GameCharacter.PACMAN)
     val gameState = model.state
 
@@ -63,7 +63,7 @@ private class GhostAct(setup: Setup) {
         case Direction.WEST => MoveDirection.LEFT
       }
 
-      if(!myModel.desMove.contains(move))  setup.engine ! ChangeDirectionReq(setup.context.self, move)
+      if(!myModel.desMove.contains(move)) setup.engine ! ChangeDirectionReq(setup.context.self, move)
 
       coreRoutine(Model(updatedMap, gameState, Some(move)))
     } else {
