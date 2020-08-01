@@ -5,6 +5,7 @@ import it.unibo.scalapacman.lib.model.{Character, Eatable, Ghost, Map, Pacman, T
 import it.unibo.scalapacman.lib.model.Direction.Direction
 import it.unibo.scalapacman.lib.model.Direction.{EAST, NORTH, SOUTH, WEST}
 import it.unibo.scalapacman.lib.engine.CircularMovement.{moveFor, moveUntil}
+import it.unibo.scalapacman.lib.model.Map.MapIndexes
 import it.unibo.scalapacman.lib.model.Tile.Track
 
 import scala.reflect.ClassTag
@@ -68,7 +69,7 @@ object GameHelpers {
 
     def nextTile(direction: Direction): Tile = map.tile(character.position, Some(direction).map(CharacterMovement.vector))
 
-    def tileIndexes: (Int, Int) = map.tileIndexes(character.position)
+    def tileIndexes: MapIndexes = map.tileIndexes(character.position)
 
     def eat: Map = map.empty(character.tileIndexes)
   }
@@ -82,14 +83,14 @@ object GameHelpers {
     def tile(position: Point2D, watchOut: Option[Vector2D] = None): Tile =
       map.tiles(pacmanEffect(tileIndex(position.y, watchOut.map(_.y)), height))(pacmanEffect(tileIndex(position.x, watchOut.map(_.x)), width))
 
-    def tile(indexes: (Int, Int)): Tile = map.tiles(pacmanEffect(indexes._2, height))(pacmanEffect(indexes._1, width))
+    def tile(indexes: MapIndexes): Tile = map.tiles(pacmanEffect(indexes._2, height))(pacmanEffect(indexes._1, width))
 
-    def tileIndexes(position: Point2D): (Int, Int) = (
+    def tileIndexes(position: Point2D): MapIndexes = (
       pacmanEffect(tileIndex(position.x), width),
       pacmanEffect(tileIndex(position.y), height)
     )
 
-    def tileIndexes(indexes: (Int, Int)): (Int, Int) = (
+    def tileIndexes(indexes: MapIndexes): MapIndexes = (
       pacmanEffect(indexes._1, width),
       pacmanEffect(indexes._2, height)
     )
@@ -99,7 +100,7 @@ object GameHelpers {
       pacmanEffect(tileIndex(position.y, watchOut.map(_.y)), height) * TileGeography.SIZE
     )
 
-    def tileOrigin(indexes: (Int, Int)): Point2D = Point2D(
+    def tileOrigin(indexes: MapIndexes): Point2D = Point2D(
       pacmanEffect(indexes._1, width) * TileGeography.SIZE,
       pacmanEffect(indexes._2, height) * TileGeography.SIZE
     )
@@ -110,9 +111,9 @@ object GameHelpers {
       case x: Int => pacmanEffect(x + max, max)
     }
 
-    def empty(indexes: (Int, Int)): Map = putEatable(indexes, None)
+    def empty(indexes: MapIndexes): Map = putEatable(indexes, None)
 
-    def putEatable(indexes: (Int, Int), option: Option[Eatable]): Map = map.copy(
+    def putEatable(indexes: MapIndexes, option: Option[Eatable]): Map = map.copy(
       tiles = map.tiles.updated(indexes._2, putEatableOnRow(indexes._1, map.tiles(indexes._2), option))
     )
 
@@ -124,7 +125,7 @@ object GameHelpers {
       case t: Tile => t
     }
 
-    def eatablesToList[A <: Eatable : ClassTag]: Seq[((Int, Int), A)] =
+    def eatablesToList[A <: Eatable : ClassTag]: Seq[(MapIndexes, A)] =
       for (
         y <- 0 until map.height;
         x <- 0 until map.width;
