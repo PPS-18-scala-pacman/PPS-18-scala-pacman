@@ -2,13 +2,16 @@ package it.unibo.scalapacman.server.core
 
 import akka.actor.typed.scaladsl.{ActorContext, Behaviors}
 import akka.actor.typed.{ActorRef, Behavior}
-import it.unibo.scalapacman.common.{DotHolder, FruitHolder, GameEntity, Item, Pellet, UpdateModel}
+import it.unibo.scalapacman.common.{GameEntity, Item, Pellet, UpdateModel}
+import it.unibo.scalapacman.common.Pellet._ // scalastyle:ignore
+import it.unibo.scalapacman.common.Item._ // scalastyle:ignore
 import it.unibo.scalapacman.lib.engine.{GameMovement, GameTick}
+import it.unibo.scalapacman.lib.engine.GameHelpers.MapHelper
 import it.unibo.scalapacman.lib.math.Point2D
 import it.unibo.scalapacman.lib.model.Character
 import it.unibo.scalapacman.lib.model.Direction.Direction
 import it.unibo.scalapacman.lib.model.GhostType.{BLINKY, CLYDE, GhostType, INKY, PINKY}
-import it.unibo.scalapacman.lib.model.{Direction, Dot, Fruit, GameObject, GameState, Ghost, GhostType, Map, Pacman}
+import it.unibo.scalapacman.lib.model.{Direction, GameObject, GameState, Ghost, GhostType, Map, Pacman}
 import it.unibo.scalapacman.server.core.Engine.{ChangeDirectionCur, ChangeDirectionReq, EngineCommand, Pause, RegisterGhost, RegisterPlayer, RegisterWatcher, Resume, Setup, UpdateCommand, UpdateMsg, WakeUp} // scalastyle:ignore
 import it.unibo.scalapacman.server.model.MoveDirection.MoveDirection
 import it.unibo.scalapacman.server.model.GameParticipant._ // scalastyle:ignore
@@ -97,20 +100,10 @@ private class Engine(setup: Setup) {
     }
 
   private def elaborateUpdateModel(model: EngineModel): UpdateModel = {
-    //FIXME gestire creazione modello da inviare
 
-    // scalastyle:off magic.number
-    //TODO fare trasformatore da model.players a List[GameEntity]
     val gameEntities: Set[GameEntity] = model.players.toSet.map(gameParticipantToGameEntity)
-    //TODO creare due metodi nella pacman-lib che data la mappa danno List[Pellet], Option[Fruit]
-    val pellets: Set[Pellet] = Set(
-      Pellet(DotHolder(Dot.SMALL_DOT), Point2D(5, 6)),
-        Pellet(DotHolder(Dot.SMALL_DOT), Point2D(6, 6)),
-        Pellet(DotHolder(Dot.SMALL_DOT), Point2D(7, 6)),
-        Pellet(DotHolder(Dot.SMALL_DOT), Point2D(8, 6)))
-
-    val fruit = Some(Item(FruitHolder(Fruit.APPLE), Point2D(9, 9)))
-    // scalastyle:on magic.number
+    val pellets: Set[Pellet]          = model.map.dots.map(rawToPellet).toSet
+    val fruit: Option[Item]           = model.map.fruit.map(rawToItem)
 
     UpdateModel(gameEntities, model.state, pellets, fruit)
   }
@@ -150,10 +143,11 @@ private class Engine(setup: Setup) {
     implicit val collisions: List[(Character, GameObject)] = GameTick.collisions(characters)
     val state = GameTick.calculateGameState(GameState(oldModel.state.score))
 
-    //TODO aggiunrere calcolo personaggi vivi, update della mappa, calcolo delle velocità
+    //TODO aggiunrere calcolo personaggi vivi, calcolo delle velocità
     // da valutare: calcolo direzioni fantasmi(per energizer pacman)
 
-    val model: EngineModel = oldModel.copy(players = players, state = state)
+    val newMap = GameTick.calculateMap(map)
+    val model: EngineModel = EngineModel(players, newMap, state)
     updateWatcher(model)
     mainRoutine(model)
   }
