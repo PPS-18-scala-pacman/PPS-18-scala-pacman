@@ -11,6 +11,7 @@ import it.unibo.scalapacman.lib.model.Tile.{GhostSpawn, Track, TrackSafe, TrackT
 case class Map(tiles: List[List[it.unibo.scalapacman.lib.model.Tile]])
 
 case object Map {
+  type MapIndexes = (Int, Int)
 
   def emptyTrack(f: Int = 0): Track = Track(None)
 

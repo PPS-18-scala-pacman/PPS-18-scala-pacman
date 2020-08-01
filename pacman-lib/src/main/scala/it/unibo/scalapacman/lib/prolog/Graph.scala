@@ -3,6 +3,7 @@ package it.unibo.scalapacman.lib.prolog
 import alice.tuprolog.{Struct, Term, Int => PrologInt}
 import it.unibo.scalapacman.lib.model.{Character, Map}
 import it.unibo.scalapacman.lib.engine.GameHelpers.MapHelper
+import it.unibo.scalapacman.lib.model.Map.MapIndexes
 
 case class Graph(nodes: List[GraphNode]) extends TermConvertible {
   def toTerm: Term = new Struct(nodes.map(_.toTerm).toArray)
@@ -15,7 +16,7 @@ case class GraphNode(vertex: GraphVertex, neighbourhood: List[GraphArc]) extends
   def toTerm: Term = new Struct("-", vertex.toTerm, new Struct(neighbourhood.map(_.toTerm).toArray))
 }
 
-case class GraphVertex(tileIndexes: (Int, Int)) extends TermConvertible {
+case class GraphVertex(tileIndexes: MapIndexes) extends TermConvertible {
   def toTerm: Term = new Struct("t", new PrologInt(tileIndexes._1), new PrologInt(tileIndexes._2))
 }
 
@@ -31,9 +32,9 @@ object Graph {
     ) yield GraphNode(GraphVertex((x, y)), tileNeighboursArcs((x, y))
     )) toList)
 
-  private def tileNeighboursArcs(pos: (Int, Int))(implicit map: Map): List[GraphArc] = tileNeighbours(pos) map (GraphVertex(_)) map (GraphArc(_))
+  private def tileNeighboursArcs(pos: MapIndexes)(implicit map: Map): List[GraphArc] = tileNeighbours(pos) map (GraphVertex(_)) map (GraphArc(_))
 
-  private def tileNeighbours(tileIndexes: (Int, Int))(implicit map: Map): List[(Int, Int)] =
+  private def tileNeighbours(tileIndexes: MapIndexes)(implicit map: Map): List[MapIndexes] =
     ((1, 0) :: (-1, 0) :: (0, 1) :: (0, -1) :: Nil)
       .map(p => (p._1 + tileIndexes._1, p._2 + tileIndexes._2))
       .map(map.tileIndexes)
