@@ -18,7 +18,7 @@ object PlayView {
 
 class PlayView(implicit controller: Controller, viewChanger: ViewChanger) extends PanelImpl with KeyBinder {
   private val TITLE_LABEL: String = "Play View"
-  private val POINTS_LABEL: String = "Punteggio"
+  private val SCORE_LABEL: String = "Punteggio"
   private val LIVES_LABEL: String = "Vite"
   private val START_GAME_BUTTON_LABEL: String = "Inizia partita"
   private val END_GAME_BUTTON_LABEL: String = "Fine partita"
@@ -33,6 +33,8 @@ class PlayView(implicit controller: Controller, viewChanger: ViewChanger) extend
   private val STARTING_LIVES_COUNT: Int = 3
   private val STARTING_POINTS_COUNT: Int = 0
   private val START_MESSAGE: String = "Per iniziare una nuova partita, cliccare sul pulsante 'Inizia partita'"
+  private val USER_STOP_MESSAGE: String = "Partita interrotta dall'utente"
+  private val GAME_END_MESSAGE: String = "Game Over"
 
   /* TextPane constants */
   private val FONT_PATH = "font/unifont/unifont.ttf"
@@ -41,13 +43,16 @@ class PlayView(implicit controller: Controller, viewChanger: ViewChanger) extend
   private val PLAY_BACKGROUND_COLOR: Color = Color.DARK_GRAY
   private val PACMAN_SN = "pacman"
   private val PACMAN_COLOR: Color = Color.YELLOW
-  private val DOT_SN = "pellet"
+  private val GHOST_SN = "ghost"
+  private val GHOST_COLOR: Color = Color.RED
+  private val DOT_SN = "dot"
   private val DOT_COLOR: Color = Color.WHITE
   private val WALL_SN = "wall"
   private val WALL_COLOR: Color = Color.BLUE
 
   private val elementStyles: List[ElementStyle] =
-    ElementStyle(PACMAN_SN, PACMAN_COLOR) :: ElementStyle(DOT_SN, DOT_COLOR) :: ElementStyle(WALL_SN, WALL_COLOR) :: Nil
+    ElementStyle(PACMAN_SN, PACMAN_COLOR) :: ElementStyle(DOT_SN, DOT_COLOR) ::
+      ElementStyle(GHOST_SN, GHOST_COLOR) :: ElementStyle(WALL_SN, WALL_COLOR) :: Nil
 
   // Stile di default, root degli stili personalizzati che andremo ad aggiungere
   private val default: Style = StyleContext.getDefaultStyleContext.getStyle(StyleContext.DEFAULT_STYLE)
@@ -56,11 +61,11 @@ class PlayView(implicit controller: Controller, viewChanger: ViewChanger) extend
   private val IFW = JComponent.WHEN_IN_FOCUSED_WINDOW
 
   private val livesCount: JLabel = createLabel(STARTING_LIVES_COUNT.toString)
-  private val pointsCount: JLabel = createLabel(STARTING_POINTS_COUNT.toString)
+  private val scoreCount: JLabel = createLabel(STARTING_POINTS_COUNT.toString)
 
   private val textPane: JTextPane = initTextPane()
   private val placeholderLabel: JLabel = createTitleLabel(TITLE_LABEL)
-  private val pointsLabel: JLabel = createLabel(POINTS_LABEL)
+  private val scoreLabel: JLabel = createLabel(SCORE_LABEL)
   private val livesLabel: JLabel = createLabel(LIVES_LABEL)
   private val startGameButton: JButton = createButton(START_GAME_BUTTON_LABEL)
   private val endGameButton: JButton = createButton(END_GAME_BUTTON_LABEL)
@@ -72,27 +77,29 @@ class PlayView(implicit controller: Controller, viewChanger: ViewChanger) extend
   controller.handleAction(SUBSCRIBE_TO_GAME_UPDATES, Some(PacmanSubscriber(handlePacmanEvent)))
 
   placeholderLabel setHorizontalAlignment SwingConstants.CENTER
-  pointsLabel setHorizontalAlignment SwingConstants.CENTER
+  scoreLabel setHorizontalAlignment SwingConstants.CENTER
   livesLabel setHorizontalAlignment SwingConstants.CENTER
 
-  pointsCount setHorizontalAlignment SwingConstants.CENTER
+  scoreCount setHorizontalAlignment SwingConstants.CENTER
   livesCount setHorizontalAlignment SwingConstants.CENTER
 
-  pointsLabel setFont new Font(MAIN_FONT_NAME, Font.BOLD, MAIN_LABELS_FONT)
+  scoreLabel setFont new Font(MAIN_FONT_NAME, Font.BOLD, MAIN_LABELS_FONT)
   livesLabel setFont new Font(MAIN_FONT_NAME, Font.BOLD, MAIN_LABELS_FONT)
 
-  pointsCount setFont new Font(MAIN_FONT_NAME, Font.BOLD, SUB_LABELS_FONT)
+  scoreCount setFont new Font(MAIN_FONT_NAME, Font.BOLD, SUB_LABELS_FONT)
   livesCount setFont new Font(MAIN_FONT_NAME, Font.BOLD, SUB_LABELS_FONT)
 
   startGameButton addActionListener (_ => controller.handleAction(START_GAME, None))
   endGameButton addActionListener (_ => {
-    textPane.setText("Partita interrotta dall'utente")
+    updateMessage(USER_STOP_MESSAGE, textPane)
     controller.handleAction(END_GAME, None)
     _prevMap = None
   })
   backButton addActionListener (_ => {
     controller.handleAction(END_GAME, None)
     viewChanger.changeView(MENU)
+    updateMessage(START_MESSAGE, textPane)
+    updateScore(0, scoreCount)
   })
 
   private val playPanel: PanelImpl = PanelImpl()
@@ -106,9 +113,9 @@ class PlayView(implicit controller: Controller, viewChanger: ViewChanger) extend
   labelsPanel setLayout new GridLayout(LABELS_LAYOUT_ROWS,LABELS_LAYOUT_COLS)
   labelsPanel setBorder BorderFactory.createEmptyBorder(EMPTY_BORDER_SIZE_Y, EMPTY_BORDER_SIZE_X, EMPTY_BORDER_SIZE_Y, EMPTY_BORDER_SIZE_X)
   labelsPanel add livesLabel
+  labelsPanel add scoreLabel
   labelsPanel add livesCount
-  labelsPanel add pointsLabel
-  labelsPanel add pointsCount
+  labelsPanel add scoreCount
 
   playPanel setLayout new BorderLayout
   playPanel setBorder BorderFactory.createLineBorder(Color.white, PLAY_PANEL_BORDER)
@@ -147,27 +154,35 @@ class PlayView(implicit controller: Controller, viewChanger: ViewChanger) extend
     StyleConstants.setForeground(doc.addStyle(elementStyle.styleName, default), elementStyle.foregroundColor)
   }
 
-  private def printMap(map: PacmanMap, tp: JTextPane): Unit = _prevMap match {
-    case Some(`map`) => // stessa mappa di prima, non faccio nulla
-    case _ =>
-      _prevMap = Some(map)
-      tp.setText("")
-      doPrint(map, tp.getStyledDocument)
+  private def updateScore(score: Int, scoreCount: JLabel): Unit = scoreCount.setText(score.toString)
+
+  private def updateMessage(message: String, textPane: JTextPane): Unit = textPane.setText(message)
+
+  private def printMap(map: PacmanMap, tp: JTextPane): Unit = if (!_prevMap.contains(map)) {
+    _prevMap = Some(map)
+    updateMessage("", tp)
+    doPrint(map, tp.getStyledDocument)
   }
 
   private def doPrint(map: PacmanMap, doc: StyledDocument): Unit = map foreach { row =>
-    row foreach {
-      case elem @ ElementsCode.WALL_CODE => insertInDocument(doc, elem, doc.getStyle(WALL_SN))
-      case elem @ (ElementsCode.DOT_CODE | ElementsCode.ENERGIZED_DOT_CODE) => insertInDocument(doc, elem, doc.getStyle(DOT_SN))
-      case elem @ ElementsCode.EMPTY_SPACE_CODE => insertInDocument(doc, elem, null)// scalastyle:ignore null
-    }
-    // A fine riga aggiunge un newline per disegnare correttamente la mappa
-    insertInDocument(doc, "\n", null)// scalastyle:ignore null
+    row foreach (elem => insertInDocument(doc, elem, retrieveStyle(elem, doc.getStyle)))
+    insertInDocument(doc, "\n", None)
   }
 
-  private def insertInDocument(doc: StyledDocument, text: String, style: Style): Unit = doc.insertString(doc.getLength, text, style)
+  // scalastyle:off cyclomatic.complexity
+  private def retrieveStyle(elem: String, styleGetter: String => Style): Option[Style] = elem match {
+    case _ if ElementsCode.matchDot(elem) || ElementsCode.matchFruit(elem) => Some(styleGetter(DOT_SN))
+    case _ if ElementsCode.matchPacman(elem) => Some(styleGetter(PACMAN_SN))
+    case _ if elem.length == 2 && ElementsCode.matchGhost(elem.substring(0, 1)) => Some(styleGetter(GHOST_SN))
+    case ElementsCode.WALL_CODE => Some(styleGetter(WALL_SN))
+    case ElementsCode.EMPTY_SPACE_CODE => None
+  }
+  // scalastyle:on cyclomatic.complexity
+
+  private def insertInDocument(doc: StyledDocument, text: String, maybeStyle: Option[Style]): Unit =
+    doc.insertString(doc.getLength, text, maybeStyle.orNull)
 
   private def handlePacmanEvent(pe: PacmanEvent): Unit = pe match {
-    case GameUpdate(map) => printMap(map, textPane)
+    case GameUpdate(map, score) => updateScore(score, scoreCount); printMap(map, textPane)
   }
 }
