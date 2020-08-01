@@ -107,17 +107,17 @@ class GameHelpersTest extends AnyWordSpec {
       }
       "provide all the eatables" in {
         val map = Map((Tile.Track(Some(Dot.SMALL_DOT)) :: Nil) :: Nil)
-        assert(map.eatablesToList[Dot.Val] == ((0, 0), Dot.SMALL_DOT) :: Nil)
+        assert(map.eatablesToSeq[Dot.Val] == ((0, 0), Dot.SMALL_DOT) :: Nil)
         val map2 = Map((Tile.Track(Some(Fruit.GALAXIAN)) :: Nil) :: Nil)
-        assert(map2.eatablesToList[Dot.Val].isEmpty)
+        assert(map2.eatablesToSeq[Dot.Val].isEmpty)
         val map3 = Map((Tile.Track(Some(Dot.SMALL_DOT)) :: Nil) :: Nil)
-        assert(map3.eatablesToList[Fruit.Val].isEmpty)
+        assert(map3.eatablesToSeq[Fruit.Val].isEmpty)
         val map4 = Map((Tile.Track(Some(Fruit.GALAXIAN)) :: Nil) :: Nil)
-        assert(map4.eatablesToList[Fruit.Val] == ((0, 0), Fruit.GALAXIAN) :: Nil)
+        assert(map4.eatablesToSeq[Fruit.Val] == ((0, 0), Fruit.GALAXIAN) :: Nil)
         val map5 = Map((Tile.Track(None) :: Nil) :: Nil)
-        assert(map5.eatablesToList[Eatable].isEmpty)
+        assert(map5.eatablesToSeq[Eatable].isEmpty)
         val map6 = Map((Tile.Track(Some(Fruit.GALAXIAN)) :: Tile.Track(Some(Dot.ENERGIZER_DOT)) :: Nil) :: Nil)
-        assert(map6.eatablesToList[Eatable] == ((0, 0), Fruit.GALAXIAN) :: ((1, 0), Dot.ENERGIZER_DOT) :: Nil)
+        assert(map6.eatablesToSeq[Eatable] == ((0, 0), Fruit.GALAXIAN) :: ((1, 0), Dot.ENERGIZER_DOT) :: Nil)
       }
     }
     "contains a character helper" which {

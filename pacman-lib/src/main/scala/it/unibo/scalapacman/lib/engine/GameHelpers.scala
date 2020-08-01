@@ -125,7 +125,7 @@ object GameHelpers {
       case t: Tile => t
     }
 
-    def eatablesToList[A <: Eatable : ClassTag]: Seq[(MapIndexes, A)] =
+    def eatablesToSeq[A <: Eatable : ClassTag]: Seq[(MapIndexes, A)] =
       for (
         y <- 0 until map.height;
         x <- 0 until map.width;
