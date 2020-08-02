@@ -1,7 +1,7 @@
 package it.unibo.scalapacman.lib.ai
 
 import it.unibo.scalapacman.lib.model.{Direction, Ghost, Map, Pacman}
-import it.unibo.scalapacman.lib.ai.GhostAI.engine
+import it.unibo.scalapacman.lib.ai.GhostAI.prologEngine
 import it.unibo.scalapacman.lib.math.{Point2D, TileGeography}
 import it.unibo.scalapacman.lib.model.Map.{emptyTrack, wall}
 import org.scalatest.wordspec.AnyWordSpec

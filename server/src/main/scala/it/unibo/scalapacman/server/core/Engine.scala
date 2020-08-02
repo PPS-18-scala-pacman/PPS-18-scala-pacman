@@ -3,14 +3,19 @@ package it.unibo.scalapacman.server.core
 import akka.actor.typed.scaladsl.{ActorContext, Behaviors}
 import akka.actor.typed.{ActorRef, Behavior}
 import it.unibo.scalapacman.common.{DirectionHolder, DotHolder, FruitHolder, GameCharacter, GameCharacterHolder, GameEntityDTO, FruitDTO, DotDTO, UpdateModelDTO} // scalastyle:ignore
+import it.unibo.scalapacman.common.Pellet._ // scalastyle:ignore
+import it.unibo.scalapacman.common.Item._ // scalastyle:ignore
 import it.unibo.scalapacman.lib.engine.{GameMovement, GameTick}
+import it.unibo.scalapacman.lib.engine.GameHelpers.MapHelper
 import it.unibo.scalapacman.lib.math.Point2D
+import it.unibo.scalapacman.lib.model.Character
 import it.unibo.scalapacman.lib.model.Direction.Direction
 import it.unibo.scalapacman.lib.model.GhostType.{BLINKY, CLYDE, GhostType, INKY, PINKY}
-import it.unibo.scalapacman.lib.model.{Direction, Dot, Fruit, GameState, Ghost, GhostType, Map, Pacman}
+import it.unibo.scalapacman.lib.model.{Direction, GameObject, GameState, Ghost, GhostType, Map, Pacman}
 import it.unibo.scalapacman.server.core.Engine.{ChangeDirectionCur, ChangeDirectionReq, EngineCommand, Pause, RegisterGhost, RegisterPlayer, RegisterWatcher, Resume, Setup, UpdateCommand, UpdateMsg, WakeUp} // scalastyle:ignore
 import it.unibo.scalapacman.server.model.MoveDirection.MoveDirection
-import it.unibo.scalapacman.server.model.{EngineModel, GameParticipant, MoveDirection, Players, RegisteredParticipant, StarterModel} // scalastyle:ignore
+import it.unibo.scalapacman.server.model.GameParticipant._ // scalastyle:ignore
+import it.unibo.scalapacman.server.model.{EngineModel, GameParticipant, Players, RegisteredParticipant, StarterModel}
 import it.unibo.scalapacman.server.util.Settings
 
 import scala.concurrent.duration.FiniteDuration
@@ -33,11 +38,11 @@ object Engine {
   sealed trait UpdateCommand
   case class UpdateMsg(model: UpdateModelDTO) extends UpdateCommand
 
-  private case class Setup(gameId: String, context: ActorContext[EngineCommand], gameRefreshRate: FiniteDuration)
+  private case class Setup(gameId: String, context: ActorContext[EngineCommand], gameRefreshRate: FiniteDuration, level: Int)
 
-  def apply(gameId: String): Behavior[EngineCommand] =
+  def apply(gameId: String, level: Int): Behavior[EngineCommand] =
     Behaviors.setup { context =>
-      new Engine(Setup(gameId, context, Settings.gameRefreshRate)).idleRoutine(StarterModel())
+      new Engine(Setup(gameId, context, Settings.gameRefreshRate, level)).idleRoutine(StarterModel())
     }
 }
 
@@ -95,24 +100,10 @@ private class Engine(setup: Setup) {
     }
 
   private def elaborateUpdateModel(model: EngineModel): UpdateModelDTO = {
-    //FIXME gestire creazione modello da inviare
 
-    // scalastyle:off magic.number
-    //TODO fare trasformatore da model.players a List[GameEntity]
-    val gameEntities: Set[GameEntityDTO] = Set(
-      GameEntityDTO(GameCharacterHolder(GameCharacter.PACMAN), Point2D(1, 2), 1, isDead = false, DirectionHolder(Direction.NORTH)),
-        GameEntityDTO(GameCharacterHolder(GameCharacter.BLINKY), Point2D(3, 4), 1, isDead = false, DirectionHolder(Direction.NORTH)),
-        GameEntityDTO(GameCharacterHolder(GameCharacter.INKY), Point2D(5, 6), 1, isDead = false, DirectionHolder(Direction.NORTH)))
-
-    //TODO creare due metodi nella pacman-lib che data la mappa danno List[Pellet], Option[Fruit]
-    val dots: Set[DotDTO] = Set(
-      DotDTO(DotHolder(Dot.SMALL_DOT), (5, 6)),
-        DotDTO(DotHolder(Dot.SMALL_DOT), (6, 6)),
-        DotDTO(DotHolder(Dot.SMALL_DOT), (7, 6)),
-        DotDTO(DotHolder(Dot.SMALL_DOT), (8, 6)))
-
-    val fruit = Some(FruitDTO(FruitHolder(Fruit.APPLE), (9, 9)))
-    // scalastyle:on magic.number
+    val gameEntities: Set[GameEntityDTO] = model.players.toSet.map(gameParticipantToGameEntity)
+    val dots: Set[DotDTO]                = model.map.dots.map(rawToPellet).toSet
+    val fruit: Option[FruitDTO]          = model.map.fruit.map(rawToItem)
 
     UpdateModelDTO(gameEntities, model.state, dots, fruit)
   }
@@ -134,7 +125,7 @@ private class Engine(setup: Setup) {
   }
 
   private def updateWatcher(model: EngineModel): Unit =
-    model.players.toSeq.foreach( _.actRef ! UpdateMsg(elaborateUpdateModel(model)) )
+    model.players.toSet.foreach( _.actRef ! UpdateMsg(elaborateUpdateModel(model)) )
 
   private def updateGame(oldModel: EngineModel) : Behavior[EngineCommand] = {
     setup.context.log.info("updateGame id: " + setup.gameId)
@@ -149,13 +140,14 @@ private class Engine(setup: Setup) {
 
     val characters = pacman.character :: pinky.character :: inky.character :: clyde.character :: blinky.character :: Nil
 
-    val collisions = GameTick.collisions(characters)
-    val state = GameTick.calculateGameState(collisions)
+    implicit val collisions: List[(Character, GameObject)] = GameTick.collisions(characters)
+    val state = GameTick.calculateGameState(GameState(oldModel.state.score))
 
-    //TODO aggiunrere calcolo personaggi vivi, update della mappa, calcolo delle velocità
+    //TODO aggiunrere calcolo personaggi vivi, calcolo delle velocità
     // da valutare: calcolo direzioni fantasmi(per energizer pacman)
 
-    val model: EngineModel = oldModel.copy(players = players, state = state)
+    val newMap = GameTick.calculateMap(map)
+    val model: EngineModel = EngineModel(players, newMap, state)
     updateWatcher(model)
     mainRoutine(model)
   }
@@ -180,13 +172,6 @@ private class Engine(setup: Setup) {
   private def clearDesiredDir(model:EngineModel, actRef:ActorRef[UpdateCommand]): Behavior[EngineCommand] =
     updateDesDir(model, actRef, None)
 
-  private def changeDesiredDir(model:EngineModel, actRef:ActorRef[UpdateCommand], move:MoveDirection): Behavior[EngineCommand] = {
-    val dir: Direction = move match {
-      case MoveDirection.UP     => Direction.NORTH
-      case MoveDirection.DOWN   => Direction.SOUTH
-      case MoveDirection.LEFT   => Direction.WEST
-      case MoveDirection.RIGHT  => Direction.EAST
-    }
-    updateDesDir(model, actRef, Some(dir))
-  }
+  private def changeDesiredDir(model:EngineModel, actRef:ActorRef[UpdateCommand], move:MoveDirection): Behavior[EngineCommand] =
+    updateDesDir(model, actRef, Some(move))
 }

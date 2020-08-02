@@ -10,7 +10,7 @@ import org.scalatest.wordspec.AnyWordSpecLike
 
 class PlayerUpdateTest extends ScalaTestWithActorTestKit with AnyWordSpecLike {
 
-  val fakeGameId = "fakeCreateGameId"
+  private val fakeGameId = "fakeCreateGameId"
 
   var testModel: UpdateModelDTO = _
   var testModelJSON: String = _
@@ -19,8 +19,8 @@ class PlayerUpdateTest extends ScalaTestWithActorTestKit with AnyWordSpecLike {
     // scalastyle:off magic.number
     val gameEntities:Set[GameEntityDTO] = Set(
       GameEntityDTO(GameCharacterHolder(GameCharacter.PACMAN), Point2D(1,2), 1, isDead=false, DirectionHolder(Direction.NORTH)),
-        GameEntityDTO(GameCharacterHolder(GameCharacter.PACMAN), Point2D(3,4), 1, isDead=false, DirectionHolder(Direction.NORTH)),
-        GameEntityDTO(GameCharacterHolder(GameCharacter.PACMAN), Point2D(5,6), 1, isDead=false, DirectionHolder(Direction.NORTH)))
+        GameEntityDTO(GameCharacterHolder(GameCharacter.BLINKY), Point2D(3,4), 1, isDead=false, DirectionHolder(Direction.NORTH)),
+        GameEntityDTO(GameCharacterHolder(GameCharacter.CLYDE), Point2D(5,6), 1, isDead=false, DirectionHolder(Direction.NORTH)))
 
     val dots: Set[DotDTO] = Set(
       DotDTO(DotHolder(Dot.SMALL_DOT), (5, 6)),
@@ -34,9 +34,9 @@ class PlayerUpdateTest extends ScalaTestWithActorTestKit with AnyWordSpecLike {
     testModel = UpdateModelDTO(gameEntities, GameState(score = 2), dots, fruit)
 
     testModelJSON = "{\"gameEntities\":[{\"gameCharacterHolder\":{\"gameChar\":\"PACMAN\"},\"position\":{\"x\":1.0,\"y\":2.0},\"speed" +
-      "\":1.0,\"isDead\":false,\"dir\":{\"direction\":\"NORTH\"}},{\"gameCharacterHolder\":{\"gameChar\":\"PACMAN\"},\"position\":{" +
+      "\":1.0,\"isDead\":false,\"dir\":{\"direction\":\"NORTH\"}},{\"gameCharacterHolder\":{\"gameChar\":\"BLINKY\"},\"position\":{" +
       "\"x\":3.0,\"y\":4.0},\"speed\":1.0,\"isDead\":false,\"dir\":{\"direction\":\"NORTH\"}},{\"gameCharacterHolder\":{\"gameChar\"" +
-      ":\"PACMAN\"},\"position\":{\"x\":5.0,\"y\":6.0},\"speed\":1.0,\"isDead\":false,\"dir\":{\"direction\":\"NORTH" +
+      ":\"CLYDE\"},\"position\":{\"x\":5.0,\"y\":6.0},\"speed\":1.0,\"isDead\":false,\"dir\":{\"direction\":\"NORTH" +
       "\"}}],\"state\":{\"score\":2,\"ghostInFear\":false,\"pacmanEmpowered\":false},\"dots\":[{\"dotHolder\":{" +
       "\"dot\":\"SMALL_DOT\"},\"pos\":[5,6]},{\"dotHolder\":{\"dot\":\"SMALL_DOT\"},\"pos\":[6,6]},{\"dotHolder\":{" +
       "\"dot\":\"SMALL_DOT\"},\"pos\":[7,6]},{\"dotHolder\":{\"dot\":\"SMALL_DOT\"},\"pos\":[8,6]}],\"fruit\":{" +
