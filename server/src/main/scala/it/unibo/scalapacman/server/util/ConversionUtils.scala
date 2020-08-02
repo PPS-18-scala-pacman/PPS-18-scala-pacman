@@ -7,7 +7,7 @@ import com.fasterxml.jackson.core.JsonProcessingException
 import com.fasterxml.jackson.databind.{JsonMappingException, ObjectMapper}
 import com.fasterxml.jackson.module.scala.DefaultScalaModule
 import grizzled.slf4j.Logging
-import it.unibo.scalapacman.common.{Command, CommandType, CommandTypeHolder, MoveCommandType, MoveCommandTypeHolder, UpdateModel}
+import it.unibo.scalapacman.common.{Command, CommandType, CommandTypeHolder, MoveCommandType, MoveCommandTypeHolder, UpdateModelDTO}
 import it.unibo.scalapacman.server.core.Engine
 import it.unibo.scalapacman.server.core.Engine.UpdateCommand
 import it.unibo.scalapacman.server.model.MoveDirection
@@ -17,7 +17,7 @@ object ConversionUtils extends Logging{
   val mapper = new ObjectMapper()
   mapper.registerModule(DefaultScalaModule)
 
-  def convertModel(model: UpdateModel): String = {
+  def convertModel(model: UpdateModelDTO): String = {
     val out = new StringWriter
     mapper.writeValue(out, model)
     out.toString

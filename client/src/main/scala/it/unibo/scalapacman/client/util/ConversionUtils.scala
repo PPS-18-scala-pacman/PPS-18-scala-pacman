@@ -6,7 +6,7 @@ import com.fasterxml.jackson.core.JsonProcessingException
 import com.fasterxml.jackson.databind.{JsonMappingException, ObjectMapper}
 import com.fasterxml.jackson.module.scala.DefaultScalaModule
 import grizzled.slf4j.Logging
-import it.unibo.scalapacman.common.{Command, MoveCommandTypeHolder, UpdateModel}
+import it.unibo.scalapacman.common.{Command, MoveCommandTypeHolder, UpdateModelDTO}
 
 object ConversionUtils extends Logging {
   val UNKNOWN_COMMAND: String = "Comando non riconosciuto"
@@ -19,10 +19,10 @@ object ConversionUtils extends Logging {
 
   def convertCommand(command: Command): String = convertToJSON(command)
 
-  def convertServerMsg(jsonMsg: String): Option[UpdateModel] = {
+  def convertServerMsg(jsonMsg: String): Option[UpdateModelDTO] = {
     try {
-      mapper.readValue(jsonMsg, classOf[UpdateModel]) match {
-        case updateModel@UpdateModel(_, _, _, _) => Some(updateModel)
+      mapper.readValue(jsonMsg, classOf[UpdateModelDTO]) match {
+        case updateModel@UpdateModelDTO(_, _, _, _) => Some(updateModel)
         case _ => error(UNKNOWN_COMMAND); None
       }
     } catch {

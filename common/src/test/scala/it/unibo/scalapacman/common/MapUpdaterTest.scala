@@ -14,8 +14,8 @@ class MapUpdaterTest extends AnyWordSpec with BeforeAndAfterAll with Matchers {
 
   var map: Map = _
   var expectedMap: Map = _
-  var pellets: Set[Pellet] = _
-  var fruit: Option[Item] = _
+  var dots: Set[DotDTO] = _
+  var fruit: Option[FruitDTO] = _
 
   override def beforeAll(): Unit = {
     map = Map(List(List.tabulate(MAP_SIZE - 1)(Map.smallDot) ::: Map.emptyTrack() :: Nil))
@@ -24,72 +24,72 @@ class MapUpdaterTest extends AnyWordSpec with BeforeAndAfterAll with Matchers {
   "MapUpdater" should {
     "update map" when {
       "missing dots" in {
-        pellets = Set(
-          Pellet(DotHolder(Dot.SMALL_DOT), (1, 0)),
-          Pellet(DotHolder(Dot.SMALL_DOT), (2, 0)),
-          Pellet(DotHolder(Dot.SMALL_DOT), (3, 0)),
-          Pellet(DotHolder(Dot.SMALL_DOT), (4, 0))
+        dots = Set(
+          DotDTO(DotHolder(Dot.SMALL_DOT), (1, 0)),
+          DotDTO(DotHolder(Dot.SMALL_DOT), (2, 0)),
+          DotDTO(DotHolder(Dot.SMALL_DOT), (3, 0)),
+          DotDTO(DotHolder(Dot.SMALL_DOT), (4, 0))
         )
 
         fruit = None
 
         expectedMap = Map(List(Map.emptyTrack() :: List.tabulate(MAP_SIZE - 2)(Map.smallDot) ::: Map.emptyTrack() :: Nil))
 
-        MapUpdater.update(map, pellets, fruit) shouldEqual expectedMap
+        MapUpdater.update(map, dots, fruit) shouldEqual expectedMap
 
-        pellets = Set(
-          Pellet(DotHolder(Dot.SMALL_DOT), (2, 0)),
-          Pellet(DotHolder(Dot.SMALL_DOT), (3, 0)),
-          Pellet(DotHolder(Dot.SMALL_DOT), (4, 0))
+        dots = Set(
+          DotDTO(DotHolder(Dot.SMALL_DOT), (2, 0)),
+          DotDTO(DotHolder(Dot.SMALL_DOT), (3, 0)),
+          DotDTO(DotHolder(Dot.SMALL_DOT), (4, 0))
         )
 
         expectedMap = Map(List(List.tabulate(2)(Map.emptyTrack) ::: List.tabulate(MAP_SIZE - 3)(Map.smallDot) ::: Map.emptyTrack() :: Nil))
 
-        MapUpdater.update(map, pellets, fruit) shouldEqual expectedMap
+        MapUpdater.update(map, dots, fruit) shouldEqual expectedMap
 
-        pellets = Set.empty[Pellet]
+        dots = Set.empty[DotDTO]
 
         expectedMap = Map(List(List.tabulate(MAP_SIZE)(Map.emptyTrack)))
 
-        MapUpdater.update(map, pellets, fruit) shouldEqual expectedMap
+        MapUpdater.update(map, dots, fruit) shouldEqual expectedMap
       }
 
       "adding a fruit" in {
-        pellets = Set(
-          Pellet(DotHolder(Dot.SMALL_DOT), (0, 0)),
-          Pellet(DotHolder(Dot.SMALL_DOT), (1, 0)),
-          Pellet(DotHolder(Dot.SMALL_DOT), (2, 0)),
-          Pellet(DotHolder(Dot.SMALL_DOT), (3, 0)),
-          Pellet(DotHolder(Dot.SMALL_DOT), (4, 0))
+        dots = Set(
+          DotDTO(DotHolder(Dot.SMALL_DOT), (0, 0)),
+          DotDTO(DotHolder(Dot.SMALL_DOT), (1, 0)),
+          DotDTO(DotHolder(Dot.SMALL_DOT), (2, 0)),
+          DotDTO(DotHolder(Dot.SMALL_DOT), (3, 0)),
+          DotDTO(DotHolder(Dot.SMALL_DOT), (4, 0))
         )
 
-        fruit = Some(Item(FruitHolder(APPLE), (MAP_SIZE - 1, 0)))
+        fruit = Some(FruitDTO(FruitHolder(APPLE), (MAP_SIZE - 1, 0)))
 
         expectedMap = Map(List(List.tabulate(MAP_SIZE - 1)(Map.smallDot) ::: Track(Some(APPLE)) :: Nil))
 
-        MapUpdater.update(map, pellets, fruit) shouldEqual expectedMap
+        MapUpdater.update(map, dots, fruit) shouldEqual expectedMap
       }
 
       "adding and then removing a fruit" in {
-        pellets = Set(
-          Pellet(DotHolder(Dot.SMALL_DOT), (0, 0)),
-          Pellet(DotHolder(Dot.SMALL_DOT), (1, 0)),
-          Pellet(DotHolder(Dot.SMALL_DOT), (2, 0)),
-          Pellet(DotHolder(Dot.SMALL_DOT), (3, 0)),
-          Pellet(DotHolder(Dot.SMALL_DOT), (4, 0))
+        dots = Set(
+          DotDTO(DotHolder(Dot.SMALL_DOT), (0, 0)),
+          DotDTO(DotHolder(Dot.SMALL_DOT), (1, 0)),
+          DotDTO(DotHolder(Dot.SMALL_DOT), (2, 0)),
+          DotDTO(DotHolder(Dot.SMALL_DOT), (3, 0)),
+          DotDTO(DotHolder(Dot.SMALL_DOT), (4, 0))
         )
 
-        fruit = Some(Item(FruitHolder(APPLE), (MAP_SIZE - 1, 0)))
+        fruit = Some(FruitDTO(FruitHolder(APPLE), (MAP_SIZE - 1, 0)))
 
         expectedMap = Map(List(List.tabulate(MAP_SIZE - 1)(Map.smallDot) ::: Track(Some(APPLE)) :: Nil))
 
-        MapUpdater.update(map, pellets, fruit) shouldEqual expectedMap
+        MapUpdater.update(map, dots, fruit) shouldEqual expectedMap
 
         fruit = None
 
         expectedMap = Map(List(List.tabulate(MAP_SIZE - 1)(Map.smallDot) ::: Map.emptyTrack() :: Nil))
 
-        MapUpdater.update(map, pellets, fruit) shouldEqual expectedMap
+        MapUpdater.update(map, dots, fruit) shouldEqual expectedMap
       }
     }
   }

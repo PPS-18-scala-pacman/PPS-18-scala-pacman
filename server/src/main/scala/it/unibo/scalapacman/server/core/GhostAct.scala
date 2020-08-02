@@ -2,7 +2,7 @@ package it.unibo.scalapacman.server.core
 
 import akka.actor.typed.{ActorRef, Behavior}
 import akka.actor.typed.scaladsl.{ActorContext, Behaviors}
-import it.unibo.scalapacman.common.UpdateModel
+import it.unibo.scalapacman.common.UpdateModelDTO
 import it.unibo.scalapacman.lib.model.GhostType.GhostType
 import it.unibo.scalapacman.server.core.GhostAct.Setup
 
@@ -30,7 +30,7 @@ private class GhostAct(setup: Setup) {
       case _ => Behaviors.same
     }
 
-  private def handleEngineUpdate(model: UpdateModel): Behavior[Engine.UpdateCommand] ={
+  private def handleEngineUpdate(model: UpdateModelDTO): Behavior[Engine.UpdateCommand] ={
     setup.context.log.info("Ricevuto update: " + model)
     Behaviors.same
   }

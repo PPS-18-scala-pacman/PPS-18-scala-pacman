@@ -6,8 +6,8 @@ import it.unibo.scalapacman.lib.model.Map.MapIndexes
 import it.unibo.scalapacman.lib.model.{GameState, Ghost, Pacman}
 
 
-case class GameEntity(id:GameCharacterHolder, position:Point2D, speed: Double, isDead:Boolean, dir:DirectionHolder) {
-  def toGhost: Option[Ghost] = id.gameChar match {
+case class GameEntityDTO(gameCharacterHolder: GameCharacterHolder, position: Point2D, speed: Double, isDead: Boolean, dir: DirectionHolder) {
+  def toGhost: Option[Ghost] = gameCharacterHolder.gameChar match {
     case GameCharacter.INKY   => Some(Ghost(INKY, position, speed, dir.direction, isDead))
     case GameCharacter.BLINKY => Some(Ghost(BLINKY, position, speed, dir.direction, isDead))
     case GameCharacter.CLYDE  => Some(Ghost(CLYDE, position, speed, dir.direction, isDead))
@@ -15,15 +15,15 @@ case class GameEntity(id:GameCharacterHolder, position:Point2D, speed: Double, i
     case _ => None
   }
   def toPacman: Option[Pacman] =
-    if(id.gameChar == GameCharacter.PACMAN) Some(Pacman(position, speed, dir.direction, isDead)) else None
+    if(gameCharacterHolder.gameChar == GameCharacter.PACMAN) Some(Pacman(position, speed, dir.direction, isDead)) else None
 }
 
-case class Pellet(pelletType:DotHolder, pos:MapIndexes)
-case class Item(id:FruitHolder, pos:MapIndexes)
+case class DotDTO(dotHolder: DotHolder, pos: MapIndexes)
+case class FruitDTO(fruitHolder: FruitHolder, pos: MapIndexes)
 
-case class UpdateModel(
-                        gameEntities: Set[GameEntity],
-                        state: GameState,
-                        pellets: Set[Pellet],
-                        fruit: Option[Item]
+case class UpdateModelDTO(
+                           gameEntities: Set[GameEntityDTO],
+                           state: GameState,
+                           dots: Set[DotDTO],
+                           fruit: Option[FruitDTO]
                       )

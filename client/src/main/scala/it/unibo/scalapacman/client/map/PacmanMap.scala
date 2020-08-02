@@ -1,6 +1,6 @@
 package it.unibo.scalapacman.client.map
 
-import it.unibo.scalapacman.common.{Item, Pellet, UpdateModel}
+import it.unibo.scalapacman.common.{FruitDTO, DotDTO, UpdateModelDTO}
 import it.unibo.scalapacman.lib.model.{Character, Dot, Fruit, Ghost, Map}
 import it.unibo.scalapacman.lib.engine.GameHelpers.{CharacterHelper, MapHelper}
 import it.unibo.scalapacman.lib.model.Direction.Direction
@@ -9,14 +9,14 @@ import it.unibo.scalapacman.lib.model.GhostType.GhostType
 object PacmanMap {
   type PacmanMap = List[List[String]]
 
-  def createMap(model: UpdateModel): PacmanMap = {
+  def createMap(model: UpdateModelDTO): PacmanMap = {
     var pacmanMap: PacmanMap = MapBuilder.buildClassic()
     implicit val classicMap: Map = MapBuilder.mapClassic
 
     // Mappa con frutti/pellet aggiornati dovrebbe essere fatto nel common con qualche funzionalità
-    pacmanMap = model.pellets.foldLeft(pacmanMap)((pacmanMap, dot) => addDot(getDotCode(dot.pelletType.dot))(pacmanMap, dot))
+    pacmanMap = model.dots.foldLeft(pacmanMap)((pacmanMap, dot) => addDot(getDotCode(dot.dotHolder.dot))(pacmanMap, dot))
 
-    pacmanMap = model.fruit.map(fruit => addFruit(getFruitCode(fruit.id.fruit))(pacmanMap, fruit)) getOrElse pacmanMap
+    pacmanMap = model.fruit.map(fruit => addFruit(getFruitCode(fruit.fruitHolder.fruit))(pacmanMap, fruit)) getOrElse pacmanMap
 
     pacmanMap = model.gameEntities.map(entity => entity.toGhost)
       .collect { case Some(ghost) => ghost }
@@ -33,10 +33,10 @@ object PacmanMap {
   def addCharacter(elementCode: String)(pacmanMap: PacmanMap, character: Character)(implicit map: Map): PacmanMap =
     addElement(pacmanMap, elementCode, character.tileIndexes)
 
-  def addDot(elementCode: String)(pacmanMap: PacmanMap, pellet: Pellet)(implicit map: Map): PacmanMap =
+  def addDot(elementCode: String)(pacmanMap: PacmanMap, pellet: DotDTO)(implicit map: Map): PacmanMap =
     addElement(pacmanMap, elementCode, map.tileIndexes(pellet.pos))
 
-  def addFruit(elementCode: String)(pacmanMap: PacmanMap, fruit: Item)(implicit map: Map): PacmanMap =
+  def addFruit(elementCode: String)(pacmanMap: PacmanMap, fruit: FruitDTO)(implicit map: Map): PacmanMap =
     addElement(pacmanMap, elementCode, map.tileIndexes(fruit.pos))
 
   def addElement(pacmanMap: PacmanMap, element: String, position: (Int, Int)): PacmanMap =

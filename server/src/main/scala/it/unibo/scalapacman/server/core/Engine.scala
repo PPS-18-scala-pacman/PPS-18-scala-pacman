@@ -2,7 +2,7 @@ package it.unibo.scalapacman.server.core
 
 import akka.actor.typed.scaladsl.{ActorContext, Behaviors}
 import akka.actor.typed.{ActorRef, Behavior}
-import it.unibo.scalapacman.common.{DirectionHolder, DotHolder, FruitHolder, GameCharacter, GameCharacterHolder, GameEntity, Item, Pellet, UpdateModel} // scalastyle:ignore
+import it.unibo.scalapacman.common.{DirectionHolder, DotHolder, FruitHolder, GameCharacter, GameCharacterHolder, GameEntityDTO, FruitDTO, DotDTO, UpdateModelDTO} // scalastyle:ignore
 import it.unibo.scalapacman.lib.engine.{GameMovement, GameTick}
 import it.unibo.scalapacman.lib.math.Point2D
 import it.unibo.scalapacman.lib.model.Direction.Direction
@@ -31,7 +31,7 @@ object Engine {
   case class RegisterWatcher(actor: ActorRef[UpdateCommand]) extends EngineCommand
 
   sealed trait UpdateCommand
-  case class UpdateMsg(model: UpdateModel) extends UpdateCommand
+  case class UpdateMsg(model: UpdateModelDTO) extends UpdateCommand
 
   private case class Setup(gameId: String, context: ActorContext[EngineCommand], gameRefreshRate: FiniteDuration)
 
@@ -94,27 +94,27 @@ private class Engine(setup: Setup) {
       }
     }
 
-  private def elaborateUpdateModel(model: EngineModel): UpdateModel = {
+  private def elaborateUpdateModel(model: EngineModel): UpdateModelDTO = {
     //FIXME gestire creazione modello da inviare
 
     // scalastyle:off magic.number
     //TODO fare trasformatore da model.players a List[GameEntity]
-    val gameEntities: Set[GameEntity] = Set(
-      GameEntity(GameCharacterHolder(GameCharacter.PACMAN), Point2D(1, 2), 1, isDead = false, DirectionHolder(Direction.NORTH)),
-        GameEntity(GameCharacterHolder(GameCharacter.BLINKY), Point2D(3, 4), 1, isDead = false, DirectionHolder(Direction.NORTH)),
-        GameEntity(GameCharacterHolder(GameCharacter.INKY), Point2D(5, 6), 1, isDead = false, DirectionHolder(Direction.NORTH)))
+    val gameEntities: Set[GameEntityDTO] = Set(
+      GameEntityDTO(GameCharacterHolder(GameCharacter.PACMAN), Point2D(1, 2), 1, isDead = false, DirectionHolder(Direction.NORTH)),
+        GameEntityDTO(GameCharacterHolder(GameCharacter.BLINKY), Point2D(3, 4), 1, isDead = false, DirectionHolder(Direction.NORTH)),
+        GameEntityDTO(GameCharacterHolder(GameCharacter.INKY), Point2D(5, 6), 1, isDead = false, DirectionHolder(Direction.NORTH)))
 
     //TODO creare due metodi nella pacman-lib che data la mappa danno List[Pellet], Option[Fruit]
-    val pellets: Set[Pellet] = Set(
-      Pellet(DotHolder(Dot.SMALL_DOT), (5, 6)),
-        Pellet(DotHolder(Dot.SMALL_DOT), (6, 6)),
-        Pellet(DotHolder(Dot.SMALL_DOT), (7, 6)),
-        Pellet(DotHolder(Dot.SMALL_DOT), (8, 6)))
+    val dots: Set[DotDTO] = Set(
+      DotDTO(DotHolder(Dot.SMALL_DOT), (5, 6)),
+        DotDTO(DotHolder(Dot.SMALL_DOT), (6, 6)),
+        DotDTO(DotHolder(Dot.SMALL_DOT), (7, 6)),
+        DotDTO(DotHolder(Dot.SMALL_DOT), (8, 6)))
 
-    val fruit = Some(Item(FruitHolder(Fruit.APPLE), (9, 9)))
+    val fruit = Some(FruitDTO(FruitHolder(Fruit.APPLE), (9, 9)))
     // scalastyle:on magic.number
 
-    UpdateModel(gameEntities, model.state, pellets, fruit)
+    UpdateModelDTO(gameEntities, model.state, dots, fruit)
   }
 
   private def initEngineModel(startMod: StarterModel) = {
