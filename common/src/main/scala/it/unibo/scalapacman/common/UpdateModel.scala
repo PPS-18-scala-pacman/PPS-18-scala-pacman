@@ -3,7 +3,7 @@ package it.unibo.scalapacman.common
 import it.unibo.scalapacman.lib.math.Point2D
 import it.unibo.scalapacman.lib.model.GhostType.{BLINKY, CLYDE, INKY, PINKY}
 import it.unibo.scalapacman.lib.model.Map.MapIndexes
-import it.unibo.scalapacman.lib.model.{GameState, Ghost, Pacman}
+import it.unibo.scalapacman.lib.model.{Dot, Fruit, GameState, Ghost, Pacman}
 
 
 case class GameEntity(id:GameCharacterHolder, position:Point2D, speed: Double, isDead:Boolean, dir:DirectionHolder) {
@@ -19,7 +19,14 @@ case class GameEntity(id:GameCharacterHolder, position:Point2D, speed: Double, i
 }
 
 case class Pellet(pelletType:DotHolder, pos:MapIndexes)
+object Pellet {
+  implicit def rawToPellet(raw: (MapIndexes, Dot.Val)):Pellet = Pellet(DotHolder(raw._2), raw._1)
+}
+
 case class Item(id:FruitHolder, pos:MapIndexes)
+object Item {
+  implicit def rawToItem(raw: (MapIndexes, Fruit.Val)):Item = Item(FruitHolder(raw._2), raw._1)
+}
 
 case class UpdateModel(
                         gameEntities: Set[GameEntity],

@@ -4,6 +4,8 @@ import alice.tuprolog.{Prolog, SolveInfo, Struct, Term, Theory}
 
 object Scala2P {
 
+  type PrologEngine = Term => Stream[Term]
+
   def extractTerm(t: Term, i: Integer): Term = t.asInstanceOf[Struct].getArg(i).getTerm
 
   implicit def convertibleToTerm(t: TermConvertible): Term = t.toTerm
@@ -12,7 +14,7 @@ object Scala2P {
 
   implicit def seqToTerm[T](s: Seq[T]): Term = s.mkString("[", ",", "]")
 
-  def mkPrologEngine(clauses: String*): Term => Stream[Term] = {
+  def mkPrologEngine(clauses: String*): PrologEngine = {
     goal =>
       new Iterable[Term] {
         val engine = new Prolog
