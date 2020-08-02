@@ -2,9 +2,9 @@ package it.unibo.scalapacman.server.core
 
 import akka.actor.typed.scaladsl.{ActorContext, Behaviors}
 import akka.actor.typed.{ActorRef, Behavior}
-import it.unibo.scalapacman.common.{DirectionHolder, DotHolder, FruitHolder, GameCharacter, GameCharacterHolder, GameEntityDTO, FruitDTO, DotDTO, UpdateModelDTO} // scalastyle:ignore
-import it.unibo.scalapacman.common.Pellet._ // scalastyle:ignore
-import it.unibo.scalapacman.common.Item._ // scalastyle:ignore
+import it.unibo.scalapacman.common.{GameEntityDTO, FruitDTO, DotDTO, UpdateModelDTO} // scalastyle:ignore
+import it.unibo.scalapacman.common.DotDTO._ // scalastyle:ignore
+import it.unibo.scalapacman.common.FruitDTO._ // scalastyle:ignore
 import it.unibo.scalapacman.lib.engine.{GameMovement, GameTick}
 import it.unibo.scalapacman.lib.engine.GameHelpers.MapHelper
 import it.unibo.scalapacman.lib.math.Point2D
@@ -102,8 +102,8 @@ private class Engine(setup: Setup) {
   private def elaborateUpdateModel(model: EngineModel): UpdateModelDTO = {
 
     val gameEntities: Set[GameEntityDTO] = model.players.toSet.map(gameParticipantToGameEntity)
-    val dots: Set[DotDTO]                = model.map.dots.map(rawToPellet).toSet
-    val fruit: Option[FruitDTO]          = model.map.fruit.map(rawToItem)
+    val dots: Set[DotDTO]                = model.map.dots.map(rawToDotDTO).toSet
+    val fruit: Option[FruitDTO]          = model.map.fruit.map(rawToFruitDTO)
 
     UpdateModelDTO(gameEntities, model.state, dots, fruit)
   }

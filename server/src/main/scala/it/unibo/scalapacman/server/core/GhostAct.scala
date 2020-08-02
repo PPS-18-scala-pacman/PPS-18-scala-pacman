@@ -41,8 +41,8 @@ private class GhostAct(setup: Setup) {
   private def handleEngineUpdate(model: UpdateModelDTO, myModel: Model): Behavior[Engine.UpdateCommand] ={
     setup.context.log.info("Ricevuto update: " + model)
 
-    val self = model.gameEntities.find(_.id.gameChar == GameCharacter.ghostTypeToGameCharacter(setup.ghostType))
-    val pacman = model.gameEntities.find(_.id.gameChar == GameCharacter.PACMAN)
+    val self = model.gameEntities.find(_.gameCharacterHolder.gameChar == GameCharacter.ghostTypeToGameCharacter(setup.ghostType))
+    val pacman = model.gameEntities.find(_.gameCharacterHolder.gameChar == GameCharacter.PACMAN)
     val gameState = model.state
 
     if(self.isDefined && pacman.isDefined) {

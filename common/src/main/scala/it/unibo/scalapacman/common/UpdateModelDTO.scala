@@ -19,15 +19,12 @@ case class GameEntityDTO(gameCharacterHolder: GameCharacterHolder, position: Poi
 }
 
 case class DotDTO(dotHolder: DotHolder, pos: MapIndexes)
-case class FruitDTO(fruitHolder: FruitHolder, pos: MapIndexes)
-case class Pellet(pelletType:DotHolder, pos:MapIndexes)
-object Pellet {
-  implicit def rawToPellet(raw: (MapIndexes, Dot.Val)):Pellet = Pellet(DotHolder(raw._2), raw._1)
+object DotDTO {
+  implicit def rawToDotDTO(raw: (MapIndexes, Dot.Val)): DotDTO = DotDTO(DotHolder(raw._2), raw._1)
 }
-
-case class Item(id:FruitHolder, pos:MapIndexes)
-object Item {
-  implicit def rawToItem(raw: (MapIndexes, Fruit.Val)):Item = Item(FruitHolder(raw._2), raw._1)
+case class FruitDTO(fruitHolder: FruitHolder, pos: MapIndexes)
+object FruitDTO {
+  implicit def rawToFruitDTO(raw: (MapIndexes, Fruit.Val)): FruitDTO = FruitDTO(FruitHolder(raw._2), raw._1)
 }
 
 case class UpdateModelDTO(

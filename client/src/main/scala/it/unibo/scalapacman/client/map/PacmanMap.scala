@@ -13,7 +13,7 @@ object PacmanMap {
     var pacmanMap: PacmanMap = MapBuilder.buildClassic()
     implicit val classicMap: Map = MapBuilder.mapClassic
 
-    // Mappa con frutti/pellet aggiornati dovrebbe essere fatto nel common con qualche funzionalità
+    // Mappa con frutti/dot aggiornati dovrebbe essere fatto nel common con qualche funzionalità
     pacmanMap = model.dots.foldLeft(pacmanMap)((pacmanMap, dot) => addDot(getDotCode(dot.dotHolder.dot))(pacmanMap, dot))
 
     pacmanMap = model.fruit.map(fruit => addFruit(getFruitCode(fruit.fruitHolder.fruit))(pacmanMap, fruit)) getOrElse pacmanMap
@@ -33,8 +33,8 @@ object PacmanMap {
   def addCharacter(elementCode: String)(pacmanMap: PacmanMap, character: Character)(implicit map: Map): PacmanMap =
     addElement(pacmanMap, elementCode, character.tileIndexes)
 
-  def addDot(elementCode: String)(pacmanMap: PacmanMap, pellet: DotDTO)(implicit map: Map): PacmanMap =
-    addElement(pacmanMap, elementCode, map.tileIndexes(pellet.pos))
+  def addDot(elementCode: String)(pacmanMap: PacmanMap, dot: DotDTO)(implicit map: Map): PacmanMap =
+    addElement(pacmanMap, elementCode, map.tileIndexes(dot.pos))
 
   def addFruit(elementCode: String)(pacmanMap: PacmanMap, fruit: FruitDTO)(implicit map: Map): PacmanMap =
     addElement(pacmanMap, elementCode, map.tileIndexes(fruit.pos))
