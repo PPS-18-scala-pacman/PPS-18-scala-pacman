@@ -7,9 +7,8 @@ import it.unibo.scalapacman.client.event.{GameUpdate, PacmanPublisher, PacmanSub
 import it.unibo.scalapacman.client.input.JavaKeyBinding.DefaultJavaKeyBinding
 import it.unibo.scalapacman.client.input.KeyMap
 import it.unibo.scalapacman.client.map.PacmanMap
-import it.unibo.scalapacman.client.util.ConversionUtils
 import it.unibo.scalapacman.common.MoveCommandType.MoveCommandType
-import it.unibo.scalapacman.common.{Command, CommandType, CommandTypeHolder, MoveCommandTypeHolder}
+import it.unibo.scalapacman.common.{Command, CommandType, CommandTypeHolder, JSONConverter, MoveCommandTypeHolder, UpdateModelDTO}
 
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor}
 import scala.util.{Failure, Success}
@@ -105,7 +104,7 @@ private case class ControllerImpl(pacmanRestClient: PacmanRestClient) extends Co
       Secondo step -> Passare le informazioni del model MIO al Subscriber che si dovrà preoccupare di convertire il model in List[List[String]]
       Bonus step -> Chi usa il subscriber dovrà convertire il modello, da solo nì, se usa una classe esterna tanto meglio!! (consigliatissimo)
   */
-  private def handleWebSocketMessage(message: String): Unit = ConversionUtils.convertServerMsg(message) match {
+  private def handleWebSocketMessage(message: String): Unit = JSONConverter.fromJSON[UpdateModelDTO](message) match {
     case None => error("Aggiornamento dati dal server non valido")
     case Some(model) => debug(model); _publisher.notifySubscribers(GameUpdate(PacmanMap.createMap(model), model.state.score))
   }
@@ -123,10 +122,10 @@ private case class ControllerImpl(pacmanRestClient: PacmanRestClient) extends Co
   private def sendMovement(moveCommandType: MoveCommandType): Unit = _gameId match {
     case None => info("Nessuna partita in corso, non invio informazione movimento al server")
     case _ => pacmanRestClient.sendOverWebSocket(
-      ConversionUtils.convertCommand(
+      JSONConverter.toJSON(
         Command(
           CommandTypeHolder(CommandType.MOVE),
-          Some(ConversionUtils.convertMoveCommandTypeHolder(MoveCommandTypeHolder(moveCommandType)))
+          Some(JSONConverter.toJSON(MoveCommandTypeHolder(moveCommandType)))
         )
       )
     )
