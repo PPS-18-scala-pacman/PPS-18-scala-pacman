@@ -5,11 +5,9 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
 class JSONConverterTest extends AnyWordSpec with BeforeAndAfterAll with Matchers {
-  // TODO what to test
 
   var testCommandUPData: MoveCommandTypeHolder = _
   var testCommandUPDataJSON: String = _
-
 
   override protected def beforeAll(): Unit = {
     testCommandUPData = MoveCommandTypeHolder(MoveCommandType.UP)
@@ -23,6 +21,12 @@ class JSONConverterTest extends AnyWordSpec with BeforeAndAfterAll with Matchers
 
     "deserialize a deserializable object" in {
       JSONConverter.fromJSON[MoveCommandTypeHolder](testCommandUPDataJSON) shouldEqual Some(testCommandUPData)
+    }
+
+    "handle conversion error" in {
+      val notValidJSONString = "Test"
+
+      JSONConverter.fromJSON[MoveCommandTypeHolder](notValidJSONString) shouldEqual None
     }
   }
 }
