@@ -2,20 +2,21 @@ package it.unibo.scalapacman.lib.engine
 
 import it.unibo.scalapacman.lib.math.{Point2D, TileGeography}
 import it.unibo.scalapacman.lib.model.{Direction, Dot, Fruit, GameState, Ghost, Map, Pacman, Tile}
-import it.unibo.scalapacman.lib.engine.GameTick.{calculateGameState, calculateMap, collisions, calculateDeaths}
+import it.unibo.scalapacman.lib.engine.GameTick.{calculateGameState, calculateMap, collisions, calculateDeaths, calculateSpeeds}
 import it.unibo.scalapacman.lib.engine.GameHelpers.{CharacterHelper, MapHelper}
 import org.scalatest.wordspec.AnyWordSpec
 
 class GameTickTest extends AnyWordSpec {
   val GHOST_1: Ghost = Ghost.blinky(Point2D(0, 0), 0.0, Direction.WEST)
   val GHOST_2: Ghost = Ghost.inky(Point2D(1, 1), 0.0, Direction.EAST)
+  val GHOST_3: Ghost = Ghost.pinky(Point2D(TileGeography.SIZE, 0), 0.0, Direction.EAST)
   val PACMAN: Pacman = Pacman(Point2D(0, 0), 0.0, Direction.NORTH)
   val MAP_SIZE = 4
   implicit val MAP: Map = Map(
     List(
-      List.tabulate(MAP_SIZE)(_ => Tile.Track(None)),
-      List.tabulate(MAP_SIZE)(_ => Tile.Track(Some(Dot.SMALL_DOT))),
-      List.tabulate(MAP_SIZE)(_ => Tile.Track(Some(Dot.ENERGIZER_DOT))),
+      List.tabulate(MAP_SIZE)(Map.emptyTrack),
+      List.tabulate(MAP_SIZE)(Map.smallDot),
+      List.tabulate(MAP_SIZE)(Map.energizerDot),
       List.tabulate(MAP_SIZE)(_ => Tile.Track(Some(Fruit.APPLE)))
     )
   )
@@ -143,14 +144,33 @@ class GameTickTest extends AnyWordSpec {
           assert(calculateDeaths(characters, state)(charactersCollisions) == PACMAN.copy(isDead = true) :: GHOST_1 :: Nil)
         }
       }
-      "kill pacman" when {
-        "it collide with a ghost in fear" in {
+      "kill a ghost" when {
+        "it is in fear and collide with pacman" in {
           val characters = PACMAN :: GHOST_1 :: Nil
           val state = GameState(0, ghostInFear = true)
           val noCollisions = Nil
           assert(calculateDeaths(characters, state)(noCollisions) == characters)
           val charactersCollisions = (PACMAN, GHOST_1) :: Nil
           assert(calculateDeaths(characters, state)(charactersCollisions) == PACMAN :: GHOST_1.copy(isDead = true) :: Nil)
+        }
+      }
+      "change the speed" when {
+        "pacman is empowered" in {
+          val characters = PACMAN :: GHOST_1 :: GHOST_3 :: Nil
+          val noCollisions = Nil
+          val newCharacters = calculateSpeeds(characters, GameState(0))(noCollisions, MAP)
+          assert(newCharacters.head.speed > characters.head.speed)
+          assert(newCharacters(1).speed < characters(1).speed)
+          assert(newCharacters(2).speed < characters(2).speed)
+        }
+        "a ghost is in the tunnel" in {
+          val characters = PACMAN :: GHOST_1 :: GHOST_3 :: Nil
+          val map = Map(tiles = List[List[Tile]](Tile.TrackTunnel() :: Tile.Track(None) :: Nil))
+          val noCollisions = Nil
+          val newCharacters = calculateSpeeds(characters, GameState(0))(noCollisions, map)
+          assert(newCharacters.head == characters.head)
+          assert(newCharacters(1).speed < characters(1).speed)
+          assert(newCharacters(2) == characters(2))
         }
       }
     }

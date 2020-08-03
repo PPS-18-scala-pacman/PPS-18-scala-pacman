@@ -1,7 +1,9 @@
 package it.unibo.scalapacman.lib.engine
 
-import it.unibo.scalapacman.lib.model.{Character, Eatable, GameObject, GameState, Ghost, Map, Pacman, Tile}
+import it.unibo.scalapacman.lib.model.{Character, Eatable, GameObject, GameState, Ghost, Level, Map, Pacman, SpeedCondition, Tile}
 import it.unibo.scalapacman.lib.engine.GameHelpers.{CharacterHelper, MapHelper}
+import it.unibo.scalapacman.lib.model.Level.{ghostSpeed, pacmanSpeed}
+import it.unibo.scalapacman.lib.model.SpeedCondition.SpeedCondition
 
 object GameTick {
   def collisions(characters: List[Character])(implicit map: Map): List[(Character, GameObject)] =
@@ -41,9 +43,33 @@ object GameTick {
       }
     }
 
-  // Se pacman è empowerato cambiano le velocità sia dei personaggi che dei fantasmi
-  // Se i fantasmi sono nel tunnel rallentano la velocità
-  // Se pacman mangia un pellet salta 1 tick e se mangia un fantasma salta 3 tick
-  // Per adesso quest'ultima cosa non la implemento
-  def calculateSpeeds(characters: List[Character], gameState: GameState, map: Map)(implicit collisions: List[(Character, GameObject)]): List[Character] = ???
+  /**
+   * Calcola la velocità dei personaggi.
+   * Se pacman è empowered aumenta di velocità mentre diminuisce quella dei fantasmi.
+   * Diminuisce sempre la velocità dei fantasmi che si trovano nel tunnel.
+   * @param characters Lista dei personaggi in gioco
+   * @param gameState Stato della partita
+   * @param collisions Collisioni correnti
+   * @param map Mappa di gioco
+   * @return
+   */
+  def calculateSpeeds(characters: List[Character], gameState: GameState)(implicit collisions: List[(Character, GameObject)], map: Map): List[Character] =
+    characters.map(char => calculateSpeed(char, gameState, calculateSpeedCondition(char, gameState)))
+
+  private def calculateSpeed(character: Character, gameState: GameState, speedCondition: SpeedCondition)
+                            (implicit collisions: List[(Character, GameObject)], map: Map): Character =
+    character match {
+      case pacman@Pacman(_, speed, _, _) => if (speed == pacmanSpeed(level, speedCondition)) pacman else pacman.copy(speed = pacmanSpeed(level, speedCondition))
+      case ghost@Ghost(_, _, speed, _, _) => if (speed == ghostSpeed(level, speedCondition)) ghost else ghost.copy(speed = ghostSpeed(level, speedCondition))
+      case _ => character
+    }
+
+  private def calculateSpeedCondition(character: Character, gameState: GameState)
+                                     (implicit collisions: List[(Character, GameObject)], map: Map): SpeedCondition.Value =
+    character match {
+      case Pacman(_, _, _, _) if gameState.pacmanEmpowered => SpeedCondition.FRIGHT
+      case Ghost(_, _, _, _, _) if character.tile.isInstanceOf[Tile.TrackTunnel] => SpeedCondition.TUNNEL
+      case Ghost(_, _, _, _, _) if gameState.pacmanEmpowered => SpeedCondition.FRIGHT
+      case _ => SpeedCondition.NORM
+    }
 }
