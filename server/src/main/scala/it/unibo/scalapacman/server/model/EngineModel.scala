@@ -1,7 +1,7 @@
 package it.unibo.scalapacman.server.model
 
 import akka.actor.typed.ActorRef
-import it.unibo.scalapacman.common.{DirectionHolder, GameCharacter, GameCharacterHolder, GameEntity}
+import it.unibo.scalapacman.common.{DirectionHolder, GameCharacter, GameCharacterHolder, GameEntityDTO}
 import it.unibo.scalapacman.lib.model.Direction.Direction
 import it.unibo.scalapacman.lib.model.{Character, Direction, GameState, Ghost, Map, Pacman}
 import it.unibo.scalapacman.server.core.Engine.UpdateCommand
@@ -44,11 +44,11 @@ case class GameParticipant(
 
 object GameParticipant {
 
-  implicit def gameParticipantToGameEntity(participant: GameParticipant): GameEntity = participant match {
+  implicit def gameParticipantToGameEntity(participant: GameParticipant): GameEntityDTO = participant match {
     case GameParticipant(Ghost(gType, pos, speed, dir, isDead), _, _) =>
-      GameEntity(GameCharacterHolder(gType), pos, speed,  isDead, DirectionHolder(dir))
+      GameEntityDTO(GameCharacterHolder(gType), pos, speed,  isDead, DirectionHolder(dir))
     case GameParticipant(Pacman(pos, speed, dir, isDead), _, _) =>
-      GameEntity(GameCharacterHolder(GameCharacter.PACMAN), pos, speed,  isDead, DirectionHolder(dir))
+      GameEntityDTO(GameCharacterHolder(GameCharacter.PACMAN), pos, speed,  isDead, DirectionHolder(dir))
   }
 }
 

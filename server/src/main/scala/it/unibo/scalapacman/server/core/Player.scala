@@ -3,9 +3,10 @@ package it.unibo.scalapacman.server.core
 import akka.actor.typed.scaladsl.{ActorContext, Behaviors}
 import akka.actor.typed.{ActorRef, Behavior}
 import akka.http.scaladsl.model.ws.{Message, TextMessage}
-import it.unibo.scalapacman.server.core.Player.{PlayerCommand, RegisterUser, RegistrationAccepted, RegistrationRejected,
-  Setup, WrapRespMessage, WrapRespUpdate}
-import it.unibo.scalapacman.server.util.ConversionUtils
+import it.unibo.scalapacman.common.{Command, CommandType, CommandTypeHolder, JSONConverter, MoveCommandType, MoveCommandTypeHolder}
+import it.unibo.scalapacman.server.core.Engine.UpdateCommand
+import it.unibo.scalapacman.server.core.Player.{PlayerCommand, RegisterUser, RegistrationAccepted, RegistrationRejected, Setup, WrapRespMessage, WrapRespUpdate}
+import it.unibo.scalapacman.server.model.MoveDirection
 
 object Player {
 
@@ -55,16 +56,39 @@ class Player(setup: Setup) {
         Behaviors.same
       case WrapRespMessage(TextMessage.Strict(msg)) =>
         setup.context.log.info("Ricevuto messaggio: " + msg)
-        val command = ConversionUtils.convertClientMsg(msg, updateMsgAdapter)
+        val command = JSONConverter.fromJSON[Command](msg) flatMap (parseClientCommand(_, updateMsgAdapter))
         if(command.isDefined) setup.engine ! command.get
         Behaviors.same
       case WrapRespUpdate(Engine.UpdateMsg(model)) =>
         setup.context.log.debug("Ricevuto update: " + model)
-        val msg = ConversionUtils.convertModel(model)
+        val msg = JSONConverter.toJSON(model)
         sourceAct ! TextMessage(msg)
         Behaviors.same
       case _ =>
         setup.context.log.warn("Ricevuto messaggio non gestito")
         Behaviors.same
+    }
+
+  private def parseClientCommand(clientCommand: Command, actRef: ActorRef[Engine.UpdateCommand]): Option[Engine.EngineCommand] = clientCommand match {
+    case Command(CommandTypeHolder(CommandType.PAUSE), None) => Some(Engine.Pause())
+    case Command(CommandTypeHolder(CommandType.RESUME), None) => Some(Engine.Resume())
+    case Command(CommandTypeHolder(CommandType.MOVE), Some(data)) =>
+      JSONConverter.fromJSON[MoveCommandTypeHolder](data) flatMap (parseClientMoveCommand(_, actRef))
+    case _ => None
+  }
+
+  private def parseClientMoveCommand(clientMoveCommand: MoveCommandTypeHolder, actRef: ActorRef[UpdateCommand]): Option[Engine.EngineCommand] =
+    clientMoveCommand match {
+      case MoveCommandTypeHolder(MoveCommandType.UP) =>
+        Some(Engine.ChangeDirectionReq(actRef, MoveDirection.UP))
+      case MoveCommandTypeHolder(MoveCommandType.DOWN) =>
+        Some(Engine.ChangeDirectionReq(actRef, MoveDirection.DOWN))
+      case MoveCommandTypeHolder(MoveCommandType.LEFT) =>
+        Some(Engine.ChangeDirectionReq(actRef, MoveDirection.LEFT))
+      case MoveCommandTypeHolder(MoveCommandType.RIGHT) =>
+        Some(Engine.ChangeDirectionReq(actRef, MoveDirection.RIGHT))
+      case MoveCommandTypeHolder(MoveCommandType.NONE) =>
+        Some(Engine.ChangeDirectionCur(actRef))
+      case _ => None
     }
 }

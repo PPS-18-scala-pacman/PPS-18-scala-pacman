@@ -2,7 +2,7 @@ package it.unibo.scalapacman.server.core
 
 import akka.actor.typed.{ActorRef, Behavior}
 import akka.actor.typed.scaladsl.{ActorContext, Behaviors}
-import it.unibo.scalapacman.common.{GameCharacter, UpdateModel}
+import it.unibo.scalapacman.common.{GameCharacter, UpdateModelDTO}
 import it.unibo.scalapacman.lib.ai.GhostAI
 import it.unibo.scalapacman.lib.ai.GhostAI.prologEngine
 import it.unibo.scalapacman.lib.model.GhostType.GhostType
@@ -38,11 +38,11 @@ private class GhostAct(setup: Setup) {
       case _ => Behaviors.same
     }
 
-  private def handleEngineUpdate(model: UpdateModel, myModel: Model): Behavior[Engine.UpdateCommand] ={
+  private def handleEngineUpdate(model: UpdateModelDTO, myModel: Model): Behavior[Engine.UpdateCommand] ={
     setup.context.log.info("Ricevuto update: " + model)
 
-    val self = model.gameEntities.find(_.id.gameChar == GameCharacter.ghostTypeToGameCharacter(setup.ghostType))
-    val pacman = model.gameEntities.find(_.id.gameChar == GameCharacter.PACMAN)
+    val self = model.gameEntities.find(_.gameCharacterHolder.gameChar == GameCharacter.ghostTypeToGameCharacter(setup.ghostType))
+    val pacman = model.gameEntities.find(_.gameCharacterHolder.gameChar == GameCharacter.PACMAN)
     val gameState = model.state
 
     if(self.isDefined && pacman.isDefined) {
