@@ -43,7 +43,7 @@ private class GhostAct(setup: Setup) {
 
     val self = model.gameEntities.find(_.gameCharacterHolder.gameChar == GameCharacter.ghostTypeToGameCharacter(setup.ghostType))
     val pacman = model.gameEntities.find(_.gameCharacterHolder.gameChar == GameCharacter.PACMAN)
-    val gameState = model.state
+    val gameState: GameState = model.state
 
     if(self.isDefined && pacman.isDefined) {
 

@@ -38,14 +38,14 @@ class UpdateModelDTOParsingTest extends AnyWordSpec with BeforeAndAfterAll with 
 
     testModel = UpdateModelDTO(gameEntities, GameState(score = 2), dots, fruit)
 
-    testModelJSON = "{\"gameEntities\":[{\"gameCharacterHolder\":{\"gameChar\":\"PACMAN\"},\"position\":{\"x\":1.0,\"y\":2.0},\"speed" +
-      "\":1.0,\"isDead\":false,\"dir\":{\"direction\":\"NORTH\"}},{\"gameCharacterHolder\":{\"gameChar\":\"BLINKY\"},\"position\":{\"x" +
-      "\":3.0,\"y\":4.0},\"speed\":1.0,\"isDead\":false,\"dir\":{\"direction\":\"NORTH\"}},{\"gameCharacterHolder\":{\"gameChar\":\"" +
-      "INKY\"},\"position\":{\"x\":5.0,\"y\":6.0},\"speed\":1.0,\"isDead\":false,\"dir\":{\"direction\":\"NORTH\"}}" +
-      "],\"state\":{\"score\":2,\"ghostInFear\":false,\"pacmanEmpowered\":false},\"dots\":[{\"dotHolder\":{\"dot" +
-      "\":\"SMALL_DOT\"},\"pos\":[5,6]},{\"dotHolder\":{\"dot\":\"SMALL_DOT\"},\"pos\":[6,6]},{\"dotHolder\":{\"dot" +
-      "\":\"SMALL_DOT\"},\"pos\":[7,6]},{\"dotHolder\":{\"dot\":\"" +
-      "SMALL_DOT\"},\"pos\":[8,6]}],\"fruit\":{\"fruitHolder\":{\"fruit\":\"APPLE\"},\"pos\":[9,9]}}"
+    testModelJSON = "{\"gameEntities\":[{\"gameCharacterHolder\":{\"gameChar\":\"PACMAN\"},\"position\":{\"x\":1.0,\"y\"" +
+      ":2.0},\"speed\":1.0,\"isDead\":false,\"dir\":{\"direction\":\"NORTH\"}},{\"gameCharacterHolder\":{\"gameChar\":\"" +
+      "BLINKY\"},\"position\":{\"x\":3.0,\"y\":4.0},\"speed\":1.0,\"isDead\":false,\"dir\":{\"direction\":\"NORTH\"}},{\"" +
+      "gameCharacterHolder\":{\"gameChar\":\"INKY\"},\"position\":{\"x\":5.0,\"y\":6.0},\"speed\":1.0,\"isDead\":false,\"" +
+      "dir\":{\"direction\":\"NORTH\"}}],\"state\":{\"score\":2,\"ghostInFear\":false,\"pacmanEmpowered\":false,\"" +
+      "levelStateHolder\":{\"levelState\":\"ONGOING\"}},\"dots\":[{\"dotHolder\":{\"dot\":\"SMALL_DOT\"},\"pos\":[5,6]}," +
+      "{\"dotHolder\":{\"dot\":\"SMALL_DOT\"},\"pos\":[6,6]},{\"dotHolder\":{\"dot\":\"SMALL_DOT\"},\"pos\":[7,6]},{\"" +
+      "dotHolder\":{\"dot\":\"SMALL_DOT\"},\"pos\":[8,6]}],\"fruit\":{\"fruitHolder\":{\"fruit\":\"APPLE\"},\"pos\":[9,9]}}"
   }
 
   "An UpdateModel" must {
