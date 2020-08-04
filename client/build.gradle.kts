@@ -24,6 +24,11 @@ application {
 
 tasks.shadowJar {
   archiveClassifier.set("fat")
+
+  // Akka reference.conf resource file
+  val newTransformer = com.github.jengelman.gradle.plugins.shadow.transformers.AppendingTransformer()
+  newTransformer.resource = "reference.conf"
+  transformers.add(newTransformer)
 }
 
 scoverage {
