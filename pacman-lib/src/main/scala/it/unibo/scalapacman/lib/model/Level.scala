@@ -19,7 +19,7 @@ trait LevelGenerator {
 
 object Level {
   // scalastyle:off magic.number
-  val BASE_SPEED = 1.21212121
+  val BASE_SPEED = 0.07575757625
 
   case class Classic(level: Int) extends LevelGenerator {
     val map: Map = Map.classic

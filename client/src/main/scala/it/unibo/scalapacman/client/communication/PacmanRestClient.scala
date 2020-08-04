@@ -18,7 +18,7 @@ trait PacmanRestClient extends Logging { this: HttpClient =>
   implicit def classicActorSystem: ActorSystem
   implicit def executionContext: ExecutionContextExecutor
 
-  val WS_BUFFER_SIZE: Int = 10
+  val WS_BUFFER_SIZE: Int = 1
 
   var _webSocketSpeaker: ActorRef = _
 
@@ -49,7 +49,7 @@ trait PacmanRestClient extends Logging { this: HttpClient =>
     val request = WebSocketRequest(s"${PacmanRestClient.GAMES_WS_URL}/$gameId")
 
     val messageSource: Source[Message, ActorRef] =
-      Source.actorRef[TextMessage.Strict](bufferSize = WS_BUFFER_SIZE, OverflowStrategy.fail)
+      Source.actorRef[TextMessage.Strict](bufferSize = WS_BUFFER_SIZE, OverflowStrategy.dropHead)
 
     val messageSink: Sink[Message, Future[Done]] = Sink.foreach[Message] {
       case message: TextMessage.Strict => serverMessageHandler(message.text)
