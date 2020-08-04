@@ -9,6 +9,7 @@ import it.unibo.scalapacman.client.input.KeyMap
 import it.unibo.scalapacman.client.map.PacmanMap
 import it.unibo.scalapacman.common.MoveCommandType.MoveCommandType
 import it.unibo.scalapacman.common.{Command, CommandType, CommandTypeHolder, JSONConverter, MoveCommandTypeHolder, UpdateModelDTO}
+import it.unibo.scalapacman.lib.model.Map
 
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor}
 import scala.util.{Failure, Success}
@@ -106,7 +107,7 @@ private case class ControllerImpl(pacmanRestClient: PacmanRestClient) extends Co
   */
   private def handleWebSocketMessage(message: String): Unit = JSONConverter.fromJSON[UpdateModelDTO](message) match {
     case None => error("Aggiornamento dati dal server non valido")
-    case Some(model) => debug(model); _publisher.notifySubscribers(GameUpdate(PacmanMap.createMap(model), model.state.score))
+    case Some(model) => debug(model); _publisher.notifySubscribers(GameUpdate(PacmanMap.createMap(Map.classic, model), model.state.score))
   }
 
   private def evalMovement(newUserAction: Option[MoveCommandType]): Unit = (newUserAction, _prevUserAction) match {
