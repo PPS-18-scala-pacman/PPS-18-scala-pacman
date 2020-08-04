@@ -1,6 +1,6 @@
 package it.unibo.scalapacman.lib.engine
 
-import it.unibo.scalapacman.lib.model.{Character, Eatable, GameObject, GameState, Ghost, Level, Map, Pacman, SpeedCondition, Tile}
+import it.unibo.scalapacman.lib.model.{Character, Dot, Eatable, GameObject, GameState, Ghost, Level, Map, Pacman, SpeedCondition, Tile}
 import it.unibo.scalapacman.lib.engine.GameHelpers.{CharacterHelper, MapHelper}
 import it.unibo.scalapacman.lib.model.Level.{ghostSpeed, pacmanSpeed}
 import it.unibo.scalapacman.lib.model.SpeedCondition.SpeedCondition
@@ -53,10 +53,10 @@ object GameTick {
    * @param map Mappa di gioco
    * @return
    */
-  def calculateSpeeds(characters: List[Character], gameState: GameState)(implicit collisions: List[(Character, GameObject)], map: Map): List[Character] =
-    characters.map(char => calculateSpeed(char, gameState, calculateSpeedCondition(char, gameState)))
+  def calculateSpeeds(characters: List[Character], level: Int, gameState: GameState)(implicit collisions: List[(Character, GameObject)], map: Map): List[Character] =
+    characters.map(char => calculateSpeed(char, level, calculateSpeedCondition(char, gameState)))
 
-  private def calculateSpeed(character: Character, gameState: GameState, speedCondition: SpeedCondition)
+  private def calculateSpeed(character: Character, level: Int, speedCondition: SpeedCondition)
                             (implicit collisions: List[(Character, GameObject)], map: Map): Character =
     character match {
       case pacman@Pacman(_, speed, _, _) => if (speed == pacmanSpeed(level, speedCondition)) pacman else pacman.copy(speed = pacmanSpeed(level, speedCondition))
@@ -69,7 +69,7 @@ object GameTick {
     character match {
       case Pacman(_, _, _, _) if gameState.pacmanEmpowered => SpeedCondition.FRIGHT
       case Ghost(_, _, _, _, _) if character.tile.isInstanceOf[Tile.TrackTunnel] => SpeedCondition.TUNNEL
-      case Ghost(_, _, _, _, _) if gameState.pacmanEmpowered => SpeedCondition.FRIGHT
+      case Ghost(_, _, _, _, _) if gameState.ghostInFear => SpeedCondition.FRIGHT
       case _ => SpeedCondition.NORM
     }
 }

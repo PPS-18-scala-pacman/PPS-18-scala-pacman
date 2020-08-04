@@ -156,18 +156,22 @@ class GameTickTest extends AnyWordSpec {
       }
       "change the speed" when {
         "pacman is empowered" in {
-          val characters = PACMAN :: GHOST_1 :: GHOST_3 :: Nil
+          var gameState = GameState(0, pacmanEmpowered = false, ghostInFear = false)
           val noCollisions = Nil
-          val newCharacters = calculateSpeeds(characters, GameState(0))(noCollisions, MAP)
+          val characters = calculateSpeeds(PACMAN :: GHOST_1 :: GHOST_3 :: Nil, 1, gameState)(noCollisions, MAP)
+          gameState = GameState(0, pacmanEmpowered = true, ghostInFear = true)
+          val newCharacters = calculateSpeeds(characters, 1, gameState)(noCollisions, MAP)
           assert(newCharacters.head.speed > characters.head.speed)
           assert(newCharacters(1).speed < characters(1).speed)
           assert(newCharacters(2).speed < characters(2).speed)
         }
         "a ghost is in the tunnel" in {
-          val characters = PACMAN :: GHOST_1 :: GHOST_3 :: Nil
-          val map = Map(tiles = List[List[Tile]](Tile.TrackTunnel() :: Tile.Track(None) :: Nil))
+          var gameState = GameState(0, pacmanEmpowered = false, ghostInFear = false)
           val noCollisions = Nil
-          val newCharacters = calculateSpeeds(characters, GameState(0))(noCollisions, map)
+          val characters = calculateSpeeds(PACMAN :: GHOST_1 :: GHOST_3 :: Nil, 1, gameState)(noCollisions, MAP)
+          val map = Map(tiles = List[List[Tile]](Tile.TrackTunnel() :: Tile.Track(None) :: Nil))
+          gameState = GameState(0, pacmanEmpowered = true, ghostInFear = true)
+          val newCharacters = calculateSpeeds(characters, 1, GameState(0))(noCollisions, map)
           assert(newCharacters.head == characters.head)
           assert(newCharacters(1).speed < characters(1).speed)
           assert(newCharacters(2) == characters(2))

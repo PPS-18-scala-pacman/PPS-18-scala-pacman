@@ -1,3 +1,3 @@
 package it.unibo.scalapacman.lib.model
 
-case class GameState(score: Int, ghostInFear:Boolean = false, pacmanEmpowered:Boolean = false)
+case class GameState(score: Int, ghostInFear: Boolean = false, pacmanEmpowered: Boolean = false)
