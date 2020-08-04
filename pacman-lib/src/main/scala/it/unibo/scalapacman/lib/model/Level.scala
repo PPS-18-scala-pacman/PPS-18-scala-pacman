@@ -31,13 +31,8 @@ object Level {
     val CLYDE_START_POSITION: Point2D = map.tileOrigin((15, 14)) + TileGeography.eastBlockCenter
     val FRUIT_INDEXES: MapIndexes = (14, 17)
 
-    def characters: List[Character] =
-      Pacman(PACMAN_START_POSITION, pacmanSpeed(level), Direction.EAST) ::
-        Ghost.blinky(BLINKY_START_POSITION, ghostSpeed(level), Direction.EAST) ::
-        Ghost.pinky(PINKY_START_POSITION, ghostSpeed(level), Direction.NORTH) ::
-        Ghost.inky(INKY_START_POSITION, ghostSpeed(level), Direction.NORTH) ::
-        Ghost.clyde(CLYDE_START_POSITION, ghostSpeed(level), Direction.NORTH) ::
-        Nil
+    def characters: List[Character] = pacman :: ghost(GhostType.BLINKY) :: ghost(GhostType.PINKY) ::
+      ghost(GhostType.INKY) :: ghost(GhostType.CLYDE) ::  Nil
 
     def pacman: Pacman = Pacman(PACMAN_START_POSITION, pacmanSpeed(level), Direction.EAST)
 
