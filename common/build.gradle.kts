@@ -3,5 +3,5 @@ dependencies {
 }
 
 scoverage {
-  excludedPackages.set(listOf("it.unibo.scalapacman.common"))
+  minimumRate.set(BigDecimal("0.3"))
 }

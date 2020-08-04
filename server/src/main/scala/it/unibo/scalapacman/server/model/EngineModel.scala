@@ -1,8 +1,9 @@
 package it.unibo.scalapacman.server.model
 
 import akka.actor.typed.ActorRef
+import it.unibo.scalapacman.common.{DirectionHolder, GameCharacter, GameCharacterHolder, GameEntityDTO}
 import it.unibo.scalapacman.lib.model.Direction.Direction
-import it.unibo.scalapacman.lib.model.{Character, GameState, Map}
+import it.unibo.scalapacman.lib.model.{Character, Direction, GameState, Ghost, Map, Pacman}
 import it.unibo.scalapacman.server.core.Engine.UpdateCommand
 
 import scala.collection.immutable
@@ -11,6 +12,13 @@ import scala.collection.immutable
 object MoveDirection extends Enumeration {
   type MoveDirection = Value
   val UP, DOWN, RIGHT, LEFT = Value
+
+  implicit def moveDirectionToDirection(dir: MoveDirection): Direction = dir match {
+    case MoveDirection.UP     => Direction.NORTH
+    case MoveDirection.DOWN   => Direction.SOUTH
+    case MoveDirection.LEFT   => Direction.WEST
+    case MoveDirection.RIGHT  => Direction.EAST
+  }
 }
 
 case class RegisteredParticipant(actor: ActorRef[UpdateCommand])
@@ -34,6 +42,16 @@ case class GameParticipant(
                             desiredDir: Option[Direction] = None
                           )
 
+object GameParticipant {
+
+  implicit def gameParticipantToGameEntity(participant: GameParticipant): GameEntityDTO = participant match {
+    case GameParticipant(Ghost(gType, pos, speed, dir, isDead), _, _) =>
+      GameEntityDTO(GameCharacterHolder(gType), pos, speed,  isDead, DirectionHolder(dir))
+    case GameParticipant(Pacman(pos, speed, dir, isDead), _, _) =>
+      GameEntityDTO(GameCharacterHolder(GameCharacter.PACMAN), pos, speed,  isDead, DirectionHolder(dir))
+  }
+}
+
 case class Players(
                     blinky: GameParticipant,
                     pinky: GameParticipant,
@@ -41,7 +59,7 @@ case class Players(
                     clyde: GameParticipant,
                     pacman: GameParticipant
                   ) {
-  def toSeq: immutable.Seq[GameParticipant] = blinky :: pinky :: inky :: clyde :: pacman :: Nil
+  def toSet: Set[GameParticipant] = Set(blinky, pinky, inky, clyde, pacman)
 }
 
 case class EngineModel(
