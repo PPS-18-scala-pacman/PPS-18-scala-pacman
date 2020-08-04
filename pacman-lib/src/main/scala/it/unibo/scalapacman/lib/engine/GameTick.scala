@@ -1,8 +1,9 @@
 package it.unibo.scalapacman.lib.engine
 
-import it.unibo.scalapacman.lib.model.{Character, Dot, Eatable, GameObject, GameState, Ghost, Level, Map, Pacman, SpeedCondition, Tile}
+import it.unibo.scalapacman.lib.model.{Character, Dot, Eatable, GameObject, GameState, Ghost, LevelState, Map, Pacman, SpeedCondition, Tile}
 import it.unibo.scalapacman.lib.engine.GameHelpers.{CharacterHelper, MapHelper}
 import it.unibo.scalapacman.lib.model.Level.{ghostSpeed, pacmanSpeed}
+import it.unibo.scalapacman.lib.model.LevelState.LevelState
 import it.unibo.scalapacman.lib.model.SpeedCondition.SpeedCondition
 
 object GameTick {
@@ -55,13 +56,15 @@ object GameTick {
    * Calcola la velocità dei personaggi.
    * Se pacman è empowered aumenta di velocità mentre diminuisce quella dei fantasmi.
    * Diminuisce sempre la velocità dei fantasmi che si trovano nel tunnel.
+   *
    * @param characters Lista dei personaggi in gioco
-   * @param gameState Stato della partita
+   * @param gameState  Stato della partita
    * @param collisions Collisioni correnti
-   * @param map Mappa di gioco
+   * @param map        Mappa di gioco
    * @return
    */
-  def calculateSpeeds(characters: List[Character], level: Int, gameState: GameState)(implicit collisions: List[(Character, GameObject)], map: Map): List[Character] =
+  def calculateSpeeds(characters: List[Character], level: Int, gameState: GameState)
+                     (implicit collisions: List[(Character, GameObject)], map: Map): List[Character] =
     characters.map(char => calculateSpeed(char, level, calculateSpeedCondition(char, gameState)))
 
   private def calculateSpeed(character: Character, level: Int, speedCondition: SpeedCondition)
@@ -80,4 +83,14 @@ object GameTick {
       case Ghost(_, _, _, _, _) if gameState.ghostInFear => SpeedCondition.FRIGHT
       case _ => SpeedCondition.NORM
     }
+
+  def calculateLevelState(gameState: GameState, characters: List[Character], map: Map): GameState = gameState.copy(
+    levelState = calculateLevelState(characters.collect { case p@Pacman(_, _, _, _) => p }, map.eatablesToSeq[Dot.Val])
+  )
+
+  private def calculateLevelState(pacmans: List[Pacman], dots: Seq[((Int, Int), Dot.Val)]): LevelState = (pacmans, dots) match {
+    case (_, dots) if dots.isEmpty => LevelState.VICTORY
+    case (pacmans, _) if pacmans forall (_.isDead == true) => LevelState.DEFEAT
+    case _ => LevelState.ONGOING
+  }
 }

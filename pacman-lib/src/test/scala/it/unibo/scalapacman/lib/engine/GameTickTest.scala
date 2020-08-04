@@ -1,8 +1,8 @@
 package it.unibo.scalapacman.lib.engine
 
 import it.unibo.scalapacman.lib.math.{Point2D, TileGeography}
-import it.unibo.scalapacman.lib.model.{Direction, Dot, Fruit, GameState, Ghost, Map, Pacman, Tile}
-import it.unibo.scalapacman.lib.engine.GameTick.{calculateGameState, calculateMap, collisions, calculateDeaths, calculateSpeeds}
+import it.unibo.scalapacman.lib.model.{Direction, Dot, Fruit, GameState, Ghost, LevelState, Map, Pacman, Tile}
+import it.unibo.scalapacman.lib.engine.GameTick.{calculateDeaths, calculateGameState, calculateLevelState, calculateMap, calculateSpeeds, collisions}
 import it.unibo.scalapacman.lib.engine.GameHelpers.{CharacterHelper, MapHelper}
 import org.scalatest.wordspec.AnyWordSpec
 
@@ -110,6 +110,27 @@ class GameTickTest extends AnyWordSpec {
         "in any other case" in {
           val gameState = calculateGameState(OLD_GAME_STATE)(Nil)
           assert(gameState.ghostInFear == OLD_GAME_STATE.ghostInFear && gameState.pacmanEmpowered == OLD_GAME_STATE.pacmanEmpowered)
+        }
+      }
+      "calculate the level state" when {
+        "pacman is dead and is defeated" in {
+          assert(OLD_GAME_STATE.levelState != LevelState.DEFEAT)
+          val characters = PACMAN.copy(isDead = true) :: GHOST_1 :: GHOST_3 :: Nil
+          val gameState = calculateLevelState(OLD_GAME_STATE, characters, MAP)
+          assert(gameState.levelState == LevelState.DEFEAT)
+        }
+        "all dots are eaten and the level is won" in {
+          assert(OLD_GAME_STATE.levelState != LevelState.VICTORY)
+          val characters = PACMAN :: GHOST_1 :: GHOST_3 :: Nil
+          val map = Map(tiles = List[List[Tile]](Tile.TrackTunnel() :: Tile.Track(None) :: Nil))
+          val gameState = calculateLevelState(OLD_GAME_STATE, characters, map)
+          assert(gameState.levelState == LevelState.VICTORY)
+        }
+        "is ongoing" in {
+          assert(OLD_GAME_STATE.levelState == LevelState.ONGOING)
+          val characters = PACMAN :: GHOST_1 :: GHOST_3 :: Nil
+          val gameState = calculateLevelState(OLD_GAME_STATE, characters, MAP)
+          assert(gameState.levelState == LevelState.ONGOING)
         }
       }
     }
