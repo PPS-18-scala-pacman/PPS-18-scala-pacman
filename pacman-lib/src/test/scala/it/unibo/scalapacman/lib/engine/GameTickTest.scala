@@ -98,6 +98,19 @@ class GameTickTest extends AnyWordSpec {
           assertResult(OLD_GAME_STATE.score + Fruit.PEACH.points)(calculateGameState(OLD_GAME_STATE)((PACMAN, Fruit.PEACH) :: Nil).score)
           assertResult(OLD_GAME_STATE.score + Fruit.STRAWBERRY.points)(calculateGameState(OLD_GAME_STATE)((PACMAN, Fruit.STRAWBERRY) :: Nil).score)
         }
+        "in any other case" in {
+          assertResult(OLD_GAME_STATE.score)(calculateGameState(OLD_GAME_STATE)(Nil).score)
+        }
+      }
+      "calculate when ghost are feared and pacman is empowered" when {
+        "pacman eat an energizer dot" in {
+          val gameState = calculateGameState(OLD_GAME_STATE)((PACMAN, Dot.ENERGIZER_DOT) :: Nil)
+          assert(gameState.ghostInFear == !OLD_GAME_STATE.ghostInFear && gameState.pacmanEmpowered == !OLD_GAME_STATE.pacmanEmpowered)
+        }
+        "in any other case" in {
+          val gameState = calculateGameState(OLD_GAME_STATE)(Nil)
+          assert(gameState.ghostInFear == OLD_GAME_STATE.ghostInFear && gameState.pacmanEmpowered == OLD_GAME_STATE.pacmanEmpowered)
+        }
       }
     }
     "evaluate the new map" which {

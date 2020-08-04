@@ -13,8 +13,16 @@ object GameTick {
     (character.tile.eatable ++: characters.filter(_ != character).filter(_.tile eq character.tile)).map(obj => (character, obj))
 
   def calculateGameState(gameState: GameState)(implicit collisions: List[(Character, GameObject)]): GameState = GameState(
-    score = (collisions collect { case (_, e: Eatable) => e } map (_.points) sum) + gameState.score
+    score = (collisions collect { case (_, e: Eatable) => e } map (_.points) sum) + gameState.score,
+    ghostInFear = isEnergizerEaten,
+    pacmanEmpowered = isEnergizerEaten,
   )
+
+  private def isEnergizerEaten(implicit collisions: List[(Character, GameObject)]) =
+    collisions.exists {
+      case (_, Dot.ENERGIZER_DOT) => true
+      case _ => false
+    }
 
   def calculateMap(map: Map)(implicit collisions: List[(Character, GameObject)]): Map = map.copy(
     tiles = calculateMapTiles(map, collisions.collect({ case (a: Character, e: Eatable) => (a, e) }))
