@@ -22,14 +22,24 @@ case class DotDTO(dotHolder: DotHolder, pos: MapIndexes)
 object DotDTO {
   implicit def rawToDotDTO(raw: (MapIndexes, Dot.Val)): DotDTO = DotDTO(DotHolder(raw._2), raw._1)
 }
+
 case class FruitDTO(fruitHolder: FruitHolder, pos: MapIndexes)
 object FruitDTO {
   implicit def rawToFruitDTO(raw: (MapIndexes, Fruit.Val)): FruitDTO = FruitDTO(FruitHolder(raw._2), raw._1)
 }
 
+case class GameStateDTO(score: Int, ghostInFear: Boolean, pacmanEmpowered: Boolean, levelStateHolder: LevelStateHolder)
+object GameStateDTO {
+  implicit def gameStateToDTO(gs: GameState): GameStateDTO =
+    GameStateDTO(gs.score, gs.ghostInFear, gs.pacmanEmpowered, LevelStateHolder(gs.levelState))
+
+  implicit def dtoToGameState(dto: GameStateDTO): GameState =
+    GameState(dto.score, dto.ghostInFear, dto.pacmanEmpowered, dto.levelStateHolder.levelState)
+}
+
 case class UpdateModelDTO(
                            gameEntities: Set[GameEntityDTO],
-                           state: GameState,
+                           state: GameStateDTO,
                            dots: Set[DotDTO],
                            fruit: Option[FruitDTO]
                       )
