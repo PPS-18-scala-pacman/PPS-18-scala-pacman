@@ -1,19 +1,19 @@
 package it.unibo.scalapacman.server.core
 
-import akka.actor.typed.scaladsl.{ActorContext, Behaviors}
 import akka.actor.typed.{ActorRef, Behavior}
+import akka.actor.typed.scaladsl.{ActorContext, Behaviors}
+import it.unibo.scalapacman.common.DotDTO.rawToDotDTO
+import it.unibo.scalapacman.common.FruitDTO.rawToFruitDTO
 import it.unibo.scalapacman.common.{DotDTO, FruitDTO, GameEntityDTO, UpdateModelDTO}
-import it.unibo.scalapacman.common.DotDTO._
-import it.unibo.scalapacman.common.FruitDTO._
 import it.unibo.scalapacman.lib.engine.{GameMovement, GameTick}
 import it.unibo.scalapacman.lib.engine.GameHelpers.MapHelper
-import it.unibo.scalapacman.lib.model.{Character, GameObject, GameState, GhostType, Level, Map}
 import it.unibo.scalapacman.lib.model.Direction.Direction
 import it.unibo.scalapacman.lib.model.GhostType.{BLINKY, CLYDE, GhostType, INKY, PINKY}
+import it.unibo.scalapacman.lib.model.{Character, GameObject, GameState, GhostType, Level, Map}
 import it.unibo.scalapacman.server.core.Engine.{ChangeDirectionCur, ChangeDirectionReq, EngineCommand, Pause,
   RegisterGhost, RegisterPlayer, RegisterWatcher, Resume, Setup, UpdateCommand, UpdateMsg, WakeUp}
+import it.unibo.scalapacman.server.model.GameParticipant.gameParticipantToGameEntity
 import it.unibo.scalapacman.server.model.MoveDirection.MoveDirection
-import it.unibo.scalapacman.server.model.GameParticipant._
 import it.unibo.scalapacman.server.model.{EngineModel, GameParticipant, Players, RegisteredParticipant, StarterModel}
 import it.unibo.scalapacman.server.util.Settings
 
