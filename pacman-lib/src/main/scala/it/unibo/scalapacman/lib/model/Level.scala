@@ -2,6 +2,7 @@ package it.unibo.scalapacman.lib.model
 
 import it.unibo.scalapacman.lib.math.{Point2D, TileGeography}
 import it.unibo.scalapacman.lib.engine.GameHelpers.MapHelper
+import it.unibo.scalapacman.lib.model.GhostType.GhostType
 import it.unibo.scalapacman.lib.model.Map.MapIndexes
 import it.unibo.scalapacman.lib.model.SpeedCondition.SpeedCondition
 import it.unibo.scalapacman.lib.model.SpeedLevel.SpeedLevel
@@ -37,6 +38,15 @@ object Level {
         Ghost.inky(INKY_START_POSITION, ghostSpeed(level), Direction.NORTH) ::
         Ghost.clyde(CLYDE_START_POSITION, ghostSpeed(level), Direction.NORTH) ::
         Nil
+
+    def pacman: Pacman = Pacman(PACMAN_START_POSITION, pacmanSpeed(level), Direction.EAST)
+
+    def ghost(gType: GhostType): Ghost = gType match {
+      case GhostType.BLINKY => Ghost(gType, BLINKY_START_POSITION, ghostSpeed(level), Direction.EAST)
+      case GhostType.PINKY  => Ghost(gType, PINKY_START_POSITION,  ghostSpeed(level), Direction.NORTH)
+      case GhostType.INKY   => Ghost(gType, INKY_START_POSITION,   ghostSpeed(level), Direction.NORTH)
+      case GhostType.CLYDE  => Ghost(gType, CLYDE_START_POSITION,  ghostSpeed(level), Direction.NORTH)
+    }
 
     def fruit: (MapIndexes, Fruit.Value) = (FRUIT_INDEXES, Level.fruit(level))
 

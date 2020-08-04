@@ -2,19 +2,18 @@ package it.unibo.scalapacman.server.core
 
 import akka.actor.typed.scaladsl.{ActorContext, Behaviors}
 import akka.actor.typed.{ActorRef, Behavior}
-import it.unibo.scalapacman.common.{GameEntityDTO, FruitDTO, DotDTO, UpdateModelDTO} // scalastyle:ignore
-import it.unibo.scalapacman.common.DotDTO._ // scalastyle:ignore
-import it.unibo.scalapacman.common.FruitDTO._ // scalastyle:ignore
+import it.unibo.scalapacman.common.{DotDTO, FruitDTO, GameEntityDTO, UpdateModelDTO}
+import it.unibo.scalapacman.common.DotDTO._
+import it.unibo.scalapacman.common.FruitDTO._
 import it.unibo.scalapacman.lib.engine.{GameMovement, GameTick}
 import it.unibo.scalapacman.lib.engine.GameHelpers.MapHelper
 import it.unibo.scalapacman.lib.math.Point2D
-import it.unibo.scalapacman.lib.model.Character
+import it.unibo.scalapacman.lib.model.{Character, Direction, GameObject, GameState, Ghost, GhostType, Level, Map, Pacman}
 import it.unibo.scalapacman.lib.model.Direction.Direction
 import it.unibo.scalapacman.lib.model.GhostType.{BLINKY, CLYDE, GhostType, INKY, PINKY}
-import it.unibo.scalapacman.lib.model.{Direction, GameObject, GameState, Ghost, GhostType, Map, Pacman}
-import it.unibo.scalapacman.server.core.Engine.{ChangeDirectionCur, ChangeDirectionReq, EngineCommand, Pause, RegisterGhost, RegisterPlayer, RegisterWatcher, Resume, Setup, UpdateCommand, UpdateMsg, WakeUp} // scalastyle:ignore
+import it.unibo.scalapacman.server.core.Engine.{ChangeDirectionCur, ChangeDirectionReq, EngineCommand, Pause, RegisterGhost, RegisterPlayer, RegisterWatcher, Resume, Setup, UpdateCommand, UpdateMsg, WakeUp}
 import it.unibo.scalapacman.server.model.MoveDirection.MoveDirection
-import it.unibo.scalapacman.server.model.GameParticipant._ // scalastyle:ignore
+import it.unibo.scalapacman.server.model.GameParticipant._
 import it.unibo.scalapacman.server.model.{EngineModel, GameParticipant, Players, RegisteredParticipant, StarterModel}
 import it.unibo.scalapacman.server.util.Settings
 
@@ -110,18 +109,16 @@ private class Engine(setup: Setup) {
 
   private def initEngineModel(startMod: StarterModel) = {
 
-    // scalastyle:off magic.number
-    //FIXME Gio aggiungerà metodi di creazione con default
+    val classicFactory = Level.Classic(setup.level)
     val players = Players(
-      pacman = GameParticipant(Pacman(Point2D(1, 0), 1.0, Direction.SOUTH), startMod.pacman.get.actor),
-      blinky = GameParticipant(Ghost(GhostType.BLINKY, Point2D(9, 9), 0.9, Direction.EAST), startMod.blinky.get.actor),
-      clyde  = GameParticipant(Ghost(GhostType.CLYDE, Point2D(9, 9), 0.9, Direction.EAST), startMod.clyde.get.actor),
-      inky   = GameParticipant(Ghost(GhostType.INKY, Point2D(9, 9), 0.9, Direction.EAST), startMod.inky.get.actor),
-      pinky  = GameParticipant(Ghost(GhostType.PINKY, Point2D(9, 9), 0.9, Direction.EAST), startMod.pinky.get.actor),
+      pacman = GameParticipant(classicFactory.pacman, startMod.pacman.get.actor),
+      blinky = GameParticipant(classicFactory.ghost(GhostType.BLINKY), startMod.blinky.get.actor),
+      clyde  = GameParticipant(classicFactory.ghost(GhostType.CLYDE), startMod.clyde.get.actor),
+      inky   = GameParticipant(classicFactory.ghost(GhostType.INKY), startMod.inky.get.actor),
+      pinky  = GameParticipant(classicFactory.ghost(GhostType.PINKY), startMod.pinky.get.actor),
     )
-    // scalastyle:on magic.number
 
-    EngineModel(players, Map.classic, GameState(score = 0))
+    EngineModel(players, classicFactory.map, classicFactory.gameState)
   }
 
   private def updateWatcher(model: EngineModel): Unit =
