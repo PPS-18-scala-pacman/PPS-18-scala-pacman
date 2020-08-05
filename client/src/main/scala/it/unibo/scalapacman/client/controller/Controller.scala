@@ -1,5 +1,7 @@
 package it.unibo.scalapacman.client.controller
 
+import java.util.concurrent.Semaphore
+
 import grizzled.slf4j.Logging
 import it.unibo.scalapacman.client.communication.PacmanRestClient
 import Action.{END_GAME, EXIT_APP, MOVEMENT, RESET_KEY_MAP, SAVE_KEY_MAP, START_GAME, SUBSCRIBE_TO_GAME_UPDATES}
@@ -11,6 +13,7 @@ import it.unibo.scalapacman.common.MoveCommandType.MoveCommandType
 import it.unibo.scalapacman.common.{Command, CommandType, CommandTypeHolder, JSONConverter, MoveCommandTypeHolder, UpdateModelDTO}
 import it.unibo.scalapacman.lib.model.Map
 
+import scala.collection.mutable
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor}
 import scala.util.{Failure, Success}
 
@@ -99,16 +102,38 @@ private case class ControllerImpl(pacmanRestClient: PacmanRestClient) extends Co
     case Some(subscriber) => _publisher.subscribe(subscriber)
   }
 
+  val webSocketThread = new Runnable {
+    val semaphore = new Semaphore(0)
+    private var message: Option[String] = None
+
+    def add(msg: String): Unit = synchronized {
+      message = Some(msg)
+      if (semaphore.availablePermits() == 0) semaphore.release()
+    }
+
+    def get(): String = synchronized {
+      message.get
+    }
+
+    override def run(): Unit = {
+      while(true) {
+        semaphore.acquire()
+        JSONConverter.fromJSON[UpdateModelDTO](get()) match {
+          case None => error("Aggiornamento dati dal server non valido")
+          case Some(model) => debug(model); _publisher.notifySubscribers(GameUpdate(PacmanMap.createMap(Map.classic, model), model.state.score))
+        }
+      }
+    }
+  }
+  new Thread(webSocketThread).start()
+
   // TODO: CREARE MODELLO CHE MANTIENE LA MAPPA DI GIOELE AGGIORNATA E I MODELLI DEI FANTASMI E DI PACMAN
   /* TODO:
       Primo step -> Aggiornare il mio modello con quello ricevuto dal server (utilizo funzioni in common che aggiornano la mappa coi pellet e i frutti)
       Secondo step -> Passare le informazioni del model MIO al Subscriber che si dovrà preoccupare di convertire il model in List[List[String]]
       Bonus step -> Chi usa il subscriber dovrà convertire il modello, da solo nì, se usa una classe esterna tanto meglio!! (consigliatissimo)
   */
-  private def handleWebSocketMessage(message: String): Unit = JSONConverter.fromJSON[UpdateModelDTO](message) match {
-    case None => error("Aggiornamento dati dal server non valido")
-    case Some(model) => debug(model); _publisher.notifySubscribers(GameUpdate(PacmanMap.createMap(Map.classic, model), model.state.score))
-  }
+  private def handleWebSocketMessage(message: String): Unit = webSocketThread.add(message)
 
   private def evalMovement(newUserAction: Option[MoveCommandType]): Unit = (newUserAction, _prevUserAction) match {
     case (Some(newInt), Some(prevInt)) if newInt == prevInt => info("Non invio aggiornamento al server")

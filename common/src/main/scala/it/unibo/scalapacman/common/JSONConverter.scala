@@ -24,7 +24,7 @@ object JSONConverter extends Logging {
 
   def fromJSON[A: ClassTag](jsonMsg: String): Option[A] = {
     try {
-      Some(mapper.readValue(jsonMsg, classTag[A].runtimeClass.asInstanceOf[Class[A]]))
+      Some(mapper.readerFor(classTag[A].runtimeClass.asInstanceOf[Class[A]]).readValue(jsonMsg))
     } catch {
       case ex @ ( _ :JsonProcessingException | _ :JsonMappingException) =>
         error(s"$CONVERSION_ERROR: $ex.getMessage")
