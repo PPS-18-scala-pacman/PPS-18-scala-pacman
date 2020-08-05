@@ -20,7 +20,7 @@ object GhostAI {
 
     engine(quest).headOption
       .map(extractTerm(_, 3))
-      .map { case s: Struct => s.listIterator }.map(Utility.iteratorToList(_)).get
+      .map { case s: Struct => s.listIterator }.map(Utility.iteratorToList(_)).getOrElse(Nil)
       .map(GraphVertex.fromTerm).map(_.tileIndexes)
   }
 
