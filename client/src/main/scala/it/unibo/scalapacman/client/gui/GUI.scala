@@ -40,5 +40,11 @@ class GUIImpl(implicit val controller: Controller) extends ViewChanger {
   frame setLocationRelativeTo null // scalastyle:ignore null
   frame setVisible true
 
-  def changeView(view: View): Unit = mainLayout show (mainPanel, view.name)
+  def changeView(view: View): Unit = {
+    view match {
+      case PLAY => playView.setupView()
+      case _ => Unit
+    }
+    mainLayout show(mainPanel, view.name)
+  }
 }

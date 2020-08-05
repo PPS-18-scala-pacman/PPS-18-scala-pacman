@@ -65,7 +65,7 @@ class PlayView(implicit controller: Controller, viewChanger: ViewChanger) extend
   private val livesCount: JLabel = createLabel(STARTING_LIVES_COUNT.toString)
   private val scoreCount: JLabel = createLabel(STARTING_POINTS_COUNT.toString)
 
-  private val textPane: GameCanvas = initTextPane()
+  val textPane: GameCanvas = initTextPane()
   private val placeholderLabel: JLabel = createTitleLabel(TITLE_LABEL)
   private val scoreLabel: JLabel = createLabel(SCORE_LABEL)
   private val livesLabel: JLabel = createLabel(LIVES_LABEL)
@@ -128,17 +128,23 @@ class PlayView(implicit controller: Controller, viewChanger: ViewChanger) extend
   // Sottoscrivo ad eventi che pubblicherà il controller
   controller.handleAction(SUBSCRIBE_TO_GAME_UPDATES, Some(PacmanSubscriber(handlePacmanEvent)))
 
-  private def initTextPane(): GameCanvas = {
-    val tp = new GameCanvas() {
-      setFont(UNIFONT.deriveFont(Font.PLAIN, PLAY_FONT_SIZE))
-      setForeground(Color.WHITE)
-      setFocusable(false)
-      setBackground(BACKGROUND_COLOR)
-    }
-    updateMessage(START_MESSAGE, tp)
-
-    tp
+  def setupView(): Unit = {
+    textPane.start()
+//    updateMessage("", textPane)
+    setStartMessage(textPane)
   }
+
+  private def initTextPane(): GameCanvas = new GameCanvas() {
+    setFont(UNIFONT.deriveFont(Font.PLAIN, PLAY_FONT_SIZE))
+    setForeground(Color.WHITE)
+    setFocusable(false)
+    setBackground(BACKGROUND_COLOR)
+  }
+
+  private def setStartMessage(textPane: GameCanvas): Unit = updateMessage(
+    ((0, 0), (START_MESSAGE.split(", ")(0), None)) :: ((0, 1), (START_MESSAGE.split(", ")(1), None)) :: Nil toIndexedSeq,
+    textPane
+  )
 
   private def bindKeys(component: JComponent)(keyMap: KeyMap): Unit =
     UserInput.setupUserInput(component.getInputMap(IFW), component.getActionMap, keyMap)
@@ -148,6 +154,9 @@ class PlayView(implicit controller: Controller, viewChanger: ViewChanger) extend
   private def updateScore(score: Int, scoreCount: JLabel): Unit = scoreCount.setText(score.toString)
 
   private def updateMessage(message: String, textPane: GameCanvas): Unit = textPane setText message
+
+  private def updateMessage(message: immutable.IndexedSeq[((Int, Int), (String, Option[ElementStyle]))], textPane: GameCanvas): Unit =
+    textPane setText message
 
   private def printMap(map: PacmanMap, tp: GameCanvas): Unit = if (!_prevMap.contains(map)) {
     _prevMap = Some(map)
@@ -172,7 +181,7 @@ class PlayView(implicit controller: Controller, viewChanger: ViewChanger) extend
   // scalastyle:on cyclomatic.complexity
 
   private def handlePacmanEvent(pe: PacmanEvent): Unit = pe match {
-    case GameUpdate(map, score) => textPane.start(); updateScore(score, scoreCount); printMap(map, textPane)
+    case GameUpdate(map, score) => updateScore(score, scoreCount); printMap(map, textPane)
   }
 }
 
@@ -182,7 +191,7 @@ class GameCanvas extends Canvas with Runnable with Logging {
   private var running = false
   private var gameThread: Thread = _
   private val BUFFERS_COUNT = 3
-  private val pleaseRender = new Semaphore(1)
+  private val pleaseRender = new Semaphore(0)
 
   setPreferredSize(new Dimension(WIDTH, HEIGHT))
 
