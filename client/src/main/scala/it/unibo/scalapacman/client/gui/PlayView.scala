@@ -1,8 +1,9 @@
 package it.unibo.scalapacman.client.gui
 
-import java.awt.{BorderLayout, Canvas, Color, Dimension, Font, GridLayout}
+import java.awt.{BorderLayout, Canvas, Color, Dimension, Font, Graphics2D, GridLayout, RenderingHints}
 import java.util.concurrent.Semaphore
 
+import grizzled.slf4j.Logging
 import it.unibo.scalapacman.client.controller.Action.{END_GAME, START_GAME, SUBSCRIBE_TO_GAME_UPDATES}
 import it.unibo.scalapacman.client.controller.Controller
 import it.unibo.scalapacman.client.event.{GameUpdate, PacmanEvent, PacmanSubscriber}
@@ -175,7 +176,7 @@ class PlayView(implicit controller: Controller, viewChanger: ViewChanger) extend
   }
 }
 
-class GameCanvas extends Canvas with Runnable {
+class GameCanvas extends Canvas with Runnable with Logging {
 
   private val text: TrieMap[(Int, Int), (String, Option[ElementStyle])] = TrieMap.empty
   private var running = false
@@ -195,44 +196,40 @@ class GameCanvas extends Canvas with Runnable {
     if (pleaseRender.availablePermits() == 0) pleaseRender.release()
   }
 
-  def start(): Unit = {
-    if (running) return
-    running = true
-    gameThread = new Thread(this)
-    gameThread.start()
-    System.out.println("Game thread started")
-  }
+  def start(): Unit =
+    if (!running) {
+      running = true
+      gameThread = new Thread(this)
+      gameThread.start()
+      debug("Game thread started")
+    }
 
   // ends the game
   def stop(): Unit = {
-    if (!running) return
-    running = false
-    var retry = true
-    while ( {
-      retry
-    }) try {
-      gameThread.join()
-      retry = false
-      System.out.println("Game thread stopped")
-    } catch {
-      case e: InterruptedException =>
-        System.out.println("Failed sopping game thread, retry in 1 second")
-        try Thread.sleep(1000)
-        catch {
-          case e1: InterruptedException =>
-            e1.printStackTrace()
-        }
+    if (!running) {
+      running = false
+      var retry = true
+      while (retry) try {
+        gameThread.join()
+        retry = false
+        debug("Game thread stopped")
+      } catch {
+        case e: InterruptedException =>
+          debug("Failed sopping game thread, retry in 1 second")
+          try Thread.sleep(1000) // scalastyle:ignore magic.number
+          catch {
+            case e1: InterruptedException =>
+              e1.printStackTrace()
+          }
+      }
     }
   }
 
-  import java.awt.Graphics2D
-  import java.awt.RenderingHints
-
   private def render(): Unit = {
-    val bs = getBufferStrategy
+    var bs = getBufferStrategy
     if (bs == null) {
       createBufferStrategy(BUFFERS_COUNT)
-      return
+      bs = getBufferStrategy
     }
     val g2d = bs.getDrawGraphics.create.asInstanceOf[Graphics2D]
     g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
@@ -248,10 +245,6 @@ class GameCanvas extends Canvas with Runnable {
     g2d.dispose()
     bs.show()
   }
-
-  import java.awt.Color
-
-  import java.awt.Graphics2D
 
   private def clear(g2d: Graphics2D, shade: Int): Unit = {
     g2d.setColor(new Color(shade, shade, shade))
