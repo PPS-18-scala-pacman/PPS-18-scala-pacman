@@ -8,6 +8,7 @@ import it.unibo.scalapacman.lib.model.Direction.{EAST, NORTH, SOUTH, WEST}
 import it.unibo.scalapacman.lib.model.Fruit
 import it.unibo.scalapacman.lib.model.Map.MapIndexes
 import it.unibo.scalapacman.lib.model.Tile.Track
+import it.unibo.scalapacman.lib.Utility.directionByPath
 
 import scala.reflect.ClassTag
 
@@ -47,12 +48,22 @@ object GameHelpers {
         .map(_ + TileGeography.center)
         .minBy(moveUntil(character, _))
 
-    def changeDirectionIfPossible(desiredDirection: Direction)(implicit map: Map): Character =
+    def changeDirectionIfPossible(desiredDirection: Direction)(implicit map: Map): Character = {
+      def forcedDirection: Character = {
+        val walkableNeighbours = map.tileNeighboursIndexes(character.tileIndexes).filter(i => !(character.revert.nextTile eq map.tile(i)) && map.tile(i).walkable(character))
+        if (!nextTile.walkable(character) && walkableNeighbours.size == 1) {
+          changeDirection(directionByPath(character.tileIndexes :: walkableNeighbours.head :: Nil))
+        } else {
+          character
+        }
+      }
+
       if (character.direction != desiredDirection && nextTile(desiredDirection).walkable(character)) {
         changeDirection(desiredDirection)
       } else {
-        character
+        forcedDirection
       }
+    }
 
     def moveIfPossible(timeMs: Double)(implicit map: Map): Character = if (nextTile.walkable(character)) {
       changePosition(moveFor(character, timeMs))
@@ -105,6 +116,11 @@ object GameHelpers {
       pacmanEffect(indexes._1, width) * TileGeography.SIZE,
       pacmanEffect(indexes._2, height) * TileGeography.SIZE
     )
+
+    def tileNeighboursIndexes(tileIndexes: MapIndexes): List[MapIndexes] =
+      ((1, 0) :: (-1, 0) :: (0, 1) :: (0, -1) :: Nil)
+        .map(p => (p._1 + tileIndexes._1, p._2 + tileIndexes._2))
+        .map(map.tileIndexes)
 
     @scala.annotation.tailrec
     private def pacmanEffect(x: Int, max: Int): Int = x match {

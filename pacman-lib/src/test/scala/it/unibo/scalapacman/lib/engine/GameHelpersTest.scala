@@ -85,6 +85,9 @@ class GameHelpersTest extends AnyWordSpec {
         assertResult((0, 0))(MAP.tileIndexes((MAP_WIDTH, 0)))
         assertResult((0, 0))(MAP.tileIndexes((0, MAP_HEIGHT)))
       }
+      "calculate a tile neighbourhood indexes" in {
+        assert(MAP.tileNeighboursIndexes(1, 1).sorted == ((0, 1) :: (1, 0) :: (2, 1) :: (1, 2) :: Nil).sorted)
+      }
       "empty a tile" in {
         val map = Map((Tile.Track(Some(Dot.SMALL_DOT)) :: Nil) :: Nil)
         assert(map.empty((0, 0)).tile((0, 0)).eatable.isEmpty)
@@ -137,6 +140,9 @@ class GameHelpersTest extends AnyWordSpec {
         "is possible" in {
           assertResult(PACMAN.copy(direction = Direction.NORTH))(PACMAN.changeDirectionIfPossible(Direction.NORTH))
           assertResult(PACMAN)(PACMAN.changeDirectionIfPossible(Direction.SOUTH))
+
+          val map = Map((Tile.Track() :: Tile.Track() :: Tile.Wall() :: Nil) :: (Tile.Wall() :: Tile.Wall() :: Tile.Wall() :: Nil) :: Nil)
+          assertResult(PACMAN)(PACMAN.copy(direction = Direction.SOUTH).changeDirectionIfPossible(Direction.SOUTH)(map))
         }
       }
       "check if the character desire to revert" in {
