@@ -2,6 +2,10 @@ package it.unibo.scalapacman.lib
 
 import java.net.URL
 
+import it.unibo.scalapacman.lib.model.Direction
+import it.unibo.scalapacman.lib.model.Direction.Direction
+import it.unibo.scalapacman.lib.model.Map.MapIndexes
+
 import scala.collection.mutable
 import scala.io.Source
 import scala.language.reflectiveCalls
@@ -25,5 +29,12 @@ object Utility {
     val buffer = mutable.Buffer[A]()
     iterator.forEachRemaining(buffer.append(_))
     buffer.toList
+  }
+
+  def directionByPath(path: List[MapIndexes]): Direction = path match {
+    case (x, _) :: (x1, _) :: Nil if x < x1 => Direction.EAST
+    case (x, _) :: (x1, _) :: Nil if x > x1 => Direction.WEST
+    case (_, y) :: (_, y1) :: Nil if y < y1 => Direction.SOUTH
+    case (_, y) :: (_, y1) :: Nil if y > y1 => Direction.NORTH
   }
 }

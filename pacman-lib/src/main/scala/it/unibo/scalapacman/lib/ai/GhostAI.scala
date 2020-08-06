@@ -8,6 +8,7 @@ import it.unibo.scalapacman.lib.prolog.{Graph, GraphVertex, MinDistance}
 import it.unibo.scalapacman.lib.engine.GameHelpers.CharacterHelper
 import it.unibo.scalapacman.lib.model.Direction.Direction
 import it.unibo.scalapacman.lib.model.Map.MapIndexes
+import it.unibo.scalapacman.lib.Utility.directionByPath
 
 object GhostAI {
   implicit val prologEngine: PrologEngine = mkPrologEngine(Utility.readFile(getClass.getResource("/prolog/Dijkstra.pl")))
@@ -26,11 +27,4 @@ object GhostAI {
 
   def desiredDirection(ghost: Ghost, pacman: Pacman)(implicit engine: PrologEngine, map: Map): Direction =
     Option(shortestPath(ghost, pacman.tileIndexes)(engine, map).take(2)) filter(_.size == 2) map directionByPath getOrElse ghost.direction
-
-  private def directionByPath(path: List[MapIndexes]): Direction = path match {
-    case (x, _) :: (x1, _) :: Nil if x < x1 => Direction.EAST
-    case (x, _) :: (x1, _) :: Nil if x > x1 => Direction.WEST
-    case (_, y) :: (_, y1) :: Nil if y < y1 => Direction.SOUTH
-    case (_, y) :: (_, y1) :: Nil if y > y1 => Direction.NORTH
-  }
 }

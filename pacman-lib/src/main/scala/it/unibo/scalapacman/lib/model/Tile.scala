@@ -18,14 +18,9 @@ object Tile {
     def speedModifier(character: Character, speed: Double): Double = speed
   }
 
-  case class Track(override val eatable: Option[Eatable]) extends TileAbstract()
+  case class Track(override val eatable: Option[Eatable] = None) extends TileAbstract()
 
-  case class TrackSafe() extends TileAbstract() {
-    override def walkable(character: Character): Boolean = character match {
-      case Pacman(_, _, _, _) => true
-      case _ => false
-    }
-  }
+  case class TrackSafe() extends TileAbstract()
 
   case class TrackTunnel() extends TileAbstract() {
     override def speedModifier(character: Character, speed: Double): Double = character match {

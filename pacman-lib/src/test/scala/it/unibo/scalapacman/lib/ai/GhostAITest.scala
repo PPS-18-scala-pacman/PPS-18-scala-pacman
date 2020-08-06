@@ -1,6 +1,6 @@
 package it.unibo.scalapacman.lib.ai
 
-import it.unibo.scalapacman.lib.model.{Direction, Ghost, Map, Pacman}
+import it.unibo.scalapacman.lib.model.{Direction, Ghost, GhostType, Level, Map, Pacman}
 import it.unibo.scalapacman.lib.ai.GhostAI.prologEngine
 import it.unibo.scalapacman.lib.math.{Point2D, TileGeography}
 import it.unibo.scalapacman.lib.model.Map.{emptyTrack, wall}
@@ -52,6 +52,15 @@ class GhostAITest extends AnyWordSpec {
         val pacman = Pacman(ORIGIN + Point2D(TileGeography.SIZE, TileGeography.SIZE * 2), 1.0, Direction.EAST)
         val desiredDirection = GhostAI.desiredDirection(blinky, pacman)
         assert(desiredDirection == Direction.EAST || desiredDirection == Direction.WEST)
+      }
+      "blinky is at the first curve and choose the correct direction" in {
+        val generator = Level.Classic(1)
+        val map = generator.map
+        var blinky = generator.ghost(GhostType.BLINKY)
+        blinky = blinky.copy(position = blinky.position + Point2D(TileGeography.SIZE * -4, 0)) // scalastyle:ignore magic.number
+        val pacman = generator.pacman
+        val desiredDirection = GhostAI.desiredDirection(blinky, pacman)(prologEngine, map)
+        assert(desiredDirection == Direction.SOUTH)
       }
     }
   }
