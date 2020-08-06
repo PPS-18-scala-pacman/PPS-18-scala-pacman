@@ -155,8 +155,8 @@ class PlayView(implicit controller: Controller, viewChanger: ViewChanger) extend
 
   private def updateMessage(message: String, textPane: GameCanvas): Unit = textPane setText message
 
-  private def updateMessage(message: immutable.IndexedSeq[((Int, Int), (String, Option[ElementStyle]))], textPane: GameCanvas): Unit =
-    textPane setText message
+  private def updateMessage(messages: immutable.IndexedSeq[((Int, Int), (String, Option[ElementStyle]))], textPane: GameCanvas): Unit =
+    textPane setText messages
 
   private def printMap(map: PacmanMap, tp: GameCanvas): Unit = if (!_prevMap.contains(map)) {
     _prevMap = Some(map)
@@ -190,7 +190,7 @@ class GameCanvas extends Canvas with Runnable with Logging {
   private val text: TrieMap[(Int, Int), (String, Option[ElementStyle])] = TrieMap.empty
   private var running = false
   private var gameThread: Thread = _
-  private val BUFFERS_COUNT = 3
+  private val BUFFERS_COUNT = 2
   private val pleaseRender = new Semaphore(0)
 
   setPreferredSize(new Dimension(WIDTH, HEIGHT))
@@ -235,11 +235,7 @@ class GameCanvas extends Canvas with Runnable with Logging {
   }
 
   private def render(): Unit = {
-    var bs = getBufferStrategy
-    if (bs == null) {
-      createBufferStrategy(BUFFERS_COUNT)
-      bs = getBufferStrategy
-    }
+    val bs = getBufferStrategy
     val g2d = bs.getDrawGraphics.create.asInstanceOf[Graphics2D]
     g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
     clear(g2d, 0)
@@ -261,9 +257,10 @@ class GameCanvas extends Canvas with Runnable with Logging {
   }
 
   def run(): Unit = {
+    if (getBufferStrategy == null) createBufferStrategy(BUFFERS_COUNT)
     while (running) {
-      pleaseRender.acquire()
       render()
+      pleaseRender.acquire()
 //      try Thread.sleep(5) // always a good idea to let is breath a bit
 //      catch {
 //        case e: InterruptedException => e.printStackTrace()
