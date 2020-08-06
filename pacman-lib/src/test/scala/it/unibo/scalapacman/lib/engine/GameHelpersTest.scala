@@ -1,9 +1,9 @@
 package it.unibo.scalapacman.lib.engine
 
-import org.scalatest.wordspec.AnyWordSpec
-import it.unibo.scalapacman.lib.model.{Direction, Dot, Eatable, Fruit, Ghost, Map, Pacman, Tile}
 import it.unibo.scalapacman.lib.engine.GameHelpers.{CharacterHelper, MapHelper}
 import it.unibo.scalapacman.lib.math.{Point2D, TileGeography, Vector2D}
+import it.unibo.scalapacman.lib.model.{Direction, Dot, Eatable, Fruit, Ghost, Map, Pacman, Tile}
+import org.scalatest.wordspec.AnyWordSpec
 
 class GameHelpersTest extends AnyWordSpec {
   val MAP_WIDTH = 3

@@ -50,7 +50,8 @@ object GameHelpers {
 
     def changeDirectionIfPossible(desiredDirection: Direction)(implicit map: Map): Character = {
       def forcedDirection: Character = {
-        val walkableNeighbours = map.tileNeighboursIndexes(character.tileIndexes).filter(i => !(character.revert.nextTile eq map.tile(i)) && map.tile(i).walkable(character))
+        val walkableNeighbours = map.tileNeighboursIndexes(character.tileIndexes)
+          .filter(i => !(character.revert.nextTile eq map.tile(i)) && map.tile(i).walkable(character))
         if (!nextTile.walkable(character) && walkableNeighbours.size == 1) {
           changeDirection(directionByPath(character.tileIndexes :: walkableNeighbours.head :: Nil))
         } else {
@@ -152,8 +153,9 @@ object GameHelpers {
     def dots: Seq[(MapIndexes, Dot.Val)] = map.eatablesToSeq[Dot.Val]
 
     def fruit: Option[(MapIndexes, Fruit.Val)] = map.eatablesToSeq[Fruit.Val] match {
-        case Seq(fruit) => Some(fruit)
-        case Seq() => None
-      }
+      case Seq(fruit) => Some(fruit)
+      case Seq() => None
+    }
   }
+
 }
