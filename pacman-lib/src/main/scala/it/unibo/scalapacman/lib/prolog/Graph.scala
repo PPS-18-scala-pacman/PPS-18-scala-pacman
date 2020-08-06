@@ -13,8 +13,11 @@ import it.unibo.scalapacman.lib.model.Map.MapIndexes
 case class Graph(nodes: List[GraphNode]) extends TermConvertible {
   def toTerm: Term = new Struct(nodes.map(_.toTerm).toArray)
 
-  def filterWalkable(character: Character)(implicit map: Map): Graph =
-    Graph(nodes.map(n => n.copy(neighbourhood = n.neighbourhood.filter(t => map.tile(t.vertex.tileIndexes).walkable(character)))))
+  def filterWalkable(character: Character)(implicit map: Map): Graph = Graph(
+    nodes
+      filter(n => map.tile(n.vertex.tileIndexes).walkable(character))
+      map(n => n.copy(neighbourhood = n.neighbourhood.filter(t => map.tile(t.vertex.tileIndexes).walkable(character))))
+  )
 }
 
 /**

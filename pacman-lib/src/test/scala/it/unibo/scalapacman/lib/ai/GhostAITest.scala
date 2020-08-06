@@ -56,9 +56,10 @@ class GhostAITest extends AnyWordSpec {
       "blinky is at the first curve and choose the correct direction" in {
         val generator = Level.Classic(1)
         val map = generator.map
-        val blinky = generator.ghost(GhostType.BLINKY)
+        var blinky = generator.ghost(GhostType.BLINKY)
+        blinky = blinky.copy(position = blinky.position + Point2D(TileGeography.SIZE * -4, 0)) // scalastyle:ignore magic.number
         val pacman = generator.pacman
-        val desiredDirection = GhostAI.desiredDirection(blinky.copy(position = blinky.position + Point2D(TileGeography.SIZE * -4, 0)), pacman)(prologEngine, map)
+        val desiredDirection = GhostAI.desiredDirection(blinky, pacman)(prologEngine, map)
         assert(desiredDirection == Direction.SOUTH)
       }
     }
