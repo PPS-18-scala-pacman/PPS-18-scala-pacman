@@ -49,20 +49,21 @@ object GameHelpers {
         .minBy(moveUntil(character, _))
 
     def changeDirectionIfPossible(desiredDirection: Direction)(implicit map: Map): Character = {
-      def forcedDirection: Character = {
-        val walkableNeighbours = map.tileNeighboursIndexes(character.tileIndexes)
-          .filter(i => !(character.revert.nextTile eq map.tile(i)) && map.tile(i).walkable(character))
-        if (!nextTile.walkable(character) && walkableNeighbours.size == 1) {
-          changeDirection(directionByPath(character.tileIndexes :: walkableNeighbours.head :: Nil))
-        } else {
-          character
-        }
-      }
+//      def forcedDirection: Character = {
+//        val walkableNeighbours = map.tileNeighboursIndexes(character.tileIndexes)
+//          .filter(i => !(character.revert.nextTile eq map.tile(i)) && map.tile(i).walkable(character))
+//        if (!nextTile.walkable(character) && walkableNeighbours.size == 1) {
+//          changeDirection(directionByPath(character.tileIndexes :: walkableNeighbours.head :: Nil))
+//        } else {
+//          character
+//        }
+//      }
 
       if (character.direction != desiredDirection && nextTile(desiredDirection).walkable(character)) {
         changeDirection(desiredDirection)
       } else {
-        forcedDirection
+//        forcedDirection
+        character
       }
     }
 
