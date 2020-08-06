@@ -20,20 +20,23 @@ import scala.util.{Failure, Success}
 trait Controller {
   /**
    * Gestisce le azioni dell'utente
-   * @param action  tipo di azione avvenuta
+   *
+   * @param action tipo di azione avvenuta
    * @param param  parametro che arricchisce l'azione avvenuta con ulteriori informazioni
    */
   def handleAction(action: Action, param: Option[Any]): Unit
 
   /**
    * Recupera la mappatura iniziale
-   * @return  la mappatura iniziale
+   *
+   * @return la mappatura iniziale
    */
   def getKeyMap: KeyMap
 
   /**
    * Recupera l'ultima azione dell'utente avvenuta in partita
-   * @return  l'ultima azione dell'utente avvenuta in partita
+   *
+   * @return l'ultima azione dell'utente avvenuta in partita
    */
   def getUserAction: Option[MoveCommandType]
 
@@ -71,6 +74,7 @@ private case class ControllerImpl(pacmanRestClient: PacmanRestClient) extends Co
   }
 
   def getKeyMap: KeyMap = _keyMap
+
   def getUserAction: Option[MoveCommandType] = _prevUserAction
 
   private def evalStartGame(): Unit = _gameId match {
@@ -79,22 +83,26 @@ private case class ControllerImpl(pacmanRestClient: PacmanRestClient) extends Co
         _prevUserAction = None
         info(s"Partita creata con successo: id $value") // scalastyle:ignore multiple.string.literals
         _gameId = Some(value)
+        new Thread(webSocketRunnable).start()
         pacmanRestClient.openWS(value, handleWebSocketMessage)
       case Failure(exception) => error(s"Errore nella creazione della partita: ${exception.getMessage}") // scalastyle:ignore multiple.string.literals
     }
     case Some(_) => error("Impossibile creare nuova partita quando ce n'è già una in corso")
   }
 
-  private def evalEndGame(): Unit = _gameId match {
-    case Some(id) => pacmanRestClient.endGame(id) onComplete  {
-      case Success(message) =>
-        info(s"Partita $id terminata con successo: $message")
-        _gameId = None
-      case Failure(exception) =>
-        error(s"Errore nella terminazione della partita: ${exception.getMessage}")
-        _gameId = None
+  private def evalEndGame(): Unit = {
+    webSocketRunnable.terminate()
+    _gameId match {
+      case Some(id) => pacmanRestClient.endGame(id) onComplete {
+        case Success(message) =>
+          info(s"Partita $id terminata con successo: $message")
+          _gameId = None
+        case Failure(exception) =>
+          error(s"Errore nella terminazione della partita: ${exception.getMessage}")
+          _gameId = None
+      }
+      case None => info("Nessuna partita da dover terminare")
     }
-    case None => info("Nessuna partita da dover terminare")
   }
 
   private def evalSubscribeToGameUpdates(maybeSubscriber: Option[PacmanSubscriber]): Unit = maybeSubscriber match {
@@ -102,30 +110,7 @@ private case class ControllerImpl(pacmanRestClient: PacmanRestClient) extends Co
     case Some(subscriber) => _publisher.subscribe(subscriber)
   }
 
-  val webSocketThread = new Runnable {
-    val semaphore = new Semaphore(0)
-    private var message: Option[String] = None
-
-    def add(msg: String): Unit = synchronized {
-      message = Some(msg)
-      if (semaphore.availablePermits() == 0) semaphore.release()
-    }
-
-    def get(): String = synchronized {
-      message.get
-    }
-
-    override def run(): Unit = {
-      while(true) {
-        semaphore.acquire()
-        JSONConverter.fromJSON[UpdateModelDTO](get()) match {
-          case None => error("Aggiornamento dati dal server non valido")
-          case Some(model) => debug(model); _publisher.notifySubscribers(GameUpdate(PacmanMap.createMap(Map.classic, model), model.state.score))
-        }
-      }
-    }
-  }
-  new Thread(webSocketThread).start()
+  val webSocketRunnable = new WebSocketConsumer(_publisher)
 
   // TODO: CREARE MODELLO CHE MANTIENE LA MAPPA DI GIOELE AGGIORNATA E I MODELLI DEI FANTASMI E DI PACMAN
   /* TODO:
@@ -133,7 +118,7 @@ private case class ControllerImpl(pacmanRestClient: PacmanRestClient) extends Co
       Secondo step -> Passare le informazioni del model MIO al Subscriber che si dovrà preoccupare di convertire il model in List[List[String]]
       Bonus step -> Chi usa il subscriber dovrà convertire il modello, da solo nì, se usa una classe esterna tanto meglio!! (consigliatissimo)
   */
-  private def handleWebSocketMessage(message: String): Unit = webSocketThread.add(message)
+  private def handleWebSocketMessage(message: String): Unit = webSocketRunnable.addMessage(message)
 
   private def evalMovement(newUserAction: Option[MoveCommandType]): Unit = (newUserAction, _prevUserAction) match {
     case (Some(newInt), Some(prevInt)) if newInt == prevInt => info("Non invio aggiornamento al server")
@@ -168,5 +153,35 @@ private case class ControllerImpl(pacmanRestClient: PacmanRestClient) extends Co
     evalEndGame()
     info("Chiusura dell'applicazione")
     System.exit(0)
+  }
+}
+
+class WebSocketConsumer(publisher: PacmanPublisher) extends Runnable with Logging {
+  val semaphore = new Semaphore(0)
+  private var message: Option[String] = None
+  private var running = true
+
+  def addMessage(msg: String): Unit = {
+    message = Some(msg)
+    if (semaphore.availablePermits() == 0) semaphore.release()
+  }
+
+  private def getMessage: Option[UpdateModelDTO] = {
+    semaphore.acquire()
+    message flatMap(JSONConverter.fromJSON[UpdateModelDTO](_))
+  }
+
+  def terminate(): Unit = running = false
+
+  override def run(): Unit = {
+    message = None
+    semaphore tryAcquire semaphore.availablePermits()
+    running = true
+    while (running) {
+      getMessage match {
+        case None => error("Aggiornamento dati dal server non valido")
+        case Some(model) => debug(model); publisher.notifySubscribers(GameUpdate(PacmanMap.createMap(Map.classic, model), model.state.score))
+      }
+    }
   }
 }
