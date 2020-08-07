@@ -49,7 +49,7 @@ class OptionsView(keyBinder: KeyBinder)(implicit controller: Controller, viewCha
   private val rightIdentifier: String = "RIGHT"
   private val leftIdentifier: String = "LEFT"
 
-  private var keyMapMap: Map[String, Int] = createKeyMapMap(controller.getKeyMap)
+  private var keyMapMap: Map[String, Int] = createKeyMapMap(controller.model.keyMap)
 
   titleLabel setHorizontalAlignment SwingConstants.CENTER
 
@@ -140,9 +140,10 @@ class OptionsView(keyBinder: KeyBinder)(implicit controller: Controller, viewCha
 
   private def resetKeyMap(keyBinder: KeyBinder): Unit = {
     controller.handleAction(RESET_KEY_MAP, None)
-    keyBinder applyKeyBinding controller.getKeyMap
+    // TODO: questo verrà rimosso
+    keyBinder applyKeyBinding controller.model.keyMap
     resetTextFields()
   }
 
-  private def resetTextFields(): Unit = updateTextFields(controller.getKeyMap)
+  private def resetTextFields(): Unit = updateTextFields(controller.model.keyMap)
 }

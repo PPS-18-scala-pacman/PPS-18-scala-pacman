@@ -124,7 +124,7 @@ class PlayView(implicit controller: Controller, viewChanger: ViewChanger) extend
   add(buttonsPanel, BorderLayout.PAGE_END)
 
   // Applico mappatura di default
-  bindKeys(playPanel)(controller.getKeyMap)
+  bindKeys(playPanel)(controller.model.keyMap)
   // Sottoscrivo ad eventi che pubblicherà il controller
   controller.handleAction(SUBSCRIBE_TO_GAME_UPDATES, Some(PacmanSubscriber(handlePacmanEvent)))
 

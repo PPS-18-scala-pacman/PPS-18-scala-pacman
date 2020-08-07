@@ -61,60 +61,60 @@ class ControllerTest
   "Controller" when {
     "instantiated" must {
       "have default key mapping" in {
-        assertResult(_defaultKeyMap)(_controller.getKeyMap)
+        assertResult(_defaultKeyMap)(_controller.model.keyMap)
       }
 
       "not have a key mapping different from the default one" in {
-        assert(_controller.getKeyMap != _notDefaultKeyMap)
+        assert(_controller.model.keyMap != _notDefaultKeyMap)
       }
 
       "not have a saved user action" in {
-        assertResult(None)(_controller.getUserAction)
+        assertResult(None)(_controller.userAction)
       }
     }
 
     "handling user action" must {
       "be able to save a new valid key mapping" in {
-        assertResult(_defaultKeyMap)(_controller.getKeyMap)
+        assertResult(_defaultKeyMap)(_controller.model.keyMap)
 
         _controller.handleAction(SAVE_KEY_MAP, Some(_notDefaultKeyMap))
-        assertResult(_notDefaultKeyMap)(_controller.getKeyMap)
+        assertResult(_notDefaultKeyMap)(_controller.model.keyMap)
       }
 
       "not save a new non-valid key mapping" in {
-        assertResult(_defaultKeyMap)(_controller.getKeyMap)
+        assertResult(_defaultKeyMap)(_controller.model.keyMap)
 
         _controller.handleAction(SAVE_KEY_MAP, None)
-        assertResult(_defaultKeyMap)(_controller.getKeyMap)
+        assertResult(_defaultKeyMap)(_controller.model.keyMap)
       }
 
       "be able to reset key mapping" in {
-        assertResult(_defaultKeyMap)(_controller.getKeyMap)
+        assertResult(_defaultKeyMap)(_controller.model.keyMap)
 
         _controller.handleAction(SAVE_KEY_MAP, Some(_notDefaultKeyMap))
-        assertResult(_notDefaultKeyMap)(_controller.getKeyMap)
+        assertResult(_notDefaultKeyMap)(_controller.model.keyMap)
 
         _controller.handleAction(RESET_KEY_MAP, None)
-        assertResult(_defaultKeyMap)(_controller.getKeyMap)
+        assertResult(_defaultKeyMap)(_controller.model.keyMap)
       }
 
       "be able to save a new valid user action" in {
-        assertResult(None)(_controller.getUserAction)
+        assertResult(None)(_controller.userAction)
 
         _controller.handleAction(MOVEMENT, Some(MoveCommandType.UP))
-        assertResult(Some(MoveCommandType.UP))(_controller.getUserAction)
+        assertResult(Some(MoveCommandType.UP))(_controller.userAction)
 
         _controller.handleAction(MOVEMENT, Some(MoveCommandType.DOWN))
-        assertResult(Some(MoveCommandType.DOWN))(_controller.getUserAction)
+        assertResult(Some(MoveCommandType.DOWN))(_controller.userAction)
 
         _controller.handleAction(MOVEMENT, Some(MoveCommandType.RIGHT))
-        assertResult(Some(MoveCommandType.RIGHT))(_controller.getUserAction)
+        assertResult(Some(MoveCommandType.RIGHT))(_controller.userAction)
 
         _controller.handleAction(MOVEMENT, Some(MoveCommandType.LEFT))
-        assertResult(Some(MoveCommandType.LEFT))(_controller.getUserAction)
+        assertResult(Some(MoveCommandType.LEFT))(_controller.userAction)
 
         _controller.handleAction(MOVEMENT, Some(MoveCommandType.NONE))
-        assertResult(Some(MoveCommandType.NONE))(_controller.getUserAction)
+        assertResult(Some(MoveCommandType.NONE))(_controller.userAction)
       }
     }
   }
