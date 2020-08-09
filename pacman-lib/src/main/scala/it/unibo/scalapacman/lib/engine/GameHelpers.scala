@@ -2,13 +2,13 @@ package it.unibo.scalapacman.lib.engine
 
 import it.unibo.scalapacman.lib.engine.CircularMovement.{moveFor, moveUntil}
 import it.unibo.scalapacman.lib.math.{Point2D, TileGeography, Vector2D}
-import it.unibo.scalapacman.lib.model.{Character, Dot, Eatable, Ghost, Map, Pacman, Tile}
+import it.unibo.scalapacman.lib.model.{Character, Direction, Dot, Eatable, Fruit, Ghost, Map, Pacman, Tile}
 import it.unibo.scalapacman.lib.model.Direction.Direction
 import it.unibo.scalapacman.lib.model.Direction.{EAST, NORTH, SOUTH, WEST}
-import it.unibo.scalapacman.lib.model.Fruit
 import it.unibo.scalapacman.lib.model.Map.MapIndexes
 import it.unibo.scalapacman.lib.model.Tile.Track
 import it.unibo.scalapacman.lib.Utility.directionByPath
+import it.unibo.scalapacman.lib.math
 
 import scala.reflect.ClassTag
 
@@ -28,10 +28,7 @@ object GameHelpers {
     }
 
     def revert: Character = character.direction match {
-      case EAST => changeDirection(WEST)
-      case WEST => changeDirection(EAST)
-      case NORTH => changeDirection(SOUTH)
-      case SOUTH => changeDirection(NORTH)
+      case EAST | WEST | NORTH | SOUTH => changeDirection(Direction.reverse(character.direction))
       case _ => character
     }
 
@@ -83,9 +80,71 @@ object GameHelpers {
 
     def nextTile(direction: Direction): Tile = map.tile(character.position, Some(direction).map(CharacterMovement.vector))
 
+    //TODO verificare
+    def nextTileIndexes(direction: Direction, tileIndexes: MapIndexes): MapIndexes =
+      map.tileIndexes(Point2D(tileIndexes._2 * TileGeography.SIZE, tileIndexes._1 * TileGeography.SIZE), Some(direction).map(CharacterMovement.vector))
+
     def tileIndexes: MapIndexes = map.tileIndexes(character.position)
 
     def eat: Map = map.empty(character.tileIndexes)
+
+    def isCross: Boolean = isCross(tileIndexes)
+
+    def isCross(tileIndexes: MapIndexes): Boolean =
+      map.tileNeighboursIndexes(tileIndexes).count(map.tile(_).walkable(character)) > 2
+
+    def nextCrossTile(): Option[MapIndexes] = nextCrossTile(character.tileIndexes, character.direction)
+
+    //FIXME fare private anche?
+    def nextCrossTile(tileIndexes: MapIndexes, direction: Direction): Option[MapIndexes] = {
+      var temp = nextTileIndexes(direction, tileIndexes)
+      if(map.tile(temp).walkable(character)) {
+        if(isCross(temp)) return Some(temp)
+        nextCrossTile(temp, direction)
+      } else {
+        val tempDir = direction match {
+          case EAST  | WEST   => NORTH
+          case NORTH | SOUTH  => EAST
+        }
+        temp = nextTileIndexes(tempDir, tileIndexes)
+        if(map.tile(temp).walkable(character)) {
+          if(isCross(temp)) return Some(temp)
+          nextCrossTile(temp, tempDir)
+        } else {
+          temp = nextTileIndexes(Direction.reverse(tempDir), tileIndexes)
+          if(map.tile(temp).walkable(character)) {
+            if(isCross(temp)) return Some(temp)
+            nextCrossTile(temp, tempDir)
+          } else {
+            None
+          }
+        }
+      }
+    }
+
+    def directionForTurn: Option[Direction] = directionForTurn(character.direction)
+
+    def directionForTurn(dir: Direction): Option[Direction] = directionForTurn(character.tileIndexes, dir)
+
+    def directionForTurn(tileIndexes: MapIndexes, dir: Direction): Option[Direction] = {
+      if(isCross(tileIndexes)) return None
+
+      var temp = nextTileIndexes(dir, tileIndexes)
+      if(map.tile(temp).walkable(character)) {
+        directionForTurn(temp, dir)
+      } else {
+        val tempDir = dir match {
+          case EAST   | WEST   => NORTH
+          case NORTH  | SOUTH  => EAST
+        }
+        temp = nextTileIndexes(tempDir, tileIndexes)
+        if(map.tile(temp).walkable(character)) {
+          Some(tempDir)
+        } else {
+          Some(Direction.reverse(tempDir))
+        }
+      }
+    }
   }
 
   implicit class MapHelper(map: Map) {
@@ -107,6 +166,11 @@ object GameHelpers {
     def tileIndexes(indexes: MapIndexes): MapIndexes = (
       pacmanEffect(indexes._1, width),
       pacmanEffect(indexes._2, height)
+    )
+
+    def tileIndexes(position: Point2D, watchOut: Option[Vector2D] = None): MapIndexes = (
+      pacmanEffect(tileIndex(position.y, watchOut.map(_.y)), height),
+      pacmanEffect(tileIndex(position.x, watchOut.map(_.x)), width)
     )
 
     def tileOrigin(position: Point2D, watchOut: Option[Vector2D] = None): Point2D = Point2D(
