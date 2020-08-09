@@ -5,8 +5,11 @@ import akka.actor.typed.scaladsl.{ActorContext, Behaviors}
 import it.unibo.scalapacman.common.{GameCharacter, UpdateModelDTO}
 import it.unibo.scalapacman.lib.ai.GhostAI
 import it.unibo.scalapacman.lib.ai.GhostAI.prologEngine
+import it.unibo.scalapacman.lib.engine.GameHelpers.CharacterHelper
+import it.unibo.scalapacman.lib.model.Direction.Direction
 import it.unibo.scalapacman.lib.model.GhostType.GhostType
-import it.unibo.scalapacman.lib.model.{Direction, GameState, Map}
+import it.unibo.scalapacman.lib.model.Map.MapIndexes
+import it.unibo.scalapacman.lib.model.{Direction, GameState, Ghost, Map}
 import it.unibo.scalapacman.server.core.Engine.ChangeDirectionReq
 import it.unibo.scalapacman.server.core.GhostAct.{Model, Setup}
 import it.unibo.scalapacman.server.model.MoveDirection
@@ -41,16 +44,18 @@ private class GhostAct(setup: Setup) {
   private def handleEngineUpdate(model: UpdateModelDTO, myModel: Model): Behavior[Engine.UpdateCommand] ={
     setup.context.log.info("Ricevuto update: " + model)
 
-    val self = model.gameEntities.find(_.gameCharacterHolder.gameChar == GameCharacter.ghostTypeToGameCharacter(setup.ghostType))
-    val pacman = model.gameEntities.find(_.gameCharacterHolder.gameChar == GameCharacter.PACMAN)
+    val selfDTO = model.gameEntities.find(_.gameCharacterHolder.gameChar == GameCharacter.ghostTypeToGameCharacter(setup.ghostType))
+    val pacmanDTO = model.gameEntities.find(_.gameCharacterHolder.gameChar == GameCharacter.PACMAN)
     val gameState: GameState = model.state
 
-    if(self.isDefined && pacman.isDefined) {
+    //FIXME UPDATE DELLA MAPPA
+    implicit val updatedMap: Map = myModel.map
+    val pacmanNextMove = pacmanDTO.get.toPacman.get.nextCrossTile
 
-      //FIXME UPDATE DELLA MAPPA
-      val updatedMap: Map = myModel.map
+    if(selfDTO.isDefined && pacmanDTO.isDefined && pacmanNextMove.isDefined) {
 
-      val direction = GhostAI.desiredDirection(self.get.toGhost.get, pacman.get.toPacman.get)(prologEngine, updatedMap)
+      val direction: Option[Direction] = calculateDirection(selfDTO.get.toGhost.get, pacmanNextMove.get)
+      //val direction = GhostAI.desiredDirection(self.get.toGhost.get, pacman.get.toPacman.get)(prologEngine, updatedMap)
 
       val move: MoveDirection = direction match {
         case Direction.NORTH |
@@ -71,5 +76,17 @@ private class GhostAct(setup: Setup) {
       Behaviors.same
     }
   }
+
+  private def calculateDirection(self: Ghost, endTileIndexes: MapIndexes)(implicit map: Map):Option[Direction] = {
+    if(self.isCross) {
+      GhostAI.desiredDirectionClassic(self, endTileIndexes)
+    } else {
+      self.directionForTurn
+      //TODO in caso None potrei già calcolare la nuova dir per dove si trova pacman per portarmi avanti e introdurre
+      // controlli per non ricolcolare nulla nei cicli successivi se pacman ed io non cambiamo nextTileCross
+      // (nel caso togliere Option dal return)
+    }
+  }
+
 }
 

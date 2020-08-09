@@ -1,25 +1,38 @@
 package it.unibo.scalapacman.lib.ai
 
-import alice.tuprolog.Struct
+import alice.tuprolog.{Struct, Term}
 import it.unibo.scalapacman.lib.Utility
 import it.unibo.scalapacman.lib.prolog.Scala2P.{PrologEngine, convertibleToTerm, extractTerm, mkPrologEngine}
-import it.unibo.scalapacman.lib.model.{Character, Direction, Ghost, Map, Pacman}
-import it.unibo.scalapacman.lib.prolog.{Graph, GraphVertex, MinDistance}
+import it.unibo.scalapacman.lib.model.{Character, Ghost, Map, Pacman}
+import it.unibo.scalapacman.lib.prolog.{Graph, GraphVertex, MinDistance, MinDistanceClassic}
 import it.unibo.scalapacman.lib.engine.GameHelpers.CharacterHelper
 import it.unibo.scalapacman.lib.model.Direction.Direction
+import it.unibo.scalapacman.lib.model.Direction.{EAST, NORTH, SOUTH, WEST}
 import it.unibo.scalapacman.lib.model.Map.MapIndexes
 import it.unibo.scalapacman.lib.Utility.directionByPath
 
 object GhostAI {
+  //TODO STO COSO È UNA GRAN CAZZATA SECONDO ME
   implicit val prologEngine: PrologEngine = mkPrologEngine(Utility.readFile(getClass.getResource("/prolog/Dijkstra.pl")))
 
-  def shortestPath(character: Character, endTileIndexes: (Int, Int))(implicit engine: PrologEngine, map: Map): List[MapIndexes] = {
+  def shortestPath(character: Character, endTileIndexes: MapIndexes)(implicit engine: PrologEngine, map: Map): List[MapIndexes] = {
     val graph = Graph.fromMap(map).filterWalkable(character)
-    val tileStart = GraphVertex(character.tileIndexes)
-    val tileEnd = GraphVertex(endTileIndexes)
-    val quest = MinDistance(graph, tileStart, tileEnd)
+    val quest: (GraphVertex,GraphVertex)=>Term = (tileStart, tileEnd) => MinDistance(graph, tileStart, tileEnd)
+    calculatePath(character.tileIndexes, endTileIndexes, quest)(engine, map)
+  }
 
-    engine(quest).headOption
+  def shortestPathClassic(startTileIndexes: MapIndexes, endTileIndexes: MapIndexes)(implicit engine: PrologEngine, map: Map): List[MapIndexes] = {
+    val quest: (GraphVertex,GraphVertex)=>Term = (tileStart, tileEnd) => MinDistanceClassic(tileStart, tileEnd)
+    calculatePath(startTileIndexes, endTileIndexes, quest)(engine, map)
+  }
+
+  private def calculatePath(startTileIndexes: MapIndexes, endTileIndexes: MapIndexes, quest:(GraphVertex,GraphVertex)=>Term)
+                           (implicit engine: PrologEngine, map: Map): List[MapIndexes] = {
+
+    val tileStart = GraphVertex(startTileIndexes)
+    val tileEnd = GraphVertex(endTileIndexes)
+
+    engine(quest(tileStart, tileEnd)).headOption
       .map(extractTerm(_, 3))
       .map { case s: Struct => s.listIterator }.map(Utility.iteratorToList(_)).getOrElse(Nil)
       .map(GraphVertex.fromTerm).map(_.tileIndexes)
@@ -27,4 +40,12 @@ object GhostAI {
 
   def desiredDirection(ghost: Ghost, pacman: Pacman)(implicit engine: PrologEngine, map: Map): Direction =
     Option(shortestPath(ghost, pacman.tileIndexes)(engine, map).take(2)) filter(_.size == 2) map directionByPath getOrElse ghost.direction
+
+  //TODO CHECK
+  def desiredDirectionClassic(char: Character, endTileIndexes: MapIndexes)(implicit engine: PrologEngine, map: Map): Option[Direction] = {
+    val path = shortestPathClassic(char.tileIndexes, endTileIndexes)(engine, map)
+    if(path.size < 2) return None
+    (NORTH :: SOUTH :: EAST :: WEST :: Nil).find(char.nextCrossTile(path.head, _).contains(path(1)))
+  }
+
 }
