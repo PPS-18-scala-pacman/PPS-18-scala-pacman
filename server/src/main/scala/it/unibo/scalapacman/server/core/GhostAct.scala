@@ -42,7 +42,7 @@ private class GhostAct(setup: Setup) {
     }
 
   private def handleEngineUpdate(model: UpdateModelDTO, myModel: Model): Behavior[Engine.UpdateCommand] ={
-    setup.context.log.info("Ricevuto update: " + model)
+    setup.context.log.debug("Ricevuto update: " + model)
 
     val selfDTO = model.gameEntities.find(_.gameCharacterHolder.gameChar == GameCharacter.ghostTypeToGameCharacter(setup.ghostType))
     val pacmanDTO = model.gameEntities.find(_.gameCharacterHolder.gameChar == GameCharacter.PACMAN)
@@ -50,27 +50,32 @@ private class GhostAct(setup: Setup) {
 
     //FIXME UPDATE DELLA MAPPA
     implicit val updatedMap: Map = myModel.map
-    val pacmanNextMove = pacmanDTO.get.toPacman.get.nextCrossTile
+    val pacmanNextMove = pacmanDTO.get.toPacman.get.nextCrossTile()
 
     if(selfDTO.isDefined && pacmanDTO.isDefined && pacmanNextMove.isDefined) {
 
       val direction: Option[Direction] = calculateDirection(selfDTO.get.toGhost.get, pacmanNextMove.get)
       //val direction = GhostAI.desiredDirection(self.get.toGhost.get, pacman.get.toPacman.get)(prologEngine, updatedMap)
 
-      val move: MoveDirection = direction match {
-        case Direction.NORTH |
-             Direction.NORTHEAST |
-             Direction.NORTHWEST => MoveDirection.UP
-        case Direction.SOUTH |
-             Direction.SOUTHEAST |
-             Direction.SOUTHWEST => MoveDirection.DOWN
-        case Direction.EAST => MoveDirection.RIGHT
-        case Direction.WEST => MoveDirection.LEFT
+      if(direction.isDefined) {
+        val move: MoveDirection = direction.get match {
+          case Direction.NORTH |
+               Direction.NORTHEAST |
+               Direction.NORTHWEST => MoveDirection.UP
+          case Direction.SOUTH |
+               Direction.SOUTHEAST |
+               Direction.SOUTHWEST => MoveDirection.DOWN
+          case Direction.EAST => MoveDirection.RIGHT
+          case Direction.WEST => MoveDirection.LEFT
+        }
+
+        if (!myModel.desMove.contains(move)) setup.engine ! ChangeDirectionReq(setup.context.self, move)
+
+        coreRoutine(Model(updatedMap, gameState, Some(move)))
+      } else {
+        setup.context.log.debug("Cambio di direzione non necessario")
+        Behaviors.same
       }
-
-      if(!myModel.desMove.contains(move)) setup.engine ! ChangeDirectionReq(setup.context.self, move)
-
-      coreRoutine(Model(updatedMap, gameState, Some(move)))
     } else {
       setup.context.log.warn("Ricevuto update model non valido")
       Behaviors.same
@@ -79,6 +84,7 @@ private class GhostAct(setup: Setup) {
 
   private def calculateDirection(self: Ghost, endTileIndexes: MapIndexes)(implicit map: Map):Option[Direction] = {
     if(self.isCross) {
+      //TODO aggiungere controllo di prossimità con pacman per raggiungerlo, in alternativa calcolo desideredDir
       GhostAI.desiredDirectionClassic(self, endTileIndexes)
     } else {
       self.directionForTurn

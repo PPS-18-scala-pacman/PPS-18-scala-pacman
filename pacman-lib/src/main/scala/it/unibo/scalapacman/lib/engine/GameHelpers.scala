@@ -8,7 +8,6 @@ import it.unibo.scalapacman.lib.model.Direction.{EAST, NORTH, SOUTH, WEST}
 import it.unibo.scalapacman.lib.model.Map.MapIndexes
 import it.unibo.scalapacman.lib.model.Tile.Track
 import it.unibo.scalapacman.lib.Utility.directionByPath
-import it.unibo.scalapacman.lib.math
 
 import scala.reflect.ClassTag
 
@@ -28,7 +27,7 @@ object GameHelpers {
     }
 
     def revert: Character = character.direction match {
-      case EAST | WEST | NORTH | SOUTH => changeDirection(Direction.reverse(character.direction))
+      case EAST | WEST | NORTH | SOUTH => changeDirection(character.direction.reverse)
       case _ => character
     }
 
@@ -82,7 +81,7 @@ object GameHelpers {
 
     //TODO verificare
     def nextTileIndexes(direction: Direction, tileIndexes: MapIndexes): MapIndexes =
-      map.tileIndexes(Point2D(tileIndexes._2 * TileGeography.SIZE, tileIndexes._1 * TileGeography.SIZE), Some(direction).map(CharacterMovement.vector))
+      map.tileIndexes(Point2D(tileIndexes._1 * TileGeography.SIZE, tileIndexes._2 * TileGeography.SIZE), Some(direction).map(CharacterMovement.vector))
 
     def tileIndexes: MapIndexes = map.tileIndexes(character.position)
 
@@ -102,19 +101,16 @@ object GameHelpers {
         if(isCross(temp)) return Some(temp)
         nextCrossTile(temp, direction)
       } else {
-        val tempDir = direction match {
-          case EAST  | WEST   => NORTH
-          case NORTH | SOUTH  => EAST
-        }
+        val tempDir = direction.sharpTurnRight
         temp = nextTileIndexes(tempDir, tileIndexes)
         if(map.tile(temp).walkable(character)) {
           if(isCross(temp)) return Some(temp)
           nextCrossTile(temp, tempDir)
         } else {
-          temp = nextTileIndexes(Direction.reverse(tempDir), tileIndexes)
+          temp = nextTileIndexes(tempDir.reverse, tileIndexes)
           if(map.tile(temp).walkable(character)) {
             if(isCross(temp)) return Some(temp)
-            nextCrossTile(temp, tempDir)
+            nextCrossTile(temp, tempDir.reverse)
           } else {
             None
           }
@@ -141,7 +137,7 @@ object GameHelpers {
         if(map.tile(temp).walkable(character)) {
           Some(tempDir)
         } else {
-          Some(Direction.reverse(tempDir))
+          Some(tempDir.reverse)
         }
       }
     }
@@ -169,8 +165,8 @@ object GameHelpers {
     )
 
     def tileIndexes(position: Point2D, watchOut: Option[Vector2D] = None): MapIndexes = (
-      pacmanEffect(tileIndex(position.y, watchOut.map(_.y)), height),
-      pacmanEffect(tileIndex(position.x, watchOut.map(_.x)), width)
+      pacmanEffect(tileIndex(position.x, watchOut.map(_.x)), width),
+      pacmanEffect(tileIndex(position.y, watchOut.map(_.y)), height)
     )
 
     def tileOrigin(position: Point2D, watchOut: Option[Vector2D] = None): Point2D = Point2D(

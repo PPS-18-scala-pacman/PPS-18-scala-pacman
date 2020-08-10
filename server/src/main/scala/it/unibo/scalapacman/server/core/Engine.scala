@@ -125,7 +125,7 @@ private class Engine(setup: Setup) {
     model.players.toSet.foreach( _.actRef ! UpdateMsg(elaborateUpdateModel(model)) )
 
   private def updateGame(oldModel: EngineModel) : Behavior[EngineCommand] = {
-    setup.context.log.info("updateGame id: " + setup.gameId)
+    setup.context.log.debug("updateGame id: " + setup.gameId)
     implicit val map: Map = oldModel.map
 
     val pacman = updateChar(oldModel.players.pacman)
