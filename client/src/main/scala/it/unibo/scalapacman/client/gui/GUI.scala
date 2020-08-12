@@ -21,7 +21,7 @@ class GUIImpl(implicit val controller: Controller) extends ViewChanger {
 
   private val menuView: MenuView = MenuView()
   private val playView: PlayView = PlayView()
-  private val optionsView: OptionsView = OptionsView(playView)
+  private val optionsView: OptionsView = OptionsView()
   private val statsView: StatsView = StatsView()
 
   mainPanel add(menuView, MENU.name)
@@ -41,10 +41,7 @@ class GUIImpl(implicit val controller: Controller) extends ViewChanger {
   frame setVisible true
 
   def changeView(view: View): Unit = {
-    view match {
-      case PLAY => playView.setupView()
-      case _ => Unit
-    }
+    if (view == PLAY) playView.setupView()
     mainLayout show(mainPanel, view.name)
   }
 }
