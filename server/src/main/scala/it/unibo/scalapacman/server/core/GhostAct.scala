@@ -50,11 +50,11 @@ private class GhostAct(setup: Setup) {
 
     //FIXME UPDATE DELLA MAPPA
     implicit val updatedMap: Map = myModel.map
-    val pacmanNextMove = pacmanDTO.get.toPacman.get.nextCrossTile()
+    val pacmanNextCross = pacmanDTO.get.toPacman.get.nextCrossTile()
 
-    if(selfDTO.isDefined && pacmanDTO.isDefined && pacmanNextMove.isDefined) {
+    if(selfDTO.isDefined && pacmanDTO.isDefined && pacmanNextCross.isDefined) {
 
-      val direction: Option[Direction] = calculateDirection(selfDTO.get.toGhost.get, pacmanNextMove.get)
+      val direction: Option[Direction] = calculateDirection(selfDTO.get.toGhost.get, pacmanNextCross.get)
       //val direction = GhostAI.desiredDirection(self.get.toGhost.get, pacman.get.toPacman.get)(prologEngine, updatedMap)
 
       if(direction.isDefined) {
@@ -83,7 +83,7 @@ private class GhostAct(setup: Setup) {
   }
 
   private def calculateDirection(self: Ghost, endTileIndexes: MapIndexes)(implicit map: Map):Option[Direction] = {
-    if(self.isCross) {
+    if(self.tileIsCross) {
       //TODO aggiungere controllo di prossimità con pacman per raggiungerlo, in alternativa calcolo desideredDir
       GhostAI.desiredDirectionClassic(self, endTileIndexes)
     } else {

@@ -17,22 +17,22 @@ object GhostAI {
   def shortestPath(character: Character, endTileIndexes: MapIndexes)(implicit engine: PrologEngine, map: Map): List[MapIndexes] = {
     val graph = Graph.fromMap(map).filterWalkable(character)
     val quest: (GraphVertex,GraphVertex)=>Term = (tileStart, tileEnd) => MinDistance(graph, tileStart, tileEnd)
-    calculatePath(character.tileIndexes, endTileIndexes, quest)(engine, map)
+    calculatePath(character.tileIndexes, endTileIndexes, quest, 3)(engine, map)
   }
 
   def shortestPathClassic(startTileIndexes: MapIndexes, endTileIndexes: MapIndexes)(implicit engine: PrologEngine, map: Map): List[MapIndexes] = {
     val quest: (GraphVertex,GraphVertex)=>Term = (tileStart, tileEnd) => MinDistanceClassic(tileStart, tileEnd)
-    calculatePath(startTileIndexes, endTileIndexes, quest)(engine, map)
+    calculatePath(startTileIndexes, endTileIndexes, quest, 2)(engine, map)
   }
 
-  private def calculatePath(startTileIndexes: MapIndexes, endTileIndexes: MapIndexes, quest:(GraphVertex,GraphVertex)=>Term)
+  private def calculatePath(startTileIndexes: MapIndexes, endTileIndexes: MapIndexes, quest:(GraphVertex,GraphVertex)=>Term, index:Int)
                            (implicit engine: PrologEngine, map: Map): List[MapIndexes] = {
 
     val tileStart = GraphVertex(startTileIndexes)
     val tileEnd = GraphVertex(endTileIndexes)
 
     engine(quest(tileStart, tileEnd)).headOption
-      .map(extractTerm(_, 2))
+      .map(extractTerm(_, index))
       .map { case s: Struct => s.listIterator }.map(Utility.iteratorToList(_)).getOrElse(Nil)
       .map(GraphVertex.fromTerm).map(_.tileIndexes)
   }

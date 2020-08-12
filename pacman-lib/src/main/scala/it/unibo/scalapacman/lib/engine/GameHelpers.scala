@@ -2,12 +2,11 @@ package it.unibo.scalapacman.lib.engine
 
 import it.unibo.scalapacman.lib.engine.CircularMovement.{moveFor, moveUntil}
 import it.unibo.scalapacman.lib.math.{Point2D, TileGeography, Vector2D}
-import it.unibo.scalapacman.lib.model.{Character, Direction, Dot, Eatable, Fruit, Ghost, Map, Pacman, Tile}
+import it.unibo.scalapacman.lib.model.{Character, Dot, Eatable, Fruit, Ghost, Map, Pacman, Tile}
 import it.unibo.scalapacman.lib.model.Direction.Direction
 import it.unibo.scalapacman.lib.model.Direction.{EAST, NORTH, SOUTH, WEST}
 import it.unibo.scalapacman.lib.model.Map.MapIndexes
 import it.unibo.scalapacman.lib.model.Tile.Track
-import it.unibo.scalapacman.lib.Utility.directionByPath
 
 import scala.reflect.ClassTag
 
@@ -79,7 +78,6 @@ object GameHelpers {
 
     def nextTile(direction: Direction): Tile = map.tile(character.position, Some(direction).map(CharacterMovement.vector))
 
-    //TODO verificare
     def nextTileIndexes(direction: Direction, tileIndexes: MapIndexes): MapIndexes =
       map.tileIndexes(Point2D(tileIndexes._1 * TileGeography.SIZE, tileIndexes._2 * TileGeography.SIZE), Some(direction).map(CharacterMovement.vector))
 
@@ -87,60 +85,34 @@ object GameHelpers {
 
     def eat: Map = map.empty(character.tileIndexes)
 
-    def isCross: Boolean = isCross(tileIndexes)
+    def tileIsCross: Boolean = tileIsCross(tileIndexes)
 
-    def isCross(tileIndexes: MapIndexes): Boolean =
-      map.tileNeighboursIndexes(tileIndexes).count(map.tile(_).walkable(character)) > 2
+    def tileIsCross(tileIndexes: MapIndexes): Boolean = map.tileIsCross(tileIndexes, character)
 
     def nextCrossTile(): Option[MapIndexes] = nextCrossTile(character.tileIndexes, character.direction)
 
-    //FIXME fare private anche?
-    def nextCrossTile(tileIndexes: MapIndexes, direction: Direction): Option[MapIndexes] = {
-      var temp = nextTileIndexes(direction, tileIndexes)
-      if(map.tile(temp).walkable(character)) {
-        if(isCross(temp)) return Some(temp)
-        nextCrossTile(temp, direction)
-      } else {
-        val tempDir = direction.sharpTurnRight
-        temp = nextTileIndexes(tempDir, tileIndexes)
-        if(map.tile(temp).walkable(character)) {
-          if(isCross(temp)) return Some(temp)
-          nextCrossTile(temp, tempDir)
-        } else {
-          temp = nextTileIndexes(tempDir.reverse, tileIndexes)
-          if(map.tile(temp).walkable(character)) {
-            if(isCross(temp)) return Some(temp)
-            nextCrossTile(temp, tempDir.reverse)
-          } else {
-            None
-          }
-        }
+    def nextCrossTile(tileIndexes: MapIndexes, direction: Direction): Option[MapIndexes] =
+      untillWall(tileIndexes, direction) match {
+        case Some(x) if tileIsCross(x._2) => Some(x._2)
+        case Some(x) => nextCrossTile(x._2, x._1)
+        case None => None
       }
-    }
 
     def directionForTurn: Option[Direction] = directionForTurn(character.direction)
 
     def directionForTurn(dir: Direction): Option[Direction] = directionForTurn(character.tileIndexes, dir)
 
-    def directionForTurn(tileIndexes: MapIndexes, dir: Direction): Option[Direction] = {
-      if(isCross(tileIndexes)) return None
-
-      var temp = nextTileIndexes(dir, tileIndexes)
-      if(map.tile(temp).walkable(character)) {
-        directionForTurn(temp, dir)
-      } else {
-        val tempDir = dir match {
-          case EAST   | WEST   => NORTH
-          case NORTH  | SOUTH  => EAST
-        }
-        temp = nextTileIndexes(tempDir, tileIndexes)
-        if(map.tile(temp).walkable(character)) {
-          Some(tempDir)
-        } else {
-          Some(tempDir.reverse)
-        }
+    def directionForTurn(tileIndexes: MapIndexes, direction: Direction): Option[Direction] =
+      untillWall(tileIndexes, direction) match {
+        case Some(x) if x._1==direction => directionForTurn(x._2, x._1)
+        case Some(x) => Some(x._1)
+        case None => None
       }
-    }
+
+    private def untillWall(tileIndexes: MapIndexes, direction: Direction): Option[(Direction, MapIndexes)] =
+      Set(direction, direction.sharpTurnRight, direction.sharpTurnLeft)
+        .map(   dir => (dir, nextTileIndexes(dir, tileIndexes)))
+        .find(  x => map.tile(x._2).walkable(character))
   }
 
   implicit class MapHelper(map: Map) {
@@ -178,6 +150,9 @@ object GameHelpers {
       pacmanEffect(indexes._1, width) * TileGeography.SIZE,
       pacmanEffect(indexes._2, height) * TileGeography.SIZE
     )
+
+    def tileIsCross(tileIndexes: MapIndexes, character:Character): Boolean =
+      map.tileNeighboursIndexes(tileIndexes).count(map.tile(_).walkable(character)) > 2
 
     def tileNeighboursIndexes(tileIndexes: MapIndexes): List[MapIndexes] =
       ((1, 0) :: (-1, 0) :: (0, 1) :: (0, -1) :: Nil)
