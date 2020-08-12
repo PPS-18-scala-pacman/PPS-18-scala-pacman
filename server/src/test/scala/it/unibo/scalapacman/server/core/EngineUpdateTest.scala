@@ -1,4 +1,4 @@
-package it.unibo.scalapacman.server.core;
+package it.unibo.scalapacman.server.core
 
 import akka.actor.testkit.typed.scaladsl.{ScalaTestWithActorTestKit, TestProbe}
 import akka.actor.typed.ActorRef
@@ -24,7 +24,7 @@ class EngineUpdateTest extends ScalaTestWithActorTestKit with AnyWordSpecLike {
     "update watcher after registration" in {
       engineActor ! Engine.RegisterPlayer(watcherPlayerProbe.ref)
 
-      watcherPlayerProbe.receiveMessage(Settings.gameRefreshRate * 2) match {
+      watcherPlayerProbe.receiveMessage(Settings.gameRefreshRate * 8) match {
         case Engine.UpdateMsg(_) =>
         case _ => fail()
       }

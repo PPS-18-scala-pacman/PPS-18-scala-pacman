@@ -36,7 +36,7 @@ class EngineCommandTest extends ScalaTestWithActorTestKit with AnyWordSpecLike {
       Thread.sleep(Settings.gameRefreshRate.toMillis * 2)
 
       engineActor ! Engine.Resume()
-      watcherPlayerProbe.receiveMessage(Settings.gameRefreshRate * 2) match {
+      watcherPlayerProbe.receiveMessage(Settings.gameRefreshRate * 8) match {
         case Engine.UpdateMsg(_) =>
         case _ => fail()
       }

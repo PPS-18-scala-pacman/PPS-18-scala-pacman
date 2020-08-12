@@ -128,11 +128,11 @@ private class Engine(setup: Setup) {
     setup.context.log.debug("updateGame id: " + setup.gameId)
     implicit val map: Map = oldModel.map
 
-    val pacman = updateChar(oldModel.players.pacman)
-    val pinky = updateChar(oldModel.players.pinky)
-    val inky = updateChar(oldModel.players.inky)
-    val clyde = updateChar(oldModel.players.clyde)
-    val blinky = updateChar(oldModel.players.blinky)
+    val pacman  = updateChar(oldModel.players.pacman)
+    val pinky   = updateChar(oldModel.players.pinky)
+    val inky    = updateChar(oldModel.players.inky)
+    val clyde   = updateChar(oldModel.players.clyde)
+    val blinky  = updateChar(oldModel.players.blinky)
     val players = Players(pacman = pacman, pinky = pinky, inky = inky, clyde = clyde, blinky = blinky)
 
     val characters = pacman.character :: pinky.character :: inky.character :: clyde.character :: blinky.character :: Nil

@@ -26,6 +26,8 @@ object Direction extends Enumeration {
       case SOUTHWEST  => NORTHWEST
       case SOUTHEAST  => SOUTHWEST
     }
+
+    def sharpTurnLeft: Direction = dir.sharpTurnRight.reverse
   }
   import scala.language.implicitConversions
   implicit def valueToDirectionVal(x: Value): DirectionVal = new DirectionVal(x)
