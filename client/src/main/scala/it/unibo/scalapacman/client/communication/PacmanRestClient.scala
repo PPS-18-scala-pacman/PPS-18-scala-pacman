@@ -8,7 +8,7 @@ import akka.http.scaladsl.client.RequestBuilding.{Delete, Post}
 import akka.http.scaladsl.model.ws.{Message, TextMessage, WebSocketRequest}
 import akka.http.scaladsl.model.{HttpRequest, HttpResponse, StatusCodes}
 import akka.http.scaladsl.unmarshalling.Unmarshal
-import akka.stream.OverflowStrategy
+import akka.stream.{CompletionStrategy, OverflowStrategy}
 import akka.stream.scaladsl.{Keep, Sink, Source}
 import grizzled.slf4j.Logging
 
@@ -20,7 +20,7 @@ trait PacmanRestClient extends Logging { this: HttpClient =>
 
   val WS_BUFFER_SIZE: Int = 1
 
-  var _webSocketSpeaker: ActorRef = _
+  var _webSocketSpeaker: Option[ActorRef] = None
 
   def startGame: Future[String] = {
     val request = Post(PacmanRestClient.GAMES_URL)
@@ -45,15 +45,25 @@ trait PacmanRestClient extends Logging { this: HttpClient =>
     }
   }
 
+  // Source: https://stackoverflow.com/questions/40345697/how-to-use-akka-http-client-websocket-send-message
   def openWS(gameId: String, serverMessageHandler: String => Unit): Unit = {
     val request = WebSocketRequest(s"${PacmanRestClient.GAMES_WS_URL}/$gameId")
 
     val messageSource: Source[Message, ActorRef] =
-      Source.actorRef[TextMessage.Strict](bufferSize = WS_BUFFER_SIZE, OverflowStrategy.dropHead)
+      Source.actorRef(
+        completionMatcher = {
+          // complete stream immediately if we send it Done
+          case Done => CompletionStrategy.immediately
+        },
+        // never fail the stream because of a message
+        failureMatcher = PartialFunction.empty,
+        bufferSize = WS_BUFFER_SIZE,
+        OverflowStrategy.dropHead
+      )
 
     val messageSink: Sink[Message, Future[Done]] = Sink.foreach[Message] {
-      case message: TextMessage.Strict => serverMessageHandler(message.text)
-      case _ => // Non faccio nulla?
+      case tms: TextMessage.Strict => serverMessageHandler(tms.text)
+      case _ => Unit
     }
 
     val webSocketFlow = establishWebSocket(request)
@@ -64,9 +74,11 @@ trait PacmanRestClient extends Logging { this: HttpClient =>
         .toMat(messageSink)(Keep.both)
         .run()
 
-    _webSocketSpeaker = webSocketSpeaker
+    _webSocketSpeaker = Some(webSocketSpeaker)
 
-    val connected = upgradeResponse.flatMap { upgrade =>
+    // TODO connected da usare?
+//    val connected = upgradeResponse.flatMap { upgrade =>
+    upgradeResponse.flatMap { upgrade =>
       if (upgrade.response.status == StatusCodes.SwitchingProtocols) {
         Future.successful(Done)
       } else {
@@ -78,7 +90,11 @@ trait PacmanRestClient extends Logging { this: HttpClient =>
     closed.foreach(thing => debug(s"WebSocket chiusa: $thing"))
   }
 
-  def sendOverWebSocket(message: String): Unit = _webSocketSpeaker ! TextMessage.Strict(message)
+  def sendOverWebSocket(message: String): Unit =
+    if(_webSocketSpeaker.isDefined) _webSocketSpeaker.get ! TextMessage.Strict(message)
+
+  def closeWebSocket(): Unit =
+    if(_webSocketSpeaker.isDefined) _webSocketSpeaker.get ! Done; _webSocketSpeaker = None
 
   private def handleUnknownStatusCode(request: HttpRequest, response: HttpResponse): Future[Nothing] = Unmarshal(response.entity).to[String] flatMap { body =>
     Future.failed(new IOException(s"Stato risposta dal server è ${response.status} [${request.uri}] e il body è $body"))

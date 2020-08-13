@@ -166,6 +166,13 @@ object ElementsCode {
   )
 
   /**
+   * Recupera tutti i codici sotto forma di lista
+   * @return  la lista di tutti i codici
+   */
+  def codes: List[String] = PACMAN_CODES_MAP.values.toList ::: GHOST_CODES_MAP.values.toList ::: DOT_CODES_MAP.values.toList :::
+    FRUIT_CODES_MAP.values.toList ::: ARROW_CODES_MAP.values.toList ::: EMPTY_SPACE_CODE :: WALL_CODE :: Nil
+
+  /**
    * Controlla se code è uno dei codici usati per rappresentare Pacman
    * @param code  codice da controllare
    * @return true se è uno dei codici usati per rappresentare Pacman, false altrimenti

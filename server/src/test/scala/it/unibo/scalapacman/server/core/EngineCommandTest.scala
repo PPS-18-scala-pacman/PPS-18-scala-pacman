@@ -3,7 +3,7 @@ package it.unibo.scalapacman.server.core
 import akka.actor.testkit.typed.scaladsl.{ScalaTestWithActorTestKit, TestProbe}
 import akka.actor.typed.ActorRef
 import it.unibo.scalapacman.lib.model.GhostType
-import it.unibo.scalapacman.server.util.Settings
+import it.unibo.scalapacman.server.util.TestSettings
 import org.scalatest.wordspec.AnyWordSpecLike
 
 class EngineCommandTest extends ScalaTestWithActorTestKit with AnyWordSpecLike {
@@ -26,17 +26,17 @@ class EngineCommandTest extends ScalaTestWithActorTestKit with AnyWordSpecLike {
 
       engineActor ! Engine.Pause()
 
-      watcherPlayerProbe.expectNoMessage(Settings.gameRefreshRate * 2)
+      watcherPlayerProbe.expectNoMessage(TestSettings.waitTime)
     }
 
     "resume game after resume command" in {
 
       engineActor ! Engine.Pause()
       //attendo che il gioco sia messo in pausa
-      Thread.sleep(Settings.gameRefreshRate.toMillis * 2)
+      Thread.sleep(TestSettings.waitTime.toMillis)
 
       engineActor ! Engine.Resume()
-      watcherPlayerProbe.receiveMessage(Settings.gameRefreshRate * 2) match {
+      watcherPlayerProbe.receiveMessage(TestSettings.waitTime) match {
         case Engine.UpdateMsg(_) =>
         case _ => fail()
       }
