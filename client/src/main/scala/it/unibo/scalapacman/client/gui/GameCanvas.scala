@@ -19,7 +19,7 @@ class GameCanvas extends Canvas with Runnable with Logging {
   private var running = false
   private var gameThread: Thread = _
   private val BUFFERS_COUNT = 2
-  private val pleaseRender = new Semaphore(0)
+//  private val pleaseRender = new Semaphore(0)
 
   setPreferredSize(new Dimension(WIDTH, HEIGHT))
 
@@ -30,9 +30,10 @@ class GameCanvas extends Canvas with Runnable with Logging {
 
   def setText(messages: CompositeMessage): Unit = {
     text ++= messages
-    if (pleaseRender.availablePermits() == 0) pleaseRender.release()
+//    if (pleaseRender.availablePermits() == 0) pleaseRender.release()
   }
 
+  // Inizia il thread
   def start(): Unit =
     if (!running) {
       running = true
@@ -41,9 +42,9 @@ class GameCanvas extends Canvas with Runnable with Logging {
       debug("Game thread partito")
     }
 
-  // ends the game
+  // Termina il thread
   def stop(): Unit = {
-    if (!running) {
+    if (running) {
       running = false
       var retry = true
       while (retry) try {
@@ -89,7 +90,7 @@ class GameCanvas extends Canvas with Runnable with Logging {
     if (getBufferStrategy == null) createBufferStrategy(BUFFERS_COUNT)
     while (running) {
       render()
-      pleaseRender.acquire()
+//      pleaseRender.acquire()
       try Thread.sleep(0) // Sempre una buona idea rilasciare le risorse
       catch {
         case e: InterruptedException => e.printStackTrace()
