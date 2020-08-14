@@ -55,7 +55,7 @@ private class GhostAct(setup: Setup) {
     if(selfDTO.isDefined && pacmanDTO.isDefined && pacmanNextCross.isDefined) {
 
       val direction: Option[Direction] = calculateDirection(selfDTO.get.toGhost.get, pacmanNextCross.get)
-      //val direction = GhostAI.desiredDirection(self.get.toGhost.get, pacman.get.toPacman.get)(prologEngine, updatedMap)
+      //val direction = GhostAI.desiredDirection(selfDTO.get.toGhost.get, pacmanDTO.get.toPacman.get)(prologEngine, updatedMap)
 
       if(direction.isDefined) {
         val move: MoveDirection = direction.get match {
