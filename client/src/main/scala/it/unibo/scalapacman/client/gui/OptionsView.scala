@@ -6,14 +6,14 @@ import java.awt.{BorderLayout, GridLayout}
 import it.unibo.scalapacman.client.controller.Action.{RESET_KEY_MAP, SAVE_KEY_MAP}
 import it.unibo.scalapacman.client.controller.Controller
 import it.unibo.scalapacman.client.gui.View.MENU
-import it.unibo.scalapacman.client.input.{KeyBinder, KeyMap}
+import it.unibo.scalapacman.client.input.KeyMap
 import javax.swing.{BorderFactory, JButton, JLabel, JTextField, SwingConstants}
 
 object OptionsView {
-  def apply(keyBinder: KeyBinder)(implicit controller: Controller, viewChanger: ViewChanger): OptionsView = new OptionsView(keyBinder)
+  def apply()(implicit controller: Controller, viewChanger: ViewChanger): OptionsView = new OptionsView()
 }
 
-class OptionsView(keyBinder: KeyBinder)(implicit controller: Controller, viewChanger: ViewChanger) extends PanelImpl {
+class OptionsView()(implicit controller: Controller, viewChanger: ViewChanger) extends PanelImpl {
   private val TITLE_LABEL: String = "Imposta tasti"
   private val SAVE_BUTTON_LABEL: String = "Salva"
   private val RESET_BUTTON_LABEL: String = "Reimposta"
@@ -49,14 +49,14 @@ class OptionsView(keyBinder: KeyBinder)(implicit controller: Controller, viewCha
   private val rightIdentifier: String = "RIGHT"
   private val leftIdentifier: String = "LEFT"
 
-  private var keyMapMap: Map[String, Int] = createKeyMapMap(controller.getKeyMap)
+  private var keyMapMap: Map[String, Int] = createKeyMapMap(controller.model.keyMap)
 
   titleLabel setHorizontalAlignment SwingConstants.CENTER
 
   backButton addActionListener (_ => goBack())
-  resetButton addActionListener (_ => resetKeyMap(keyBinder))
+  resetButton addActionListener (_ => resetKeyMap())
   saveButton addActionListener (_ =>
-    saveKeyMap(keyBinder, KeyMap(keyMapMap(upIdentifier), keyMapMap(downIdentifier), keyMapMap(rightIdentifier), keyMapMap(leftIdentifier)))
+    saveKeyMap(KeyMap(keyMapMap(upIdentifier), keyMapMap(downIdentifier), keyMapMap(rightIdentifier), keyMapMap(leftIdentifier)))
   )
 
   upLabel setLabelFor upTextField
@@ -120,8 +120,7 @@ class OptionsView(keyBinder: KeyBinder)(implicit controller: Controller, viewCha
 
   private def updateKeyMapMap(keyIdentifier: String)(keyCode: Int): Unit = keyMapMap = keyMapMap + (keyIdentifier -> keyCode)
 
-  private def saveKeyMap(keyBinder: KeyBinder, keyMap: KeyMap): Unit = {
-    keyBinder applyKeyBinding keyMap
+  private def saveKeyMap(keyMap: KeyMap): Unit = {
     controller.handleAction(SAVE_KEY_MAP, Some(keyMap))
     resetTextFields()
   }
@@ -138,11 +137,10 @@ class OptionsView(keyBinder: KeyBinder)(implicit controller: Controller, viewCha
     viewChanger.changeView(MENU)
   }
 
-  private def resetKeyMap(keyBinder: KeyBinder): Unit = {
+  private def resetKeyMap(): Unit = {
     controller.handleAction(RESET_KEY_MAP, None)
-    keyBinder applyKeyBinding controller.getKeyMap
     resetTextFields()
   }
 
-  private def resetTextFields(): Unit = updateTextFields(controller.getKeyMap)
+  private def resetTextFields(): Unit = updateTextFields(controller.model.keyMap)
 }
