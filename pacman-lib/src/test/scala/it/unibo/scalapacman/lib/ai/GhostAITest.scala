@@ -63,5 +63,36 @@ class GhostAITest extends AnyWordSpec {
         assert(desiredDirection == Direction.SOUTH)
       }
     }
+    "calculate the shortest path on classic map" when {
+      "in any condition" in {
+        // scalastyle:off magic.number
+        var classicPath = GhostAI.shortestPathClassic((24, 26), (15, 29))
+        assert(classicPath == (24, 26) :: (15, 29) :: Nil)
+
+        classicPath = GhostAI.shortestPathClassic((1, 5), (26, 5))
+        assert(classicPath == (1, 5) :: (6, 5) :: (9, 5) :: (12, 5) :: (15, 5) :: (18, 5) :: (21, 5) :: (26, 5) :: Nil)
+
+        classicPath = GhostAI.shortestPathClassic((6, 1), (6, 23))
+        assert(classicPath == (6, 1) :: (6, 5) :: (6, 8) :: (6, 14) :: (6, 20) :: (6, 23) :: Nil)
+
+        classicPath = GhostAI.shortestPathClassic((1, 5), (18, 17))
+        assert(classicPath == (1, 5) :: (6, 5) :: (9, 5) :: (12, 11) :: (15, 11) :: (18, 14) :: (18, 17) :: Nil)
+        // scalastyle:on magic.number
+      }
+      "calculate the desired direction" when {
+        "in any condition" in {
+          // scalastyle:off magic.number
+          var ghost = Ghost.clyde(Point2D(12 * TileGeography.SIZE, 29 * TileGeography.SIZE), 1.0, Direction.NORTH)
+          assert(GhostAI.desiredDirectionClassic(ghost, (15, 29)).contains(Direction.EAST))
+
+          ghost = Ghost.clyde(Point2D(24 * TileGeography.SIZE, 26 * TileGeography.SIZE), 1.0, Direction.SOUTH)
+          assert(GhostAI.desiredDirectionClassic(ghost, (15, 29)).contains(Direction.EAST))
+          assert(GhostAI.desiredDirectionClassic(ghost, (15, 29)).contains(Direction.EAST))
+          assert(GhostAI.desiredDirectionClassic(ghost, (21, 23)).contains(Direction.WEST))
+          assert(GhostAI.desiredDirectionClassic(ghost, (15, 11)).contains(Direction.WEST))
+          // scalastyle:on magic.number
+        }
+      }
+    }
   }
 }
