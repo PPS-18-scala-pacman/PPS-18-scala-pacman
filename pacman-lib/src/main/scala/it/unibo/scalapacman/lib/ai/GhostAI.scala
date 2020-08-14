@@ -17,16 +17,16 @@ object GhostAI {
   def shortestPath(character: Character, endTileIndexes: MapIndexes)(implicit engine: PrologEngine, map: Map): List[MapIndexes] = {
     val graph = Graph.fromMap(map).filterWalkable(character)
     val quest: (GraphVertex,GraphVertex)=>Term = (tileStart, tileEnd) => MinDistance(graph, tileStart, tileEnd)
-    calculatePath(character.tileIndexes, endTileIndexes, quest, 3)(engine, map)
+    calculatePath(character.tileIndexes, endTileIndexes, quest, 3)(engine)
   }
 
-  def shortestPathClassic(startTileIndexes: MapIndexes, endTileIndexes: MapIndexes)(implicit engine: PrologEngine, map: Map): List[MapIndexes] = {
+  def shortestPathClassic(startTileIndexes: MapIndexes, endTileIndexes: MapIndexes)(implicit engine: PrologEngine): List[MapIndexes] = {
     val quest: (GraphVertex,GraphVertex)=>Term = (tileStart, tileEnd) => MinDistanceClassic(tileStart, tileEnd)
-    calculatePath(startTileIndexes, endTileIndexes, quest, 2)(engine, map)
+    calculatePath(startTileIndexes, endTileIndexes, quest, 2)(engine)
   }
 
   private def calculatePath(startTileIndexes: MapIndexes, endTileIndexes: MapIndexes, quest:(GraphVertex,GraphVertex)=>Term, index:Int)
-                           (implicit engine: PrologEngine, map: Map): List[MapIndexes] = {
+                           (implicit engine: PrologEngine): List[MapIndexes] = {
 
     val tileStart = GraphVertex(startTileIndexes)
     val tileEnd = GraphVertex(endTileIndexes)
@@ -40,8 +40,9 @@ object GhostAI {
   def desiredDirection(ghost: Ghost, pacman: Pacman)(implicit engine: PrologEngine, map: Map): Direction =
     Option(shortestPath(ghost, pacman.tileIndexes)(engine, map).take(2)) filter(_.size == 2) map directionByPath getOrElse ghost.direction
 
-  def desiredDirectionClassic(char: Character, endTileIndexes: MapIndexes)(implicit engine: PrologEngine, map: Map): Option[Direction] = {
-    shortestPathClassic(char.tileIndexes, endTileIndexes)(engine, map) match {
+  def desiredDirectionClassic(char: Character, endTileIndexes: MapIndexes)(implicit engine: PrologEngine): Option[Direction] = {
+    implicit val map: Map = Map.classic
+    shortestPathClassic(char.tileIndexes, endTileIndexes)(engine) match {
       case path:List[MapIndexes] if path.size < 2 => None
       case path:List[MapIndexes] => Direction.windRose.find(dir =>
         char.nextTile(dir).walkable(char) && char.nextCrossTile(path.head, dir).contains(path.tail.head))
