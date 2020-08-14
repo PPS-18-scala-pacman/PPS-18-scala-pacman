@@ -138,12 +138,15 @@ private class Engine(setup: Setup) {
     val characters = pacman.character :: pinky.character :: inky.character :: clyde.character :: blinky.character :: Nil
 
     implicit val collisions: List[(Character, GameObject)] = GameTick.collisions(characters)
-    val state = GameTick.calculateGameState(GameState(oldModel.state.score))
+
+    val newMap = GameTick.calculateMap(map)
+    val state = GameTick.calculateGameState(
+      GameTick.calculateLevelState(GameState(oldModel.state.score), characters, oldModel.map)
+    )
 
     //TODO aggiunrere calcolo personaggi vivi, calcolo delle velocità
     // da valutare: calcolo direzioni fantasmi(per energizer pacman)
 
-    val newMap = GameTick.calculateMap(map)
     val model: EngineModel = EngineModel(players, newMap, state)
     updateWatcher(model)
     mainRoutine(model)
