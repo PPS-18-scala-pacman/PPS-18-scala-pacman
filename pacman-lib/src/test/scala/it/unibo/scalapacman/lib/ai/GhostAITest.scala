@@ -76,7 +76,19 @@ class GhostAITest extends AnyWordSpec {
         assert(classicPath == (6, 1) :: (6, 5) :: (6, 8) :: (6, 14) :: (6, 20) :: (6, 23) :: Nil)
 
         classicPath = GhostAI.shortestPathClassic((1, 5), (18, 17))
-        assert(classicPath == (1, 5) :: (6, 5) :: (9, 5) :: (12, 11) :: (15, 11) :: (18, 14) :: (18, 17) :: Nil)
+        assert(classicPath == (1, 5) :: (6, 5) :: (9, 5) :: (12, 11) :: (13,11) :: (14,11) :: (15, 11) :: (18, 14) :: (18, 17) :: Nil)
+
+        classicPath = GhostAI.shortestPathClassic((13, 13), (12, 11))
+        assert(classicPath == (13,13) :: (13,12) :: (13,11) :: (12,11) :: Nil)
+
+        classicPath = GhostAI.shortestPathClassic((13, 15), (12, 11))
+        assert(classicPath == (13,15) :: (13,14) :: (13,13) :: (13,12) :: (13,11) :: (12,11) :: Nil)
+
+        classicPath = GhostAI.shortestPathClassic((15, 14), (12, 11))
+        assert(classicPath == (15, 14) :: (14, 14) :: (14,13) :: (14,12) :: (14,11) :: (13,11) :: (12,11) :: Nil)
+
+        classicPath = GhostAI.shortestPathClassic((11, 14), (12, 11))
+        assert(classicPath == (11, 14) :: (12,14) :: (13,14) :: (13,13) :: (13,12) :: (13,11) :: (12,11) :: Nil)
         // scalastyle:on magic.number
       }
       "calculate the desired direction" when {
@@ -90,6 +102,9 @@ class GhostAITest extends AnyWordSpec {
           assert(GhostAI.desiredDirectionClassic(ghost, (15, 29)).contains(Direction.EAST))
           assert(GhostAI.desiredDirectionClassic(ghost, (21, 23)).contains(Direction.WEST))
           assert(GhostAI.desiredDirectionClassic(ghost, (15, 11)).contains(Direction.WEST))
+
+          ghost = Ghost.clyde(Point2D(13 * TileGeography.SIZE, 15 * TileGeography.SIZE), 1.0, Direction.NORTH)
+          assert(GhostAI.desiredDirectionClassic(ghost, (12, 11)).contains(Direction.NORTH))
           // scalastyle:on magic.number
         }
       }

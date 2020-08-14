@@ -110,7 +110,7 @@ object GameHelpers {
       }
 
     private def untillWall(tileIndexes: MapIndexes, direction: Direction): Option[(Direction, MapIndexes)] =
-      Set(direction, direction.sharpTurnRight, direction.sharpTurnLeft)
+      List(direction, direction.sharpTurnRight, direction.sharpTurnLeft)
         .map(   dir => (dir, nextTileIndexes(dir, tileIndexes)))
         .find(  x => map.tile(x._2).walkable(character))
   }
