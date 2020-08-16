@@ -5,7 +5,7 @@ import akka.actor.typed.scaladsl.Behaviors
 import com.typesafe.config.ConfigFactory
 import it.unibo.scalapacman.server.communication.HttpService
 import it.unibo.scalapacman.server.core.Master
-import it.unibo.scalapacman.server.util.Settings
+import it.unibo.scalapacman.server.util.{ConfLoader, Settings}
 
 object Bootstrap {
   def apply(): Behavior[String] = Behaviors.setup { context =>
@@ -16,6 +16,5 @@ object Bootstrap {
 }
 
 object ServerApp extends App {
-  val config = ConfigFactory.load()
-  val system = ActorSystem(Bootstrap(), "BootstrapActor", config.getConfig("server-app").withFallback(config))
+  val system = ActorSystem(Bootstrap(), "BootstrapActor", ConfLoader.config)
 }
