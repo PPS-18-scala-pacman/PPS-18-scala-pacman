@@ -94,16 +94,16 @@ class GhostAITest extends AnyWordSpec {
       "calculate the desired direction" when {
         "in any condition" in {
           // scalastyle:off magic.number
-          var ghost = Ghost.clyde(Point2D(12 * TileGeography.SIZE, 29 * TileGeography.SIZE), 1.0, Direction.NORTH)
+          var ghost = Ghost.inky(Point2D(12 * TileGeography.SIZE, 29 * TileGeography.SIZE), 1.0, Direction.NORTH)
           assert(GhostAI.desiredDirectionClassic(ghost, (15, 29)).contains(Direction.EAST))
 
-          ghost = Ghost.clyde(Point2D(24 * TileGeography.SIZE, 26 * TileGeography.SIZE), 1.0, Direction.SOUTH)
+          ghost = Ghost.inky(Point2D(24 * TileGeography.SIZE, 26 * TileGeography.SIZE), 1.0, Direction.SOUTH)
           assert(GhostAI.desiredDirectionClassic(ghost, (15, 29)).contains(Direction.EAST))
           assert(GhostAI.desiredDirectionClassic(ghost, (15, 29)).contains(Direction.EAST))
           assert(GhostAI.desiredDirectionClassic(ghost, (21, 23)).contains(Direction.WEST))
           assert(GhostAI.desiredDirectionClassic(ghost, (15, 11)).contains(Direction.WEST))
 
-          ghost = Ghost.clyde(Point2D(13 * TileGeography.SIZE, 15 * TileGeography.SIZE), 1.0, Direction.NORTH)
+          ghost = Ghost.inky(Point2D(13 * TileGeography.SIZE, 15 * TileGeography.SIZE), 1.0, Direction.NORTH)
           assert(GhostAI.desiredDirectionClassic(ghost, (12, 11)).contains(Direction.NORTH))
           // scalastyle:on magic.number
         }

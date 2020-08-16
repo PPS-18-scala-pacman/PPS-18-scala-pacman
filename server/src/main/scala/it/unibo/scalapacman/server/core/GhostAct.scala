@@ -9,7 +9,7 @@ import it.unibo.scalapacman.lib.engine.GameHelpers.CharacterHelper
 import it.unibo.scalapacman.lib.model.Direction.Direction
 import it.unibo.scalapacman.lib.model.GhostType.GhostType
 import it.unibo.scalapacman.lib.model.Map.MapIndexes
-import it.unibo.scalapacman.lib.model.{Direction, GameState, Ghost, Map}
+import it.unibo.scalapacman.lib.model.{Direction, GameState, Ghost, GhostType, Map}
 import it.unibo.scalapacman.server.core.Engine.ChangeDirectionReq
 import it.unibo.scalapacman.server.core.GhostAct.{Model, Setup}
 import it.unibo.scalapacman.server.model.MoveDirection
@@ -33,6 +33,7 @@ object GhostAct {
 
 private class GhostAct(setup: Setup) {
 
+  setup.context.log.info(s"GhostActor per fantasma ${setup.ghostType}")
   setup.engine ! Engine.RegisterGhost(setup.context.self, setup.ghostType)
 
   private def coreRoutine(model: Model): Behaviors.Receive[Engine.UpdateCommand] =
@@ -69,7 +70,7 @@ private class GhostAct(setup: Setup) {
           case Direction.WEST => MoveDirection.LEFT
         }
 
-        if (!myModel.desMove.contains(move)) setup.engine ! ChangeDirectionReq(setup.context.self, move)
+        if(!myModel.desMove.contains(move)) setup.engine ! ChangeDirectionReq(setup.context.self, move)
 
         coreRoutine(Model(updatedMap, gameState, Some(move)))
       } else {

@@ -39,7 +39,7 @@ object Level {
     def ghost(gType: GhostType): Ghost = gType match {
       case GhostType.BLINKY => Ghost(gType, BLINKY_START_POSITION, ghostSpeed(level), Direction.WEST)
       case GhostType.PINKY  => Ghost(gType, PINKY_START_POSITION,  ghostSpeed(level), Direction.EAST)
-      case GhostType.INKY   => Ghost(gType, INKY_START_POSITION,   ghostSpeed(level), Direction.NORTH)
+      case GhostType.INKY   => Ghost(gType, INKY_START_POSITION,   ghostSpeed(level), Direction.EAST)
       case GhostType.CLYDE  => Ghost(gType, CLYDE_START_POSITION,  ghostSpeed(level), Direction.WEST)
     }
 
