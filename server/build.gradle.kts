@@ -11,6 +11,8 @@ val group: String by project
 dependencies {
   implementation(project(":pacman-lib"))
   implementation(project(":common"))
+
+  implementation( group = "ch.qos.logback", name= "logback-classic", version= "1.2.3")
 }
 
 application {

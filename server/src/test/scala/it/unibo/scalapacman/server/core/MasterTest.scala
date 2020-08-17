@@ -5,12 +5,13 @@ import java.util.concurrent.TimeUnit
 import akka.actor.testkit.typed.scaladsl.{ScalaTestWithActorTestKit, TestProbe}
 import akka.actor.typed.ActorRef
 import akka.actor.typed.receptionist.{Receptionist, ServiceKey}
+import it.unibo.scalapacman.server.util.ConfLoader
 import org.scalatest.wordspec.AnyWordSpecLike
 
 import scala.concurrent.duration.FiniteDuration
 import scala.reflect.ClassTag
 
-class MasterTest extends ScalaTestWithActorTestKit with AnyWordSpecLike {
+class MasterTest extends ScalaTestWithActorTestKit(ConfLoader.config) with AnyWordSpecLike {
 
   private var gameCreatedProbe: TestProbe[Master.GameCreated] = _
   private var masterActor: ActorRef[Master.MasterCommand] = _
