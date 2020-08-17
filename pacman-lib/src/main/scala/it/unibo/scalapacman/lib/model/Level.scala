@@ -24,22 +24,22 @@ object Level {
   case class Classic(level: Int) extends LevelGenerator {
     val map: Map = Map.classic
 
-    val PACMAN_START_POSITION: Point2D = map.tileOrigin((14, 23)) + TileGeography.westBlockCenter
-    val BLINKY_START_POSITION: Point2D = map.tileOrigin((13, 11)) + TileGeography.eastBlockCenter
-    val PINKY_START_POSITION: Point2D = map.tileOrigin((11, 14)) + TileGeography.eastBlockCenter
-    val INKY_START_POSITION: Point2D = map.tileOrigin((13, 15)) + TileGeography.eastBlockCenter
-    val CLYDE_START_POSITION: Point2D = map.tileOrigin((15, 14)) + TileGeography.eastBlockCenter
+    val PACMAN_START_POSITION : Point2D = map.tileOrigin((14, 23)) + TileGeography.center
+    val BLINKY_START_POSITION : Point2D = map.tileOrigin((13, 11)) + TileGeography.center
+    val PINKY_START_POSITION  : Point2D = map.tileOrigin((11, 14)) + TileGeography.center
+    val INKY_START_POSITION   : Point2D = map.tileOrigin((13, 15)) + TileGeography.center
+    val CLYDE_START_POSITION  : Point2D = map.tileOrigin((15, 14)) + TileGeography.center
     val FRUIT_INDEXES: MapIndexes = (14, 17)
 
     def characters: List[Character] = pacman :: ghost(GhostType.BLINKY) :: ghost(GhostType.PINKY) ::
-      ghost(GhostType.INKY) :: ghost(GhostType.CLYDE) ::  Nil
+      ghost(GhostType.INKY) :: ghost(GhostType.CLYDE) :: Nil
 
     def pacman: Pacman = Pacman(PACMAN_START_POSITION, pacmanSpeed(level), Direction.WEST)
 
     def ghost(gType: GhostType): Ghost = gType match {
       case GhostType.BLINKY => Ghost(gType, BLINKY_START_POSITION, ghostSpeed(level), Direction.WEST)
       case GhostType.PINKY  => Ghost(gType, PINKY_START_POSITION,  ghostSpeed(level), Direction.EAST)
-      case GhostType.INKY   => Ghost(gType, INKY_START_POSITION,   ghostSpeed(level), Direction.EAST)
+      case GhostType.INKY   => Ghost(gType, INKY_START_POSITION,   ghostSpeed(level), Direction.NORTH)
       case GhostType.CLYDE  => Ghost(gType, CLYDE_START_POSITION,  ghostSpeed(level), Direction.WEST)
     }
 
