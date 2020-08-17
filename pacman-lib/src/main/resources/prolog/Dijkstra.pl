@@ -3,35 +3,30 @@
 % ?- min_dist([0-[1-1], 1-[2-1, 3-1], 2-[], 3-[]], 0, 3, X).
 % Result: X = [0, 1, 3]    X / [0,1,3]
 
-% edge(Graph,V1,V2,Value):-
-%    member(V1-NB-[V1],Graph),
-%    member(V2-Value-[V2],NB).
-
-neighbourhood(Graph,V,NB):-
-   member(V-NB,Graph).
-
 % min_dist(+Graph,+Start,+End,-Path)
 min_dist(Graph,Start,End,Path):-
-   dijkstra(Graph,[],[Start-0-[Start]],MinDist),
-   member(End-_-ReversePath, MinDist),
+   dijkstra(Graph,[],[Start-0-[Start]],End,_-_-ReversePath),
    reverse(ReversePath, Path).
 % min_dist(+Start,+End,-Path) based on the classic map of pacman
 min_dist(Start,End,Path):-
    classicMap(Graph),
-   dijkstra(Graph,[],[Start-0-[Start]],MinDist),
-   member(End-_-ReversePath, MinDist),
+   dijkstra(Graph,[],[Start-0-[Start]],End,_-_-ReversePath),
    reverse(ReversePath, Path).
 
 % dijkstra(+Graph,+ClosedVertices,+OpenVertices,+End,-Path)
-dijkstra(_,MinDist,[],MinDist).
-dijkstra(Graph,Closed,Open,MinDist):-
+dijkstra(_,_,Open,End,End-D-P):-
+    choose_v(Open,End-D-P,_), !.
+dijkstra(Graph,Closed,Open,End,MinDist):-
    choose_v(Open,V-D-P,RestOpen),
-   print(V-D-P), nl,
    neighbourhood(Graph,V,NB),  % NB is a list of adjacent vertices+distance to V
    diff(NB,Closed,NewNB),
-   add_path(NewNB, P, NBP),	   % NBP is a list of adjacent vertices+distance and path to V
+   add_path(NewNB, P, NBP),    % NBP is a list of adjacent vertices+distance and path to V
    merge(NBP,RestOpen,D,NewOpen),
-   dijkstra(Graph,[V-D-P|Closed],NewOpen,MinDist).
+   dijkstra(Graph,[V-D-P|Closed],NewOpen,MinDist,End).
+
+
+neighbourhood(Graph,V,NB):-
+   member(V-NB,Graph).
 
 % add_path(+Neighbourhood,+Path,-NeighbourhoodWithPath)
 add_path([], _, []).
@@ -43,7 +38,7 @@ choose_v([H|T],MinV,Rest):-
    choose_minv(T,H,MinV,Rest).
 choose_minv([],MinV,MinV,[]).
 choose_minv([H|T],M,MinV,[H2|Rest]):-
-   H=V1-D1-P1, M=V-D-P,
+   H=_-D1-_, M=_-D-_,
    (D1<D -> NextM=H,H2=M
           ; NextM=M,H2=H),
    choose_minv(T,NextM,MinV,Rest).
@@ -51,7 +46,7 @@ choose_minv([H|T],M,MinV,[H2|Rest]):-
 % diff(+ListOfVertices,+Closed,-ListOfNonClosedVertices)
 diff([],_,[]).
 diff([H|T],Closed,L):-
-   H=V-D,
+   H=V-_,
    (member(V-_-_,Closed) -> L=NewT ; L=[H|NewT]),
    diff(T,Closed,NewT).
 
@@ -59,7 +54,7 @@ diff([H|T],Closed,L):-
 merge([],L,_,L).
 merge([V1-D1-P1|T],Open,D,NewOpen):-
    (remove(Open,V1-D2-P2,RestOpen)
-      -> (D2<D+D1 -> VD=D2, VP=P2 ; VD=D+D1, VP=P1)  % VP deve prendere il valore in base a VD
+      -> (D2<D+D1 -> VD=D2, VP=P2 ; VD is D+D1, VP=P1)  % VP deve prendere il valore in base a VD
        ; (RestOpen=Open,VD is D+D1, VP=P1) ),
    NewOpen=[V1-VD-VP|SubOpen],
    merge(T,RestOpen,D,SubOpen).
@@ -96,4 +91,3 @@ classicMap([
     t(11,14)-[t(12,14)-1], t(12,14)-[t(13,14)-1],
     t(15,14)-[t(14,14)-1]
 ]).
-
