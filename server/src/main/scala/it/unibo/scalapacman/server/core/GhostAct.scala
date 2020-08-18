@@ -3,13 +3,13 @@ package it.unibo.scalapacman.server.core
 import akka.actor.typed.{ActorRef, Behavior}
 import akka.actor.typed.scaladsl.{ActorContext, Behaviors}
 import it.unibo.scalapacman.common.{GameCharacter, UpdateModelDTO}
+import it.unibo.scalapacman.lib.Utility.directionByCrossTile
 import it.unibo.scalapacman.lib.ai.GhostAI
 import it.unibo.scalapacman.lib.ai.GhostAI.prologEngine
-import it.unibo.scalapacman.lib.engine.GameHelpers.CharacterHelper
+import it.unibo.scalapacman.lib.engine.GameHelpers.{CharacterHelper, MapHelper}
 import it.unibo.scalapacman.lib.model.Direction.Direction
 import it.unibo.scalapacman.lib.model.GhostType.GhostType
-import it.unibo.scalapacman.lib.model.Map.MapIndexes
-import it.unibo.scalapacman.lib.model.{Direction, GameState, Ghost, GhostType, Map}
+import it.unibo.scalapacman.lib.model.{Character, Direction, GameState, Ghost, Map}
 import it.unibo.scalapacman.server.core.Engine.ChangeDirectionReq
 import it.unibo.scalapacman.server.core.GhostAct.{Model, Setup}
 import it.unibo.scalapacman.server.model.MoveDirection
@@ -51,14 +51,14 @@ private class GhostAct(setup: Setup) {
 
     //FIXME UPDATE DELLA MAPPA
     implicit val updatedMap: Map = myModel.map
-    val pacmanNextCross = pacmanDTO.get.toPacman.get.nextCrossTile()
 
-    if(selfDTO.isDefined && pacmanDTO.isDefined && pacmanNextCross.isDefined) {
+    if(selfDTO.isDefined && pacmanDTO.isDefined) {
 
-      val direction: Option[Direction] = calculateDirection(selfDTO.get.toGhost.get, pacmanNextCross.get)
+      val pacman = pacmanDTO.get.toPacman.get
+      val direction: Option[Direction] = calculateDirection(selfDTO.get.toGhost.get, pacman)
       //val direction = GhostAI.desiredDirection(selfDTO.get.toGhost.get, pacmanDTO.get.toPacman.get)(prologEngine, updatedMap)
 
-      if(direction.isDefined) {
+      if (direction.isDefined) {
         val move: MoveDirection = direction.get match {
           case Direction.NORTH |
                Direction.NORTHEAST |
@@ -70,28 +70,36 @@ private class GhostAct(setup: Setup) {
           case Direction.WEST => MoveDirection.LEFT
         }
 
-        if(!myModel.desMove.contains(move)) setup.engine ! ChangeDirectionReq(setup.context.self, move)
+        if (!myModel.desMove.contains(move)) setup.engine ! ChangeDirectionReq(setup.context.self, move)
 
         coreRoutine(Model(updatedMap, gameState, Some(move)))
       } else {
         setup.context.log.debug("Cambio di direzione non necessario")
         Behaviors.same
       }
+
     } else {
       setup.context.log.warn("Ricevuto update model non valido")
       Behaviors.same
     }
   }
 
-  private def calculateDirection(self: Ghost, endTileIndexes: MapIndexes)(implicit map: Map):Option[Direction] = {
-    if(self.tileIsCross) {
-      //TODO aggiungere controllo di prossimità con pacman per raggiungerlo, in alternativa calcolo desideredDir
-      GhostAI.desiredDirectionClassic(self, endTileIndexes)
+  private def calculateDirection(self: Ghost, char: Character)(implicit map: Map):Option[Direction] = {
+    val endTileIndexes = char.nextCrossTile()
+
+    if(endTileIndexes.isDefined) {
+      if(self.tileIsCross) {
+        val nearCross = map.tileNearbyCrossings(endTileIndexes.get, char)
+        if(nearCross.size == 2 && nearCross.contains(self.tileIndexes) ) {
+          directionByCrossTile(self.tileIndexes :: nearCross.filter(_!=self.tileIndexes), char)
+        } else {
+          GhostAI.desiredDirectionClassic(self, endTileIndexes.get)
+        }
+      } else {
+        self.directionForTurn
+      }
     } else {
-      self.directionForTurn
-      //TODO in caso None potrei già calcolare la nuova dir per dove si trova pacman per portarmi avanti e introdurre
-      // controlli per non ricolcolare nulla nei cicli successivi se pacman ed io non cambiamo nextTileCross
-      // (nel caso togliere Option dal return)
+      None
     }
   }
 

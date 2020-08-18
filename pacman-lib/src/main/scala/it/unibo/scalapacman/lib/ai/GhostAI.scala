@@ -8,10 +8,10 @@ import it.unibo.scalapacman.lib.prolog.{Graph, GraphVertex, MinDistance, MinDist
 import it.unibo.scalapacman.lib.engine.GameHelpers.CharacterHelper
 import it.unibo.scalapacman.lib.model.Direction.Direction
 import it.unibo.scalapacman.lib.model.Map.MapIndexes
-import it.unibo.scalapacman.lib.Utility.directionByPath
+import it.unibo.scalapacman.lib.Utility.{directionByPath, directionByCrossTile}
 
 object GhostAI {
-  //TODO STO COSO È UNA GRAN CAZZATA SECONDO ME
+
   implicit val prologEngine: PrologEngine = mkPrologEngine(Utility.readFile(getClass.getResource("/prolog/Dijkstra.pl")))
 
   def shortestPath(character: Character, endTileIndexes: MapIndexes)(implicit engine: PrologEngine, map: Map): List[MapIndexes] = {
@@ -44,8 +44,7 @@ object GhostAI {
     implicit val map: Map = Map.classic
     shortestPathClassic(char.tileIndexes, endTileIndexes)(engine) match {
       case path:List[MapIndexes] if path.size < 2 => None
-      case path:List[MapIndexes] => Direction.windRose.find(dir =>
-        char.nextTile(dir).walkable(char) && char.nextCrossTile(path.head, dir).contains(path.tail.head))
+      case path:List[MapIndexes] => directionByCrossTile(path, char)
     }
   }
 

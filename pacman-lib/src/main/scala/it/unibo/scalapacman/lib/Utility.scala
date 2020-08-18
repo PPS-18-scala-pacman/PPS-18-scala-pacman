@@ -2,7 +2,8 @@ package it.unibo.scalapacman.lib
 
 import java.net.URL
 
-import it.unibo.scalapacman.lib.model.Direction
+import it.unibo.scalapacman.lib.engine.GameHelpers.CharacterHelper
+import it.unibo.scalapacman.lib.model.{Character, Direction, Map}
 import it.unibo.scalapacman.lib.model.Direction.Direction
 import it.unibo.scalapacman.lib.model.Map.MapIndexes
 
@@ -37,4 +38,9 @@ object Utility {
     case (_, y) :: (_, y1) :: Nil if y < y1 => Direction.SOUTH
     case (_, y) :: (_, y1) :: Nil if y > y1 => Direction.NORTH
   }
+
+  def directionByCrossTile(path: List[MapIndexes], char: Character)(implicit map: Map): Option[Direction] =
+    Direction.windRose.find(
+      dir => char.nextTile(dir).walkable(char) && char.nextCrossTile(path.head, dir).contains(path.tail.head)
+    )
 }

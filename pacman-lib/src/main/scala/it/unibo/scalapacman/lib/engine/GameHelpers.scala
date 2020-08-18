@@ -1,8 +1,9 @@
 package it.unibo.scalapacman.lib.engine
 
+import it.unibo.scalapacman.lib.Utility
 import it.unibo.scalapacman.lib.engine.CircularMovement.{moveFor, moveUntil}
 import it.unibo.scalapacman.lib.math.{Point2D, TileGeography, Vector2D}
-import it.unibo.scalapacman.lib.model.{Character, Dot, Eatable, Fruit, Ghost, Map, Pacman, Tile}
+import it.unibo.scalapacman.lib.model.{Character, Direction, Dot, Eatable, Fruit, Ghost, Map, Pacman, Tile}
 import it.unibo.scalapacman.lib.model.Direction.Direction
 import it.unibo.scalapacman.lib.model.Direction.{EAST, NORTH, SOUTH, WEST}
 import it.unibo.scalapacman.lib.model.Map.MapIndexes
@@ -92,7 +93,7 @@ object GameHelpers {
     def nextCrossTile(): Option[MapIndexes] = nextCrossTile(character.tileIndexes, character.direction)
 
     def nextCrossTile(tileIndexes: MapIndexes, direction: Direction): Option[MapIndexes] =
-      untillWall(tileIndexes, direction) match {
+      untilWall(tileIndexes, direction) match {
         case Some(x) if tileIsCross(x._2) => Some(x._2)
         case Some(x) => nextCrossTile(x._2, x._1)
         case None => None
@@ -103,13 +104,13 @@ object GameHelpers {
     def directionForTurn(dir: Direction): Option[Direction] = directionForTurn(character.tileIndexes, dir)
 
     def directionForTurn(tileIndexes: MapIndexes, direction: Direction): Option[Direction] =
-      untillWall(tileIndexes, direction) match {
+      untilWall(tileIndexes, direction) match {
         case Some(x) if x._1==direction => directionForTurn(x._2, x._1)
         case Some(x) => Some(x._1)
         case None => None
       }
 
-    private def untillWall(tileIndexes: MapIndexes, direction: Direction): Option[(Direction, MapIndexes)] =
+    private def untilWall(tileIndexes: MapIndexes, direction: Direction): Option[(Direction, MapIndexes)] =
       List(direction, direction.sharpTurnRight, direction.sharpTurnLeft)
         .map(   dir => (dir, nextTileIndexes(dir, tileIndexes)))
         .find(  x => map.tile(x._2).walkable(character))
@@ -158,6 +159,13 @@ object GameHelpers {
       ((1, 0) :: (-1, 0) :: (0, 1) :: (0, -1) :: Nil)
         .map(p => (p._1 + tileIndexes._1, p._2 + tileIndexes._2))
         .map(map.tileIndexes)
+
+    def tileNearbyCrossings(tileIndexes: MapIndexes, character:Character): List[MapIndexes] =
+      map.tileNeighboursIndexes(tileIndexes)
+        .filter(map.tile(_).walkable(character))
+        .map(tileIndexes :: _ :: Nil)
+        .map(Utility.directionByPath)
+        .flatMap( CharacterHelper(character)(map).nextCrossTile(tileIndexes, _) )
 
     @scala.annotation.tailrec
     private def pacmanEffect(x: Int, max: Int): Int = x match {
