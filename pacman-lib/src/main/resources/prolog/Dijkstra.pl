@@ -14,8 +14,8 @@ min_dist(Start,End,Path):-
    reverse(ReversePath, Path).
 
 % dijkstra(+Graph,+ClosedVertices,+OpenVertices,+End,-Path)
-dijkstra(_,_,Open,End,End-D-P):-
-    choose_v(Open,End-D-P,_), !.
+dijkstra(_,Closed,_,End,End-D-P):-
+    member(End-D-P,Closed), !.
 dijkstra(Graph,Closed,Open,End,MinDist):-
    choose_v(Open,V-D-P,RestOpen),
    neighbourhood(Graph,V,NB),  % NB is a list of adjacent vertices+distance to V
