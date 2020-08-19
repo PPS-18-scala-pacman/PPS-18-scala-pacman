@@ -3,12 +3,12 @@ package it.unibo.scalapacman.lib.ai
 import alice.tuprolog.{Struct, Term}
 import it.unibo.scalapacman.lib.Utility
 import it.unibo.scalapacman.lib.prolog.Scala2P.{PrologEngine, convertibleToTerm, extractTerm, mkPrologEngine}
-import it.unibo.scalapacman.lib.model.{Character, Direction, Ghost, Map, Pacman}
+import it.unibo.scalapacman.lib.model.{Character, Ghost, Map, Pacman}
 import it.unibo.scalapacman.lib.prolog.{Graph, GraphVertex, MinDistance, MinDistanceClassic}
-import it.unibo.scalapacman.lib.engine.GameHelpers.CharacterHelper
+import it.unibo.scalapacman.lib.engine.GameHelpers.{CharacterHelper, MapHelper}
 import it.unibo.scalapacman.lib.model.Direction.Direction
 import it.unibo.scalapacman.lib.model.Map.MapIndexes
-import it.unibo.scalapacman.lib.Utility.{directionByPath, directionByCrossTile}
+import it.unibo.scalapacman.lib.Utility.{directionByCrossTile, directionByPath}
 
 object GhostAI {
 
@@ -48,4 +48,23 @@ object GhostAI {
     }
   }
 
+  def calculateDirectionClassic(self: Ghost, char: Character):Option[Direction] = {
+    implicit val map: Map = Map.classic
+    val selfTile = self.tileIndexes
+
+    if(self.tileIsCross) {
+      char.nextCrossTile().flatMap ( charNextCross =>
+        charNextCross match {
+          case `selfTile` =>
+            directionByCrossTile(selfTile :: char.revert.nextCrossTile().get :: Nil, char.revert)
+          case _ if map.tileNearbyCrossings(charNextCross, char).contains(selfTile) =>
+            directionByCrossTile(selfTile :: charNextCross :: Nil, char)
+          case _ =>
+            GhostAI.desiredDirectionClassic(self, charNextCross)
+        }
+      )
+    } else {
+      self.directionForTurn
+    }
+  }
 }
