@@ -108,6 +108,29 @@ class GhostAITest extends AnyWordSpec {
           // scalastyle:on magic.number
         }
       }
+      "find the best direction for all situation" when {
+        "faraway from pacman" in {
+          val ghost = Ghost.inky(Point2D(6 * TileGeography.SIZE, 23 * TileGeography.SIZE), 1.0, Direction.NORTH)
+          val pacman = Pacman(Point2D(6 * TileGeography.SIZE, 1 * TileGeography.SIZE), 1.0, Direction.SOUTH)
+          assert(GhostAI.calculateDirectionClassic(ghost, pacman).contains(Direction.NORTH))
+        }
+        "the ghost's tile isn't a crossing" in {
+          var ghost = Ghost.inky(Point2D(4 * TileGeography.SIZE, 26 * TileGeography.SIZE), 1.0, Direction.NORTH)
+          val pacman = Pacman(Point2D(6 * TileGeography.SIZE, 1 * TileGeography.SIZE), 1.0, Direction.SOUTH)
+          assert(GhostAI.calculateDirectionClassic(ghost, pacman).contains(Direction.EAST))
+
+          ghost = ghost.copy(position = Point2D(3 * TileGeography.SIZE, 25 * TileGeography.SIZE))
+          assert(GhostAI.calculateDirectionClassic(ghost, pacman).contains(Direction.WEST))
+        }
+        "pacman is near" in {
+          val ghost = Ghost.inky(Point2D(21 * TileGeography.SIZE, 8 * TileGeography.SIZE), 1.0, Direction.NORTH)
+          var pacman = Pacman(Point2D(26 * TileGeography.SIZE, 6 * TileGeography.SIZE), 1.0, Direction.NORTH)
+          assert(GhostAI.calculateDirectionClassic(ghost, pacman).contains(Direction.EAST))
+
+          pacman = pacman.copy(direction = Direction.SOUTH)
+          assert(GhostAI.calculateDirectionClassic(ghost, pacman).contains(Direction.EAST))
+        }
+      }
     }
   }
 }
