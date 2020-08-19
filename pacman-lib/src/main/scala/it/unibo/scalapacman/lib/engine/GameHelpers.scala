@@ -3,7 +3,7 @@ package it.unibo.scalapacman.lib.engine
 import it.unibo.scalapacman.lib.Utility
 import it.unibo.scalapacman.lib.engine.CircularMovement.{moveFor, moveUntil}
 import it.unibo.scalapacman.lib.math.{Point2D, TileGeography, Vector2D}
-import it.unibo.scalapacman.lib.model.{Character, Direction, Dot, Eatable, Fruit, Ghost, Map, Pacman, Tile}
+import it.unibo.scalapacman.lib.model.{Character, Dot, Eatable, Fruit, Ghost, Map, Pacman, Tile}
 import it.unibo.scalapacman.lib.model.Direction.Direction
 import it.unibo.scalapacman.lib.model.Direction.{EAST, NORTH, SOUTH, WEST}
 import it.unibo.scalapacman.lib.model.Map.MapIndexes
@@ -166,6 +166,8 @@ object GameHelpers {
         .map(tileIndexes :: _ :: Nil)
         .map(Utility.directionByPath)
         .flatMap( CharacterHelper(character)(map).nextCrossTile(tileIndexes, _) )
+
+    def nextTile(tileIndexes: MapIndexes, direction: Direction): Tile = map.tile(map.tileOrigin(tileIndexes), Some(direction).map(CharacterMovement.vector))
 
     @scala.annotation.tailrec
     private def pacmanEffect(x: Int, max: Int): Int = x match {
