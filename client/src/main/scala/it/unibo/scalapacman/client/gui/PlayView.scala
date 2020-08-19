@@ -3,9 +3,8 @@ package it.unibo.scalapacman.client.gui
 import java.awt.{BorderLayout, Color, Font, GridLayout}
 
 import it.unibo.scalapacman.client.controller.Action.{END_GAME, START_GAME, SUBSCRIBE_TO_EVENTS}
-import it.unibo.scalapacman.client.controller.Controller
+import it.unibo.scalapacman.client.controller.{Action, Controller}
 import it.unibo.scalapacman.client.event.{GameUpdate, NewKeyMap, PacmanEvent, PacmanSubscriber}
-import it.unibo.scalapacman.client.gui.GameCanvas.CompositeMessage
 import it.unibo.scalapacman.client.input.{KeyMap, UserInput}
 import it.unibo.scalapacman.client.gui.View.MENU
 import it.unibo.scalapacman.client.map.{ElementsCode, PacmanMap}
@@ -38,7 +37,7 @@ class PlayView(implicit controller: Controller, viewChanger: ViewChanger) extend
   private val GAME_OVER_MESSAGE: String = "Game Over!"
   private val SCORE_MESSAGE: String = "Punteggio"
 
-  /* TextPane constants */
+  /* GameCanvas constants */
   private val FONT_PATH = "font/unifont/unifont.ttf"
   private val UNIFONT: Font = loadFont(FONT_PATH)
   private val PLAY_FONT_SIZE: Float = 24f
@@ -57,7 +56,7 @@ class PlayView(implicit controller: Controller, viewChanger: ViewChanger) extend
 
   private var _map: Option[PacmanMap] = None
   private var _gameState: Option[GameState] = None
-  private var _no_more: Boolean = false
+  private var _gameRunning: Boolean = false
 
   private val IFW = JComponent.WHEN_IN_FOCUSED_WINDOW
 
@@ -89,9 +88,9 @@ class PlayView(implicit controller: Controller, viewChanger: ViewChanger) extend
   userMessage setFont new Font(MAIN_FONT_NAME, Font.BOLD, MAIN_LABELS_FONT)
 
   startGameButton addActionListener (_ => {
-    controller.handleAction(START_GAME, None)
+    askToController(START_GAME, None)
     gameCanvas start()
-    _no_more = false
+    _gameRunning = true
     _map = None
     _gameState = None
     userMessage setText GOOD_LUCK
@@ -100,13 +99,15 @@ class PlayView(implicit controller: Controller, viewChanger: ViewChanger) extend
 
   endGameButton addActionListener (_ => {
     updateGameView(_map.getOrElse(Nil), _gameState.getOrElse(GameState(score = 0)).copy(levelState = LevelState.DEFEAT), gameCanvas, scoreCount)
-    controller.handleAction(END_GAME, None)
+    askToController(END_GAME, None)
   })
 
   backButton addActionListener (_ => {
-    controller.handleAction(END_GAME, None)
+    askToController(END_GAME, None)
     viewChanger.changeView(MENU)
     gameCanvas stop()
+    // Pulisco l'area di gioco
+    gameCanvas setText ""
   })
 
   private val playPanel: PanelImpl = PanelImpl()
@@ -137,7 +138,7 @@ class PlayView(implicit controller: Controller, viewChanger: ViewChanger) extend
   // Applico mappatura di default
   bindKeys(playPanel, controller.model.keyMap)
   // Sottoscrivo ad eventi che pubblicherà il controller
-  controller.handleAction(SUBSCRIBE_TO_EVENTS, Some(PacmanSubscriber(handlePacmanEvent)))
+  askToController(SUBSCRIBE_TO_EVENTS, Some(PacmanSubscriber(handlePacmanEvent)))
 
   def setupView(): Unit = {
     userMessage setText START_MESSAGE
@@ -158,7 +159,7 @@ class PlayView(implicit controller: Controller, viewChanger: ViewChanger) extend
     updateScore(gameState.score, scoreCount)
     printMap(map, gameState, gameCanvas)
     gameState.levelState match {
-      case LevelState.DEFEAT | LevelState.VICTORY => _no_more = true; userMessage setText getEndMessage(gameState)
+      case LevelState.DEFEAT | LevelState.VICTORY => _gameRunning = false; userMessage setText getEndMessage(gameState)
       case _ => Unit
     }
   }
@@ -172,9 +173,14 @@ class PlayView(implicit controller: Controller, viewChanger: ViewChanger) extend
 
   // TODO sfruttare gameState per cambiare colore ai fantasmi?
   private def doPrint(map: PacmanMap, gameState: GameState, gameCanvas: GameCanvas): Unit = {
-    gameCanvas setText (for (x <- map.head.indices;
-                             y <- map.indices
-                             ) yield ((x, y), (map(y)(x), retrieveStyle(map(y)(x), name => elementStyles.find(style => style.styleName == name)))))
+    def styleGetter(name: String): Option[ElementStyle] = elementStyles.find(style => style.styleName == name)
+
+    gameCanvas setText (
+      (for (x <- map.head.indices;
+            y <- map.indices;
+            tile <- Some(map(y)(x))
+            ) yield ((x, y), (tile, retrieveStyle(tile, styleGetter)))) toMap
+      )
   }
 
   private def getEndMessage(gameState: GameState): String = gameState.levelState match {
@@ -193,11 +199,15 @@ class PlayView(implicit controller: Controller, viewChanger: ViewChanger) extend
   // scalastyle:on cyclomatic.complexity
 
   private def handlePacmanEvent(pe: PacmanEvent): Unit = pe match {
-    case GameUpdate(map, gameState) => if(!_no_more) {
+    case GameUpdate(map, gameState) if _gameRunning =>
       _gameState = Some(gameState)
       updateGameView(map, gameState, gameCanvas, scoreCount)
-    }
     case NewKeyMap(keyMap) => bindKeys(playPanel, keyMap)
     case _ => Unit
   }
+
+  private def askToController(action: Action, param: Option[Any]): Unit =
+    new Thread() {
+      override def run(): Unit = controller.handleAction(action, param)
+    } start()
 }
