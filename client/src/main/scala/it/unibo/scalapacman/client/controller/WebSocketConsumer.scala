@@ -30,6 +30,10 @@ class WebSocketConsumer(notifyModelUpdate: UpdateModelDTO => Unit) extends Runna
         case None => error("Aggiornamento dati dal server non valido")
         case Some(model) => debug(model); notifyModelUpdate(model)
       }
+      try Thread.sleep(0) // Sempre una buona idea rilasciare le risorse
+      catch {
+        case e: InterruptedException => e.printStackTrace()
+      }
     }
   }
 }
