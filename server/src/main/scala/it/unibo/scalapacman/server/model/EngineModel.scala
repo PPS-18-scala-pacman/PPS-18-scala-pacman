@@ -3,6 +3,7 @@ package it.unibo.scalapacman.server.model
 import akka.actor.typed.ActorRef
 import it.unibo.scalapacman.common.{DirectionHolder, GameCharacter, GameCharacterHolder, GameEntityDTO}
 import it.unibo.scalapacman.lib.model.Direction.Direction
+import it.unibo.scalapacman.lib.model.Direction.{EAST, NORTH, SOUTH, WEST, NORTHEAST, NORTHWEST, SOUTHWEST, SOUTHEAST}
 import it.unibo.scalapacman.lib.model.{Character, Direction, GameState, Ghost, Map, Pacman}
 import it.unibo.scalapacman.server.core.Engine.UpdateCommand
 
@@ -13,11 +14,18 @@ object MoveDirection extends Enumeration {
   type MoveDirection = Value
   val UP, DOWN, RIGHT, LEFT = Value
 
-  implicit def moveDirectionToDirection(dir: MoveDirection): Direction = dir match {
-    case MoveDirection.UP     => Direction.NORTH
-    case MoveDirection.DOWN   => Direction.SOUTH
-    case MoveDirection.LEFT   => Direction.WEST
-    case MoveDirection.RIGHT  => Direction.EAST
+  implicit def moveDirectionToDirection(move: MoveDirection): Direction = move match {
+    case UP     => NORTH
+    case DOWN   => SOUTH
+    case LEFT   => WEST
+    case RIGHT  => EAST
+  }
+
+  implicit def directionToMoveDirection(dir: Direction): MoveDirection = dir match {
+    case NORTH | NORTHEAST | NORTHWEST  => UP
+    case SOUTH | SOUTHEAST | SOUTHWEST  => DOWN
+    case EAST                           => RIGHT
+    case WEST                           => LEFT
   }
 }
 

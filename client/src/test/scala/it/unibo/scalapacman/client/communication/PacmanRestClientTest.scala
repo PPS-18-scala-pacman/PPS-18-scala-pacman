@@ -4,7 +4,6 @@ import java.io.IOException
 
 import akka.actor.ActorSystem
 import akka.actor.testkit.typed.scaladsl.ScalaTestWithActorTestKit
-import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.ws.{Message, WebSocketRequest, WebSocketUpgradeResponse}
 import akka.http.scaladsl.model.{HttpEntity, HttpMethods, HttpRequest, HttpResponse, StatusCodes}
 import akka.stream.scaladsl.Flow
@@ -12,6 +11,7 @@ import akka.util.ByteString
 import org.scalamock.function.MockFunction1
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.concurrent.ScalaFutures
+import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AsyncWordSpecLike
 
 import scala.concurrent.{ExecutionContextExecutor, Future}
@@ -19,17 +19,20 @@ import scala.concurrent.{ExecutionContextExecutor, Future}
 class PacmanRestClientTest
   extends ScalaTestWithActorTestKit
     with AsyncWordSpecLike
+    with Matchers
     with ScalaFutures
     with MockFactory {
 
   trait MockClientHandler extends HttpClient {
     val mockHttp: MockFunction1[HttpRequest, Future[HttpResponse]] = mockFunction[HttpRequest, Future[HttpResponse]]
+    val mockWS: MockFunction1[WebSocketRequest, Flow[Message, Message, Future[WebSocketUpgradeResponse]]] =
+      mockFunction[WebSocketRequest, Flow[Message, Message, Future[WebSocketUpgradeResponse]]]
 
     override def sendRequest(httpRequest: HttpRequest)(implicit classicActorSystem: ActorSystem): Future[HttpResponse] =
       mockHttp(httpRequest)
 
     override def establishWebSocket(wsRequest: WebSocketRequest)(implicit classicActorSystem: ActorSystem):
-      Flow[Message, Message, Future[WebSocketUpgradeResponse]] = Http().webSocketClientFlow("ws://echo.websocket.org")
+      Flow[Message, Message, Future[WebSocketUpgradeResponse]] = mockWS(wsRequest)
   }
 
   class PacmanRestClientWithMockClientHandler extends PacmanRestClient with MockClientHandler {
@@ -58,7 +61,7 @@ class PacmanRestClientTest
         .returning(Future.successful(HttpResponse(status = StatusCodes.Created, entity = HttpEntity(ByteString(expectedGameId)))))
 
       whenReady(pacmanRestClient.startGame) { res =>
-        res should be (expectedGameId)
+        res shouldEqual expectedGameId
       }
     }
 
@@ -71,7 +74,7 @@ class PacmanRestClientTest
 
       recoverToSucceededIf[IOException] {
         pacmanRestClient.startGame flatMap { res =>
-          res should be (failureMessage)
+          res shouldEqual failureMessage
         }
       }
     }
@@ -85,7 +88,7 @@ class PacmanRestClientTest
 
       recoverToSucceededIf[IOException] {
         pacmanRestClient.startGame flatMap { res =>
-          res should be (failureMessage)
+          res shouldEqual failureMessage
         }
       }
     }
@@ -101,7 +104,7 @@ class PacmanRestClientTest
         .returning(Future.successful(HttpResponse(status = StatusCodes.Accepted, entity = HttpEntity(ByteString(expectedMessage)))))
 
       whenReady(pacmanRestClient endGame gameId) { res =>
-        res should be (expectedMessage)
+        res shouldEqual expectedMessage
       }
     }
 
@@ -117,7 +120,7 @@ class PacmanRestClientTest
 
       recoverToSucceededIf[IOException] {
         pacmanRestClient.endGame(gameId) flatMap { res =>
-          res should be (failureMessage)
+          res shouldEqual failureMessage
         }
       }
     }

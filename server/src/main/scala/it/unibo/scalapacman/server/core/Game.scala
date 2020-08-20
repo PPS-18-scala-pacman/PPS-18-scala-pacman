@@ -1,6 +1,6 @@
 package it.unibo.scalapacman.server.core
 
-import akka.actor.typed.{ActorRef, Behavior, ChildFailed}
+import akka.actor.typed.{ActorRef, Behavior, ChildFailed, MailboxSelector}
 import akka.actor.typed.receptionist.{Receptionist, ServiceKey}
 import akka.actor.typed.scaladsl.{ActorContext, Behaviors}
 import akka.http.scaladsl.model.ws.Message
@@ -35,10 +35,11 @@ object Game {
       val player = context.spawn(Player(id, engine), "PlayerActor")
       context.watch(player)
 
-      context.spawn(GhostAct(id, engine, GhostType.PINKY), "PinkyActor")
-      context.spawn(GhostAct(id, engine, GhostType.BLINKY), "BlinkyActor")
-      context.spawn(GhostAct(id, engine, GhostType.INKY), "InkyActor")
-      context.spawn(GhostAct(id, engine, GhostType.CLYDE), "ClydeActor")
+      val props = MailboxSelector.fromConfig("server-app.ghost-mailbox")
+      context.spawn(GhostAct(id, engine, GhostType.PINKY), "PinkyActor", props)
+      context.spawn(GhostAct(id, engine, GhostType.BLINKY), "BlinkyActor", props)
+      context.spawn(GhostAct(id, engine, GhostType.INKY), "InkyActor", props)
+      context.spawn(GhostAct(id, engine, GhostType.CLYDE), "ClydeActor", props)
 
       new Game(Setup(id, context, engine, player)).initRoutine()
         .receiveSignal {

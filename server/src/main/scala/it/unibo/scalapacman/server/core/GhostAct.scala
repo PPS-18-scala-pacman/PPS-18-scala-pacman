@@ -4,12 +4,12 @@ import akka.actor.typed.{ActorRef, Behavior}
 import akka.actor.typed.scaladsl.{ActorContext, Behaviors}
 import it.unibo.scalapacman.common.{GameCharacter, UpdateModelDTO}
 import it.unibo.scalapacman.lib.ai.GhostAI
-import it.unibo.scalapacman.lib.ai.GhostAI.prologEngine
+import it.unibo.scalapacman.lib.model.Direction.Direction
 import it.unibo.scalapacman.lib.model.GhostType.GhostType
-import it.unibo.scalapacman.lib.model.{Direction, GameState, Map}
+import it.unibo.scalapacman.lib.model.{GameState, Map}
 import it.unibo.scalapacman.server.core.Engine.ChangeDirectionReq
 import it.unibo.scalapacman.server.core.GhostAct.{Model, Setup}
-import it.unibo.scalapacman.server.model.MoveDirection
+import it.unibo.scalapacman.server.model.MoveDirection.directionToMoveDirection
 import it.unibo.scalapacman.server.model.MoveDirection.MoveDirection
 
 object GhostAct {
@@ -19,17 +19,18 @@ object GhostAct {
                            engine: ActorRef[Engine.EngineCommand],
                            ghostType: GhostType)
 
-  case class Model(map: Map, state: GameState, desMove: Option[MoveDirection])
+  case class Model(state: GameState, desMove: Option[MoveDirection])
 
   def apply(id: String, engine: ActorRef[Engine.EngineCommand], ghostType: GhostType): Behavior[Engine.UpdateCommand] =
     Behaviors.setup { context =>
-      new GhostAct(Setup(id, context, engine, ghostType)).coreRoutine(Model(Map.classic, GameState(0), None))
+      new GhostAct(Setup(id, context, engine, ghostType)).coreRoutine(Model(GameState(0), None))
     }
 }
 
 
 private class GhostAct(setup: Setup) {
 
+  setup.context.log.info(s"GhostActor per fantasma ${setup.ghostType}")
   setup.engine ! Engine.RegisterGhost(setup.context.self, setup.ghostType)
 
   private def coreRoutine(model: Model): Behaviors.Receive[Engine.UpdateCommand] =
@@ -39,33 +40,27 @@ private class GhostAct(setup: Setup) {
     }
 
   private def handleEngineUpdate(model: UpdateModelDTO, myModel: Model): Behavior[Engine.UpdateCommand] ={
-    setup.context.log.info("Ricevuto update: " + model)
+    setup.context.log.debug("Ricevuto update: " + model)
 
-    val self = model.gameEntities.find(_.gameCharacterHolder.gameChar == GameCharacter.ghostTypeToGameCharacter(setup.ghostType))
-    val pacman = model.gameEntities.find(_.gameCharacterHolder.gameChar == GameCharacter.PACMAN)
+    val selfDTO = model.gameEntities.find(_.gameCharacterHolder.gameChar == GameCharacter.ghostTypeToGameCharacter(setup.ghostType))
+    val pacmanDTO = model.gameEntities.find(_.gameCharacterHolder.gameChar == GameCharacter.PACMAN)
     val gameState: GameState = model.state
 
-    if(self.isDefined && pacman.isDefined) {
+    if(selfDTO.isDefined && pacmanDTO.isDefined) {
 
-      //FIXME UPDATE DELLA MAPPA
-      val updatedMap: Map = myModel.map
+      val pacman = pacmanDTO.get.toPacman.get
+      val direction: Option[Direction] = GhostAI.calculateDirectionClassic(selfDTO.get.toGhost.get, pacman)
+      //val direction = GhostAI.desiredDirection(selfDTO.get.toGhost.get, pacmanDTO.get.toPacman.get)(prologEngine, updatedMap)
 
-      val direction = GhostAI.desiredDirection(self.get.toGhost.get, pacman.get.toPacman.get)(prologEngine, updatedMap)
+      if(direction.isDefined) {
+        if(!myModel.desMove.contains(direction.get)) setup.engine ! ChangeDirectionReq(setup.context.self, direction.get)
 
-      val move: MoveDirection = direction match {
-        case Direction.NORTH |
-             Direction.NORTHEAST |
-             Direction.NORTHWEST => MoveDirection.UP
-        case Direction.SOUTH |
-             Direction.SOUTHEAST |
-             Direction.SOUTHWEST => MoveDirection.DOWN
-        case Direction.EAST => MoveDirection.RIGHT
-        case Direction.WEST => MoveDirection.LEFT
+        coreRoutine(Model(gameState, Some(direction.get)))
+      } else {
+        setup.context.log.debug("Cambio di direzione non necessario")
+        Behaviors.same
       }
 
-      if(!myModel.desMove.contains(move)) setup.engine ! ChangeDirectionReq(setup.context.self, move)
-
-      coreRoutine(Model(updatedMap, gameState, Some(move)))
     } else {
       setup.context.log.warn("Ricevuto update model non valido")
       Behaviors.same

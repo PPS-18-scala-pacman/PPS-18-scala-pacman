@@ -16,7 +16,7 @@ object Settings {
   val hostAddr = "localhost"
   val port = 8080
 
-  val gameRefreshRate: FiniteDuration = FiniteDuration(5, TimeUnit.SECONDS)
+  val gameRefreshRate: FiniteDuration = FiniteDuration(64, TimeUnit.MILLISECONDS)
 
   val stashSize = 100
 
