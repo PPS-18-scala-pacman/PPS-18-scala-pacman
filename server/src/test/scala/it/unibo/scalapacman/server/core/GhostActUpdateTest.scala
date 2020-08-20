@@ -22,8 +22,8 @@ class GhostActUpdateTest  extends ScalaTestWithActorTestKit(ConfLoader.config) w
 
     // scalastyle:off magic.number
     val gameEntities:Set[GameEntityDTO] = Set(
-      GameEntityDTO(GameCharacterHolder(GameCharacter.PACMAN), Point2D(1,2), 1, isDead=false, DirectionHolder(Direction.NORTH)),
-      GameEntityDTO(GameCharacterHolder(ghostTestType), Point2D(3,4), 1, isDead=false, DirectionHolder(Direction.NORTH)))
+      GameEntityDTO(GameCharacterHolder(GameCharacter.PACMAN), Point2D(48,28), 1, isDead=false, DirectionHolder(Direction.WEST)),
+      GameEntityDTO(GameCharacterHolder(ghostTestType), Point2D(120,80), 1, isDead=false, DirectionHolder(Direction.NORTH)))
     // scalastyle:on magic.number
 
     testModel = UpdateModelDTO(gameEntities, GameState(score = 2), Set(), None)

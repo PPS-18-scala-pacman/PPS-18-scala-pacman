@@ -63,5 +63,74 @@ class GhostAITest extends AnyWordSpec {
         assert(desiredDirection == Direction.SOUTH)
       }
     }
+    "calculate the shortest path on classic map" when {
+      "in any condition" in {
+        // scalastyle:off magic.number
+        var classicPath = GhostAI.shortestPathClassic((24, 26), (15, 29))
+        assert(classicPath == (24, 26) :: (15, 29) :: Nil)
+
+        classicPath = GhostAI.shortestPathClassic((1, 5), (26, 5))
+        assert(classicPath == (1, 5) :: (6, 5) :: (9, 5) :: (12, 5) :: (15, 5) :: (18, 5) :: (21, 5) :: (26, 5) :: Nil)
+
+        classicPath = GhostAI.shortestPathClassic((6, 1), (6, 23))
+        assert(classicPath == (6, 1) :: (6, 5) :: (6, 8) :: (6, 14) :: (6, 20) :: (6, 23) :: Nil)
+
+        classicPath = GhostAI.shortestPathClassic((1, 5), (18, 17))
+        assert(classicPath == (1, 5) :: (6, 5) :: (9, 5) :: (12, 11) :: (13,11) :: (14,11) :: (15, 11) :: (18, 14) :: (18, 17) :: Nil)
+
+        classicPath = GhostAI.shortestPathClassic((13, 13), (12, 11))
+        assert(classicPath == (13,13) :: (13,12) :: (13,11) :: (12,11) :: Nil)
+
+        classicPath = GhostAI.shortestPathClassic((13, 15), (12, 11))
+        assert(classicPath == (13,15) :: (13,14) :: (13,13) :: (13,12) :: (13,11) :: (12,11) :: Nil)
+
+        classicPath = GhostAI.shortestPathClassic((15, 14), (12, 11))
+        assert(classicPath == (15, 14) :: (14, 14) :: (14,13) :: (14,12) :: (14,11) :: (13,11) :: (12,11) :: Nil)
+
+        classicPath = GhostAI.shortestPathClassic((11, 14), (12, 11))
+        assert(classicPath == (11, 14) :: (12,14) :: (13,14) :: (13,13) :: (13,12) :: (13,11) :: (12,11) :: Nil)
+        // scalastyle:on magic.number
+      }
+      "calculate the desired direction" when {
+        "in any condition" in {
+          // scalastyle:off magic.number
+          var ghost = Ghost.inky(Point2D(12 * TileGeography.SIZE, 29 * TileGeography.SIZE), 1.0, Direction.NORTH)
+          assert(GhostAI.desiredDirectionClassic(ghost, (15, 29)).contains(Direction.EAST))
+
+          ghost = Ghost.inky(Point2D(24 * TileGeography.SIZE, 26 * TileGeography.SIZE), 1.0, Direction.SOUTH)
+          assert(GhostAI.desiredDirectionClassic(ghost, (15, 29)).contains(Direction.EAST))
+          assert(GhostAI.desiredDirectionClassic(ghost, (15, 29)).contains(Direction.EAST))
+          assert(GhostAI.desiredDirectionClassic(ghost, (21, 23)).contains(Direction.WEST))
+          assert(GhostAI.desiredDirectionClassic(ghost, (15, 11)).contains(Direction.WEST))
+
+          ghost = Ghost.inky(Point2D(13 * TileGeography.SIZE, 15 * TileGeography.SIZE), 1.0, Direction.NORTH)
+          assert(GhostAI.desiredDirectionClassic(ghost, (12, 11)).contains(Direction.NORTH))
+          // scalastyle:on magic.number
+        }
+      }
+      "find the best direction for all situation" when {
+        "faraway from pacman" in {
+          val ghost = Ghost.inky(Point2D(6 * TileGeography.SIZE, 23 * TileGeography.SIZE), 1.0, Direction.NORTH)
+          val pacman = Pacman(Point2D(6 * TileGeography.SIZE, 1 * TileGeography.SIZE), 1.0, Direction.SOUTH)
+          assert(GhostAI.calculateDirectionClassic(ghost, pacman).contains(Direction.NORTH))
+        }
+        "the ghost's tile isn't a crossing" in {
+          var ghost = Ghost.inky(Point2D(4 * TileGeography.SIZE, 26 * TileGeography.SIZE), 1.0, Direction.NORTH)
+          val pacman = Pacman(Point2D(6 * TileGeography.SIZE, 1 * TileGeography.SIZE), 1.0, Direction.SOUTH)
+          assert(GhostAI.calculateDirectionClassic(ghost, pacman).contains(Direction.EAST))
+
+          ghost = ghost.copy(position = Point2D(3 * TileGeography.SIZE, 25 * TileGeography.SIZE))
+          assert(GhostAI.calculateDirectionClassic(ghost, pacman).contains(Direction.WEST))
+        }
+        "pacman is near" in {
+          val ghost = Ghost.inky(Point2D(21 * TileGeography.SIZE, 8 * TileGeography.SIZE), 1.0, Direction.NORTH)
+          var pacman = Pacman(Point2D(26 * TileGeography.SIZE, 6 * TileGeography.SIZE), 1.0, Direction.NORTH)
+          assert(GhostAI.calculateDirectionClassic(ghost, pacman).contains(Direction.EAST))
+
+          pacman = pacman.copy(direction = Direction.SOUTH)
+          assert(GhostAI.calculateDirectionClassic(ghost, pacman).contains(Direction.EAST))
+        }
+      }
+    }
   }
 }

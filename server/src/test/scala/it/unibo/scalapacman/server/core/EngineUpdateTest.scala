@@ -1,4 +1,4 @@
-package it.unibo.scalapacman.server.core;
+package it.unibo.scalapacman.server.core
 
 import akka.actor.testkit.typed.scaladsl.{ScalaTestWithActorTestKit, TestProbe}
 import akka.actor.typed.ActorRef
