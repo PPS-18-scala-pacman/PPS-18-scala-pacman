@@ -9,9 +9,8 @@ import it.unibo.scalapacman.lib.engine.{GameMovement, GameTick}
 import it.unibo.scalapacman.lib.engine.GameHelpers.MapHelper
 import it.unibo.scalapacman.lib.model.Direction.Direction
 import it.unibo.scalapacman.lib.model.GhostType.{BLINKY, CLYDE, GhostType, INKY, PINKY}
-import it.unibo.scalapacman.lib.model.{Character, GameObject, GameState, GhostType, Level, Map}
-import it.unibo.scalapacman.server.core.Engine.{ChangeDirectionCur, ChangeDirectionReq, EngineCommand, Pause,
-  RegisterGhost, RegisterPlayer, RegisterWatcher, Resume, Setup, UpdateCommand, UpdateMsg, WakeUp}
+import it.unibo.scalapacman.lib.model.{Character, GameObject, GameState, GhostType, Level, LevelState, Map}
+import it.unibo.scalapacman.server.core.Engine.{ChangeDirectionCur, ChangeDirectionReq, EngineCommand, Pause, RegisterGhost, RegisterPlayer, RegisterWatcher, Resume, Setup, UpdateCommand, UpdateMsg, WakeUp}
 import it.unibo.scalapacman.server.model.GameParticipant.gameParticipantToGameEntity
 import it.unibo.scalapacman.server.model.MoveDirection.MoveDirection
 import it.unibo.scalapacman.server.model.{EngineModel, GameParticipant, Players, RegisteredParticipant, StarterModel}
@@ -70,6 +69,9 @@ private class Engine(setup: Setup) {
           idleRoutine(upModel)
         }
       case RegisterWatcher(actor) => ???
+      case _ =>
+        setup.context.log.warn("Ricevuto messaggio non gestito")
+        Behaviors.same
     }
 
   private def pauseRoutine(model: EngineModel): Behavior[EngineCommand] =
@@ -79,6 +81,9 @@ private class Engine(setup: Setup) {
         mainRoutine(model)
       case RegisterWatcher(actor) => ???
       case Pause() => Behaviors.same
+      case _ =>
+        setup.context.log.warn("Ricevuto messaggio non gestito")
+        Behaviors.same
     }
 
   private def mainRoutine(model: EngineModel): Behavior[EngineCommand] =
@@ -95,6 +100,9 @@ private class Engine(setup: Setup) {
         case RegisterWatcher(actor) => ???
         case ChangeDirectionCur(actRef) => clearDesiredDir(model, actRef)
         case ChangeDirectionReq(actRef, dir) => changeDesiredDir(model, actRef, dir)
+        case _ =>
+          setup.context.log.warn("Ricevuto messaggio non gestito")
+          Behaviors.same
       }
     }
 
@@ -133,23 +141,25 @@ private class Engine(setup: Setup) {
     val inky    = updateChar(oldModel.players.inky)
     val clyde   = updateChar(oldModel.players.clyde)
     val blinky  = updateChar(oldModel.players.blinky)
-    val players = Players(pacman = pacman, pinky = pinky, inky = inky, clyde = clyde, blinky = blinky)
+    implicit var players: Players = Players(pacman = pacman, pinky = pinky, inky = inky, clyde = clyde, blinky = blinky)
 
-    val characters = pacman.character :: pinky.character :: inky.character :: clyde.character :: blinky.character :: Nil
-
-    implicit val collisions: List[(Character, GameObject)] = GameTick.collisions(characters)
+    implicit val collisions: List[(Character, GameObject)] = GameTick.collisions(players)
 
     val newMap = GameTick.calculateMap(map)
-    val state = GameTick.calculateGameState(
-      GameTick.calculateLevelState(GameState(oldModel.state.score), characters, oldModel.map)
-    )
-
-    //TODO aggiunrere calcolo personaggi vivi, calcolo delle velocità
-    // da valutare: calcolo direzioni fantasmi(per energizer pacman)
+    var state = GameTick.calculateGameState(GameState(oldModel.state.score) )
+    players = GameTick.calculateDeaths(players, state)
+    players = GameTick.calculateSpeeds(players, setup.level, state)
+    state = GameTick.calculateLevelState(state, players, oldModel.map)
 
     val model: EngineModel = EngineModel(players, newMap, state)
     updateWatcher(model)
-    mainRoutine(model)
+
+    if(state.levelState == LevelState.ONGOING) {
+      mainRoutine(model)
+    } else {
+      setup.context.log.info("Partita terminata spegnimento")
+      Behaviors.stopped
+    }
   }
 
   private def updateChar(participant: GameParticipant)(implicit map: Map): GameParticipant = {
