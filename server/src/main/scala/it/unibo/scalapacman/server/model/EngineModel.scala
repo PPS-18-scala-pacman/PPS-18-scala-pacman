@@ -3,8 +3,8 @@ package it.unibo.scalapacman.server.model
 import akka.actor.typed.ActorRef
 import it.unibo.scalapacman.common.{DirectionHolder, GameCharacter, GameCharacterHolder, GameEntityDTO}
 import it.unibo.scalapacman.lib.model.Direction.Direction
-import it.unibo.scalapacman.lib.model.Direction.{EAST, NORTH, SOUTH, WEST, NORTHEAST, NORTHWEST, SOUTHWEST, SOUTHEAST}
-import it.unibo.scalapacman.lib.model.{Character, Direction, GameState, Ghost, Map, Pacman}
+import it.unibo.scalapacman.lib.model.Direction.{EAST, NORTH, NORTHEAST, NORTHWEST, SOUTH, SOUTHEAST, SOUTHWEST, WEST}
+import it.unibo.scalapacman.lib.model.{Character, GameState, Ghost, GhostType, Map, Pacman}
 import it.unibo.scalapacman.server.core.Engine.UpdateCommand
 
 import scala.collection.immutable
@@ -57,6 +57,7 @@ object GameParticipant {
       GameEntityDTO(GameCharacterHolder(gType), pos, speed,  isDead, DirectionHolder(dir))
     case GameParticipant(Pacman(pos, speed, dir, isDead), _, _) =>
       GameEntityDTO(GameCharacterHolder(GameCharacter.PACMAN), pos, speed,  isDead, DirectionHolder(dir))
+    case _ => throw new IllegalArgumentException("Unknown character type")
   }
 }
 
@@ -68,6 +69,22 @@ case class Players(
                     pacman: GameParticipant
                   ) {
   def toSet: Set[GameParticipant] = Set(blinky, pinky, inky, clyde, pacman)
+}
+
+object Players {
+
+  implicit def playerToCharacters(pl: Players): List[Character] =
+    pl.pacman.character :: pl.pinky.character :: pl.inky.character :: pl.clyde.character :: pl.blinky.character :: Nil
+
+  implicit def updatePlayers(characters: List[Character])(implicit pl: Players): Players =
+    characters.foldRight(pl) {                                                                                 //scalastyle:ignore
+      case (c@Pacman(_, _, _, _), pl)                   => pl.copy(pacman  = pl.pacman.copy(c))
+      case (c@Ghost(GhostType.BLINKY, _, _, _, _), pl)  => pl.copy(blinky  = pl.blinky.copy(c))
+      case (c@Ghost(GhostType.CLYDE, _, _, _, _), pl)   => pl.copy(clyde   = pl.clyde.copy(c))
+      case (c@Ghost(GhostType.INKY, _, _, _, _), pl)    => pl.copy(inky    = pl.inky.copy(c))
+      case (c@Ghost(GhostType.PINKY, _, _, _, _), pl)   => pl.copy(pinky   = pl.pinky.copy(c))
+      case _ => throw new IllegalArgumentException("Unknown character type")
+    }
 }
 
 case class EngineModel(
