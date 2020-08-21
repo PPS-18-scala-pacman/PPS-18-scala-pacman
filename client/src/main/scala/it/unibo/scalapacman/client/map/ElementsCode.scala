@@ -72,8 +72,8 @@ object ElementsCode {
   val GHOST_CODE_PINKY = "P"
   /**
    * Rappresenta fantasma Inky
-   * Carattere I, occupa 1 spazio */
-  val GHOST_CODE_INKY = "I"
+   * Carattere K, occupa 1 spazio */
+  val GHOST_CODE_INKY = "K"
   /**
    * Rappresenta fantasma Clyde
    * Carattere C, occupa 1 spazio */
