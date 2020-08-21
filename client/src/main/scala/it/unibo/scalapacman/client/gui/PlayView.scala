@@ -29,7 +29,7 @@ class PlayView(implicit controller: Controller, viewChanger: ViewChanger) extend
   private val EMPTY_BORDER_SIZE_X: Int = 5
   private val LABELS_LAYOUT_ROWS: Int = 2
   private val LABELS_LAYOUT_COLS: Int = 2
-  private val STARTING_LIVES_COUNT: Int = 3
+  private val STARTING_LIVES_COUNT: Int = 1
   private val STARTING_POINTS_COUNT: Int = 0
   private val START_MESSAGE: String = "Per una nuova partita, cliccare sul pulsante 'Inizia partita'"
   private val GOOD_LUCK: String = "Buona fortuna!"
@@ -159,7 +159,7 @@ class PlayView(implicit controller: Controller, viewChanger: ViewChanger) extend
     updateScore(gameState.score, scoreCount)
     printMap(map, gameState, gameCanvas)
     gameState.levelState match {
-      case LevelState.DEFEAT | LevelState.VICTORY => _gameRunning = false; userMessage setText getEndMessage(gameState)
+      case LevelState.DEFEAT | LevelState.VICTORY => handleEndGame(gameState)
       case _ => Unit
     }
   }
@@ -181,6 +181,12 @@ class PlayView(implicit controller: Controller, viewChanger: ViewChanger) extend
             tile <- Some(map(y)(x))
             ) yield ((x, y), (tile, retrieveStyle(tile, styleGetter)))) toMap
       )
+  }
+
+  private def handleEndGame(gameState: GameState): Unit = {
+    _gameRunning = false
+    userMessage setText getEndMessage(gameState)
+    askToController(END_GAME, None)
   }
 
   private def getEndMessage(gameState: GameState): String = gameState.levelState match {
