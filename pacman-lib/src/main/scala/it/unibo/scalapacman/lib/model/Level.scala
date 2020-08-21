@@ -2,6 +2,7 @@ package it.unibo.scalapacman.lib.model
 
 import it.unibo.scalapacman.lib.math.{Point2D, TileGeography}
 import it.unibo.scalapacman.lib.engine.GameHelpers.MapHelper
+import it.unibo.scalapacman.lib.model.Character.{Ghost, Pacman}
 import it.unibo.scalapacman.lib.model.GhostType.GhostType
 import it.unibo.scalapacman.lib.model.Map.MapIndexes
 import it.unibo.scalapacman.lib.model.SpeedCondition.SpeedCondition

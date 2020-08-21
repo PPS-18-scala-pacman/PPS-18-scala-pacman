@@ -31,16 +31,4 @@ object Utility {
     iterator.forEachRemaining(buffer.append(_))
     buffer.toList
   }
-
-  def directionByPath(path: List[MapIndexes]): Direction = path match {
-    case (x, _) :: (x1, _) :: Nil if x < x1 => Direction.EAST
-    case (x, _) :: (x1, _) :: Nil if x > x1 => Direction.WEST
-    case (_, y) :: (_, y1) :: Nil if y < y1 => Direction.SOUTH
-    case (_, y) :: (_, y1) :: Nil if y > y1 => Direction.NORTH
-  }
-
-  def directionByCrossTile(path: List[MapIndexes], char: Character)(implicit map: Map): Option[Direction] =
-    Direction.windRose.find(
-      dir => map.nextTile(path.head, dir).walkable(char) && char.nextCrossTile(path.head, dir).contains(path.tail.head)
-    )
 }

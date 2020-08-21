@@ -1,15 +1,16 @@
 package it.unibo.scalapacman.lib.engine
 
 import it.unibo.scalapacman.lib.math.{Point2D, TileGeography}
-import it.unibo.scalapacman.lib.model.{Direction, Dot, Fruit, GameState, Ghost, LevelState, Map, Pacman, Tile}
+import it.unibo.scalapacman.lib.model.{Direction, Dot, Fruit, GameState, GhostType, LevelState, Map, Tile}
 import it.unibo.scalapacman.lib.engine.GameTick.{calculateDeaths, calculateGameState, calculateLevelState, calculateMap, calculateSpeeds, collisions}
 import it.unibo.scalapacman.lib.engine.GameHelpers.{CharacterHelper, MapHelper}
+import it.unibo.scalapacman.lib.model.Character.{Ghost, Pacman}
 import org.scalatest.wordspec.AnyWordSpec
 
 class GameTickTest extends AnyWordSpec {
-  val GHOST_1: Ghost = Ghost.blinky(Point2D(0, 0), 0.0, Direction.WEST)
-  val GHOST_2: Ghost = Ghost.inky(Point2D(1, 1), 0.0, Direction.EAST)
-  val GHOST_3: Ghost = Ghost.pinky(Point2D(TileGeography.SIZE, 0), 0.0, Direction.EAST)
+  val GHOST_1: Ghost = Ghost(GhostType.BLINKY, Point2D(0, 0), 0.0, Direction.WEST)
+  val GHOST_2: Ghost = Ghost(GhostType.INKY, Point2D(1, 1), 0.0, Direction.EAST)
+  val GHOST_3: Ghost = Ghost(GhostType.PINKY, Point2D(TileGeography.SIZE, 0), 0.0, Direction.EAST)
   val PACMAN: Pacman = Pacman(Point2D(0, 0), 0.0, Direction.NORTH)
   val MAP_SIZE = 4
   implicit val MAP: Map = Map(

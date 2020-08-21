@@ -1,9 +1,8 @@
 package it.unibo.scalapacman.lib.engine
 
-import it.unibo.scalapacman.lib.Utility
 import it.unibo.scalapacman.lib.engine.CircularMovement.{moveFor, moveUntil}
 import it.unibo.scalapacman.lib.math.{Point2D, TileGeography, Vector2D}
-import it.unibo.scalapacman.lib.model.{Character, Dot, Eatable, Fruit, Ghost, Map, Pacman, Tile}
+import it.unibo.scalapacman.lib.model.{Character, Direction, Dot, Eatable, Fruit, Map, Tile}
 import it.unibo.scalapacman.lib.model.Direction.Direction
 import it.unibo.scalapacman.lib.model.Direction.{EAST, NORTH, SOUTH, WEST}
 import it.unibo.scalapacman.lib.model.Map.MapIndexes
@@ -14,20 +13,15 @@ import scala.reflect.ClassTag
 object GameHelpers {
 
   implicit class CharacterHelper(character: Character)(implicit map: Map) {
-    def changePosition(position: Point2D): Character = character match {
-      case ghost: Ghost => ghost.copy(position = position)
-      case pacman: Pacman => pacman.copy(position = position)
-      case _ => throw new IllegalArgumentException("Unknown character type")
-    }
-
-    def changeDirection(direction: Direction): Character = character match {
-      case ghost: Ghost => ghost.copy(direction = direction)
-      case pacman: Pacman => pacman.copy(direction = direction)
-      case _ => throw new IllegalArgumentException("Unknown character type")
-    }
+    def copy(
+              position: Point2D = character.position,
+              speed: Double = character.speed,
+              direction: Direction = character.direction,
+              isDead: Boolean = character.isDead
+            ): Character = Character.copy(character)(position, speed, direction, isDead)
 
     def revert: Character = character.direction match {
-      case EAST | WEST | NORTH | SOUTH => changeDirection(character.direction.reverse)
+      case EAST | WEST | NORTH | SOUTH => copy(direction = character.direction.reverse)
       case _ => character
     }
 
@@ -44,27 +38,15 @@ object GameHelpers {
         .map(_ + TileGeography.center)
         .minBy(moveUntil(character, _))
 
-    def changeDirectionIfPossible(desiredDirection: Direction)(implicit map: Map): Character = {
-//      def forcedDirection: Character = {
-//        val walkableNeighbours = map.tileNeighboursIndexes(character.tileIndexes)
-//          .filter(i => !(character.revert.nextTile eq map.tile(i)) && map.tile(i).walkable(character))
-//        if (!nextTile.walkable(character) && walkableNeighbours.size == 1) {
-//          changeDirection(directionByPath(character.tileIndexes :: walkableNeighbours.head :: Nil))
-//        } else {
-//          character
-//        }
-//      }
-
+    def changeDirectionIfPossible(desiredDirection: Direction)(implicit map: Map): Character =
       if (character.direction != desiredDirection && nextTile(desiredDirection).walkable(character)) {
-        changeDirection(desiredDirection)
+        copy(direction = desiredDirection)
       } else {
-//        forcedDirection
         character
       }
-    }
 
     def moveIfPossible(timeMs: Double)(implicit map: Map): Character = if (nextTile.walkable(character)) {
-      changePosition(moveFor(character, timeMs))
+      copy(position = moveFor(character, timeMs))
     } else {
       character
     }
@@ -105,15 +87,15 @@ object GameHelpers {
 
     def directionForTurn(tileIndexes: MapIndexes, direction: Direction): Option[Direction] =
       untilWall(tileIndexes, direction) match {
-        case Some(x) if x._1==direction => directionForTurn(x._2, x._1)
+        case Some(x) if x._1 == direction => directionForTurn(x._2, x._1)
         case Some(x) => Some(x._1)
         case None => None
       }
 
     private def untilWall(tileIndexes: MapIndexes, direction: Direction): Option[(Direction, MapIndexes)] =
       List(direction, direction.sharpTurnRight, direction.sharpTurnLeft)
-        .map(   dir => (dir, nextTileIndexes(dir, tileIndexes)))
-        .find(  x => map.tile(x._2).walkable(character))
+        .map(dir => (dir, nextTileIndexes(dir, tileIndexes)))
+        .find(x => map.tile(x._2).walkable(character))
   }
 
   implicit class MapHelper(map: Map) {
@@ -152,7 +134,7 @@ object GameHelpers {
       pacmanEffect(indexes._2, height) * TileGeography.SIZE
     )
 
-    def tileIsCross(tileIndexes: MapIndexes, character:Character): Boolean =
+    def tileIsCross(tileIndexes: MapIndexes, character: Character): Boolean =
       map.tileNeighboursIndexes(tileIndexes).count(map.tile(_).walkable(character)) > 2
 
     def tileNeighboursIndexes(tileIndexes: MapIndexes): List[MapIndexes] =
@@ -160,12 +142,12 @@ object GameHelpers {
         .map(p => (p._1 + tileIndexes._1, p._2 + tileIndexes._2))
         .map(map.tileIndexes)
 
-    def tileNearbyCrossings(tileIndexes: MapIndexes, character:Character): List[MapIndexes] =
+    def tileNearbyCrossings(tileIndexes: MapIndexes, character: Character): List[MapIndexes] =
       map.tileNeighboursIndexes(tileIndexes)
         .filter(map.tile(_).walkable(character))
-        .map(tileIndexes :: _ :: Nil)
-        .map(Utility.directionByPath)
-        .flatMap( CharacterHelper(character)(map).nextCrossTile(tileIndexes, _) )
+        .map((tileIndexes, _))
+        .map(Direction.byPath)
+        .flatMap(CharacterHelper(character)(map).nextCrossTile(tileIndexes, _))
 
     def nextTile(tileIndexes: MapIndexes, direction: Direction): Tile = map.tile(map.tileOrigin(tileIndexes), Some(direction).map(CharacterMovement.vector))
 

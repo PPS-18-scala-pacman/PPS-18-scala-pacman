@@ -1,8 +1,9 @@
 package it.unibo.scalapacman.lib.ai
 
-import it.unibo.scalapacman.lib.model.{Direction, Ghost, GhostType, Level, Map, Pacman}
+import it.unibo.scalapacman.lib.model.{Direction, GhostType, Level, Map}
 import it.unibo.scalapacman.lib.ai.GhostAI.prologEngine
 import it.unibo.scalapacman.lib.math.{Point2D, TileGeography}
+import it.unibo.scalapacman.lib.model.Character.{Ghost, Pacman}
 import it.unibo.scalapacman.lib.model.Map.{emptyTrack, wall}
 import org.scalatest.wordspec.AnyWordSpec
 
@@ -21,34 +22,34 @@ class GhostAITest extends AnyWordSpec {
   "Ghost AI" should {
     "calculate the shortest path" when {
       "target tile is next to starting one" in {
-        assert(GhostAI.shortestPath(Ghost.clyde(ORIGIN, 1.0, Direction.WEST), (2, 1)) == (1, 1) :: (2, 1) :: Nil)
+        assert(GhostAI.shortestPath(Ghost(GhostType.CLYDE, ORIGIN, 1.0, Direction.WEST), (2, 1)) == (1, 1) :: (2, 1) :: Nil)
       }
       "target tile is after the tunnel" in {
-        val path = GhostAI.shortestPath(Ghost.pinky(ORIGIN + Point2D(0, TileGeography.SIZE), 1.0, Direction.WEST), (3, 2))
+        val path = GhostAI.shortestPath(Ghost(GhostType.PINKY, ORIGIN + Point2D(0, TileGeography.SIZE), 1.0, Direction.WEST), (3, 2))
         assert(path == (1, 2) :: (0, 2) :: (4, 2) :: (3, 2) :: Nil)
       }
       "target tile is behind a wall" in {
-        val path = GhostAI.shortestPath(Ghost.clyde(ORIGIN + Point2D(TileGeography.SIZE, 0), 1.0, Direction.WEST), (2, 3))
+        val path = GhostAI.shortestPath(Ghost(GhostType.CLYDE, ORIGIN + Point2D(TileGeography.SIZE, 0), 1.0, Direction.WEST), (2, 3))
         assert(path == (2, 1) :: (3, 1) :: (3, 2) :: (3, 3) :: (2, 1) :: Nil || path == (2, 1) :: (1, 1) :: (1, 2) :: (1, 3) :: (2, 3) :: Nil)
       }
     }
     "calculate the desired direction" when {
       "target is in front of the ghost" in {
-        var blinky = Ghost.blinky(ORIGIN, 1.0, Direction.NORTH)
+        var blinky = Ghost(GhostType.BLINKY, ORIGIN, 1.0, Direction.NORTH)
         var pacman = Pacman(ORIGIN + Point2D(0, TileGeography.SIZE), 1.0, Direction.SOUTH)
         assert(GhostAI.desiredDirection(blinky, pacman) == Direction.SOUTH)
 
-        blinky = Ghost.blinky(ORIGIN + Point2D(0, TileGeography.SIZE), 1.0, Direction.NORTH)
+        blinky = Ghost(GhostType.BLINKY, ORIGIN + Point2D(0, TileGeography.SIZE), 1.0, Direction.NORTH)
         pacman = Pacman(ORIGIN, 1.0, Direction.SOUTH)
         assert(GhostAI.desiredDirection(blinky, pacman) == Direction.NORTH)
       }
       "target is after the tunnel" in {
-        val blinky = Ghost.blinky(ORIGIN + Point2D(0, TileGeography.SIZE), 1.0, Direction.EAST)
+        val blinky = Ghost(GhostType.BLINKY, ORIGIN + Point2D(0, TileGeography.SIZE), 1.0, Direction.EAST)
         val pacman = Pacman(ORIGIN + Point2D(TileGeography.SIZE * 2, TileGeography.SIZE), 1.0, Direction.WEST)
         assert(GhostAI.desiredDirection(blinky, pacman) == Direction.WEST)
       }
       "target is behind a wall" in {
-        val blinky = Ghost.blinky(ORIGIN + Point2D(TileGeography.SIZE, 0), 1.0, Direction.EAST)
+        val blinky = Ghost(GhostType.BLINKY, ORIGIN + Point2D(TileGeography.SIZE, 0), 1.0, Direction.EAST)
         val pacman = Pacman(ORIGIN + Point2D(TileGeography.SIZE, TileGeography.SIZE * 2), 1.0, Direction.EAST)
         val desiredDirection = GhostAI.desiredDirection(blinky, pacman)
         assert(desiredDirection == Direction.EAST || desiredDirection == Direction.WEST)
@@ -94,28 +95,28 @@ class GhostAITest extends AnyWordSpec {
       "calculate the desired direction" when {
         "in any condition" in {
           // scalastyle:off magic.number
-          var ghost = Ghost.inky(Point2D(12 * TileGeography.SIZE, 29 * TileGeography.SIZE), 1.0, Direction.NORTH)
+          var ghost = Ghost(GhostType.INKY, Point2D(12 * TileGeography.SIZE, 29 * TileGeography.SIZE), 1.0, Direction.NORTH)
           assert(GhostAI.desiredDirectionClassic(ghost, (15, 29)).contains(Direction.EAST))
 
-          ghost = Ghost.inky(Point2D(24 * TileGeography.SIZE, 26 * TileGeography.SIZE), 1.0, Direction.SOUTH)
+          ghost = Ghost(GhostType.INKY, Point2D(24 * TileGeography.SIZE, 26 * TileGeography.SIZE), 1.0, Direction.SOUTH)
           assert(GhostAI.desiredDirectionClassic(ghost, (15, 29)).contains(Direction.EAST))
           assert(GhostAI.desiredDirectionClassic(ghost, (15, 29)).contains(Direction.EAST))
           assert(GhostAI.desiredDirectionClassic(ghost, (21, 23)).contains(Direction.WEST))
           assert(GhostAI.desiredDirectionClassic(ghost, (15, 11)).contains(Direction.WEST))
 
-          ghost = Ghost.inky(Point2D(13 * TileGeography.SIZE, 15 * TileGeography.SIZE), 1.0, Direction.NORTH)
+          ghost = Ghost(GhostType.INKY, Point2D(13 * TileGeography.SIZE, 15 * TileGeography.SIZE), 1.0, Direction.NORTH)
           assert(GhostAI.desiredDirectionClassic(ghost, (12, 11)).contains(Direction.NORTH))
           // scalastyle:on magic.number
         }
       }
       "find the best direction for all situation" when {
         "faraway from pacman" in {
-          val ghost = Ghost.inky(Point2D(6 * TileGeography.SIZE, 23 * TileGeography.SIZE), 1.0, Direction.NORTH)
+          val ghost = Ghost(GhostType.INKY, Point2D(6 * TileGeography.SIZE, 23 * TileGeography.SIZE), 1.0, Direction.NORTH)
           val pacman = Pacman(Point2D(6 * TileGeography.SIZE, 1 * TileGeography.SIZE), 1.0, Direction.SOUTH)
           assert(GhostAI.calculateDirectionClassic(ghost, pacman).contains(Direction.NORTH))
         }
         "the ghost's tile isn't a crossing" in {
-          var ghost = Ghost.inky(Point2D(4 * TileGeography.SIZE, 26 * TileGeography.SIZE), 1.0, Direction.NORTH)
+          var ghost = Ghost(GhostType.INKY, Point2D(4 * TileGeography.SIZE, 26 * TileGeography.SIZE), 1.0, Direction.NORTH)
           val pacman = Pacman(Point2D(6 * TileGeography.SIZE, 1 * TileGeography.SIZE), 1.0, Direction.SOUTH)
           assert(GhostAI.calculateDirectionClassic(ghost, pacman).contains(Direction.EAST))
 
@@ -123,7 +124,7 @@ class GhostAITest extends AnyWordSpec {
           assert(GhostAI.calculateDirectionClassic(ghost, pacman).contains(Direction.WEST))
         }
         "pacman is near" in {
-          val ghost = Ghost.inky(Point2D(21 * TileGeography.SIZE, 8 * TileGeography.SIZE), 1.0, Direction.NORTH)
+          val ghost = Ghost(GhostType.INKY, Point2D(21 * TileGeography.SIZE, 8 * TileGeography.SIZE), 1.0, Direction.NORTH)
           var pacman = Pacman(Point2D(26 * TileGeography.SIZE, 6 * TileGeography.SIZE), 1.0, Direction.NORTH)
           assert(GhostAI.calculateDirectionClassic(ghost, pacman).contains(Direction.EAST))
 

@@ -3,12 +3,12 @@ package it.unibo.scalapacman.lib.ai
 import alice.tuprolog.{Struct, Term}
 import it.unibo.scalapacman.lib.Utility
 import it.unibo.scalapacman.lib.prolog.Scala2P.{PrologEngine, convertibleToTerm, extractTerm, mkPrologEngine}
-import it.unibo.scalapacman.lib.model.{Character, Ghost, Map, Pacman}
+import it.unibo.scalapacman.lib.model.{Character, Direction, Map}
 import it.unibo.scalapacman.lib.prolog.{Graph, GraphVertex, MinDistance, MinDistanceClassic}
+import it.unibo.scalapacman.lib.model.Character.{Ghost, Pacman}
 import it.unibo.scalapacman.lib.engine.GameHelpers.{CharacterHelper, MapHelper}
 import it.unibo.scalapacman.lib.model.Direction.Direction
 import it.unibo.scalapacman.lib.model.Map.MapIndexes
-import it.unibo.scalapacman.lib.Utility.{directionByCrossTile, directionByPath}
 
 object GhostAI {
 
@@ -38,13 +38,13 @@ object GhostAI {
   }
 
   def desiredDirection(ghost: Ghost, pacman: Pacman)(implicit engine: PrologEngine, map: Map): Direction =
-    Option(shortestPath(ghost, pacman.tileIndexes)(engine, map).take(2)) filter(_.size == 2) map directionByPath getOrElse ghost.direction
+    Option(shortestPath(ghost, pacman.tileIndexes)(engine, map)) collect { case List(a, b, _*) => (a, b) } map Direction.byPath getOrElse ghost.direction
 
   def desiredDirectionClassic(char: Character, endTileIndexes: MapIndexes)(implicit engine: PrologEngine): Option[Direction] = {
     implicit val map: Map = Map.classic
     shortestPathClassic(char.tileIndexes, endTileIndexes)(engine) match {
-      case path:List[MapIndexes] if path.size < 2 => None
-      case path:List[MapIndexes] => directionByCrossTile(path, char)
+      case List(tile1, tile2, _*) => Direction.byCrossTile((tile1, tile2), char)
+      case _ => None
     }
   }
 
@@ -56,9 +56,9 @@ object GhostAI {
       char.nextCrossTile().flatMap ( charNextCross =>
         charNextCross match {
           case `selfTile` =>
-            directionByCrossTile(selfTile :: char.revert.nextCrossTile().get :: Nil, char.revert)
+            Direction.byCrossTile((selfTile, char.revert.nextCrossTile().get), char.revert)
           case _ if map.tileNearbyCrossings(charNextCross, char).contains(selfTile) =>
-            directionByCrossTile(selfTile :: charNextCross :: Nil, char)
+            Direction.byCrossTile((selfTile, charNextCross), char)
           case _ =>
             GhostAI.desiredDirectionClassic(self, charNextCross)
         }

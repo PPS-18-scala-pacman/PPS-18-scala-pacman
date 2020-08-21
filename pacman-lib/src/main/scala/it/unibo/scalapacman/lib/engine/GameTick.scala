@@ -1,7 +1,8 @@
 package it.unibo.scalapacman.lib.engine
 
-import it.unibo.scalapacman.lib.model.{Character, Dot, Eatable, GameObject, GameState, Ghost, LevelState, Map, Pacman, SpeedCondition, Tile}
+import it.unibo.scalapacman.lib.model.{Character, Dot, Eatable, GameObject, GameState, LevelState, Map, SpeedCondition, Tile}
 import it.unibo.scalapacman.lib.engine.GameHelpers.{CharacterHelper, MapHelper}
+import it.unibo.scalapacman.lib.model.Character.{Ghost, Pacman}
 import it.unibo.scalapacman.lib.model.Level.{ghostSpeed, pacmanSpeed}
 import it.unibo.scalapacman.lib.model.LevelState.LevelState
 import it.unibo.scalapacman.lib.model.SpeedCondition.SpeedCondition

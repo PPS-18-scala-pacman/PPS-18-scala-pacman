@@ -2,7 +2,8 @@ package it.unibo.scalapacman.lib.engine
 
 import it.unibo.scalapacman.lib.engine.GameHelpers.{CharacterHelper, MapHelper}
 import it.unibo.scalapacman.lib.math.{Point2D, TileGeography, Vector2D}
-import it.unibo.scalapacman.lib.model.{Direction, Dot, Eatable, Fruit, Ghost, Map, Pacman, Tile}
+import it.unibo.scalapacman.lib.model.Character.{Ghost, Pacman}
+import it.unibo.scalapacman.lib.model.{Direction, Dot, Eatable, Fruit, GhostType, Map, Tile}
 import org.scalatest.wordspec.AnyWordSpec
 
 class GameHelpersTest extends AnyWordSpec {
@@ -18,7 +19,7 @@ class GameHelpersTest extends AnyWordSpec {
     )
   )
   val PACMAN: Pacman = Pacman(Point2D(0, 0), 1.0, Direction.EAST)
-  val GHOST: Ghost = Ghost.inky(Point2D(0, 0), 1.0, Direction.EAST)
+  val GHOST: Ghost = Ghost(GhostType.INKY, Point2D(0, 0), 1.0, Direction.EAST)
 
   "Game helpers" should {
     "contains a map helper with pacman effect" which {
@@ -129,13 +130,13 @@ class GameHelpersTest extends AnyWordSpec {
         assertResult(PACMAN.copy(direction = Direction.SOUTH))(PACMAN.copy(direction = Direction.SOUTH).moveIfPossible(1))
       }
       "change character position" in {
-        assertResult(PACMAN.copy(position = Point2D(17.3, 9)))(PACMAN.changePosition(Point2D(17.3, 9))) // scalastyle:ignore magic.number
-        assertResult(GHOST.copy(position = Point2D(17.3, 9)))(GHOST.changePosition(Point2D(17.3, 9))) // scalastyle:ignore magic.number
+        assertResult(PACMAN.copy(position = Point2D(17.3, 9)))(PACMAN.copy(position = Point2D(17.3, 9))) // scalastyle:ignore magic.number
+        assertResult(GHOST.copy(position = Point2D(17.3, 9)))(GHOST.copy(position = Point2D(17.3, 9))) // scalastyle:ignore magic.number
       }
       "change character direction" when {
         "always" in {
-          assertResult(PACMAN.copy(direction = Direction.NORTH))(PACMAN.changeDirection(Direction.NORTH))
-          assertResult(GHOST.copy(direction = Direction.NORTH))(GHOST.changeDirection(Direction.NORTH))
+          assertResult(PACMAN.copy(direction = Direction.NORTH))(PACMAN.copy(direction = Direction.NORTH))
+          assertResult(GHOST.copy(direction = Direction.NORTH))(GHOST.copy(direction = Direction.NORTH))
         }
         "is possible" in {
           assertResult(PACMAN.copy(direction = Direction.NORTH))(PACMAN.changeDirectionIfPossible(Direction.NORTH))

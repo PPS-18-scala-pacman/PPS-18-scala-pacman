@@ -1,5 +1,7 @@
 package it.unibo.scalapacman.lib.model
 
+import it.unibo.scalapacman.lib.model.Character.Ghost
+
 trait Tile {
   val eatable: Option[Eatable]
 

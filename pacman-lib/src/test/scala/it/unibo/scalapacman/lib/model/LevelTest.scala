@@ -1,7 +1,8 @@
 package it.unibo.scalapacman.lib.model
 
-import it.unibo.scalapacman.lib.model.Level.{Classic, pacmanSpeed, ghostSpeed, fruit, BASE_SPEED}
-import it.unibo.scalapacman.lib.model.Fruit.{CHERRIES, KEY, BELL, GRAPES, GALAXIAN, APPLE, PEACH, STRAWBERRY}
+import it.unibo.scalapacman.lib.model.Character.{Ghost, Pacman}
+import it.unibo.scalapacman.lib.model.Level.{BASE_SPEED, Classic, fruit, ghostSpeed, pacmanSpeed}
+import it.unibo.scalapacman.lib.model.Fruit.{APPLE, BELL, CHERRIES, GALAXIAN, GRAPES, KEY, PEACH, STRAWBERRY}
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.wordspec.AnyWordSpec
 

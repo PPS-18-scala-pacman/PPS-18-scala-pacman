@@ -2,7 +2,8 @@ package it.unibo.scalapacman.lib.engine
 
 import it.unibo.scalapacman.lib.engine.GameMovement.move
 import it.unibo.scalapacman.lib.math.{Point2D, TileGeography}
-import it.unibo.scalapacman.lib.model.{Direction, Map, Pacman, Tile, Character}
+import it.unibo.scalapacman.lib.model.Character.Pacman
+import it.unibo.scalapacman.lib.model.{Character, Direction, Map, Tile}
 import org.scalatest.wordspec.AnyWordSpec
 
 class GameMovementTest extends AnyWordSpec {
