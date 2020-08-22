@@ -77,7 +77,7 @@ object Players {
     pl.pacman.character :: pl.pinky.character :: pl.inky.character :: pl.clyde.character :: pl.blinky.character :: Nil
 
   implicit def updatePlayers(characters: List[Character])(implicit pl: Players): Players =
-    characters.foldRight(pl) {                                                                                 //scalastyle:ignore
+    characters.foldRight(pl) {
       case (c@Pacman(_, _, _, _), pl)                   => pl.copy(pacman  = pl.pacman.copy(c))
       case (c@Ghost(GhostType.BLINKY, _, _, _, _), pl)  => pl.copy(blinky  = pl.blinky.copy(c))
       case (c@Ghost(GhostType.CLYDE, _, _, _, _), pl)   => pl.copy(clyde   = pl.clyde.copy(c))

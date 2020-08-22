@@ -28,10 +28,8 @@ object Engine {
   case class ChangeDirectionReq(id: ActorRef[UpdateCommand], direction: MoveDirection) extends EngineCommand
   case class ChangeDirectionCur(id: ActorRef[UpdateCommand]) extends EngineCommand
 
-  //TODO gestire logica di registrazione e update
   case class RegisterGhost(actor: ActorRef[UpdateCommand], ghostType: GhostType) extends EngineCommand
   case class RegisterPlayer(actor: ActorRef[UpdateCommand]) extends EngineCommand
-  case class RegisterWatcher(actor: ActorRef[UpdateCommand]) extends EngineCommand
 
   sealed trait UpdateCommand
   case class UpdateMsg(model: UpdateModelDTO) extends UpdateCommand
@@ -68,7 +66,6 @@ private class Engine(setup: Setup) {
         } else {
           idleRoutine(upModel)
         }
-      case RegisterWatcher(actor) => ???
       case _ =>
         setup.context.log.warn("Ricevuto messaggio non gestito")
         Behaviors.same
@@ -79,7 +76,6 @@ private class Engine(setup: Setup) {
       case Resume() =>
         setup.context.log.info("Resume id: " + setup.gameId)
         mainRoutine(model)
-      case RegisterWatcher(actor) => ???
       case Pause() => Behaviors.same
       case _ =>
         setup.context.log.warn("Ricevuto messaggio non gestito")
@@ -97,7 +93,6 @@ private class Engine(setup: Setup) {
           setup.context.log.info("Pause id: " + setup.gameId)
           timers.cancel(WakeUp())
           pauseRoutine(model)
-        case RegisterWatcher(actor) => ???
         case ChangeDirectionCur(actRef) => clearDesiredDir(model, actRef)
         case ChangeDirectionReq(actRef, dir) => changeDesiredDir(model, actRef, dir)
         case _ =>
