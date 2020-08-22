@@ -9,12 +9,12 @@ import it.unibo.scalapacman.lib.engine.{GameMovement, GameTick}
 import it.unibo.scalapacman.lib.engine.GameHelpers.MapHelper
 import it.unibo.scalapacman.lib.model.Direction.Direction
 import it.unibo.scalapacman.lib.model.GhostType.{BLINKY, CLYDE, GhostType, INKY, PINKY}
-import it.unibo.scalapacman.lib.model.{Character, GameObject, GameState, GhostType, Level, Map}
+import it.unibo.scalapacman.lib.model.{Character, GameObject, GameState, GhostType, Level, LevelState, Map}
 import it.unibo.scalapacman.server.core.Engine.{ChangeDirectionCur, ChangeDirectionReq, EngineCommand, Pause,
-  RegisterGhost, RegisterPlayer, RegisterWatcher, Resume, Setup, UpdateCommand, UpdateMsg, WakeUp}
+  RegisterGhost, RegisterPlayer, Resume, Setup, UpdateCommand, UpdateMsg, WakeUp}
 import it.unibo.scalapacman.server.model.GameParticipant.gameParticipantToGameEntity
 import it.unibo.scalapacman.server.model.MoveDirection.MoveDirection
-import it.unibo.scalapacman.server.model.{EngineModel, GameParticipant, Players, RegisteredParticipant, StarterModel}
+import it.unibo.scalapacman.server.model.{EngineModel, GameParticipant, Players, RegisteredParticipant, RegistrationModel}
 import it.unibo.scalapacman.server.util.Settings
 
 import scala.concurrent.duration.FiniteDuration
@@ -26,13 +26,12 @@ object Engine {
   case class WakeUp() extends EngineCommand
   case class Pause() extends EngineCommand
   case class Resume() extends EngineCommand
+  case class ActorRecovery(actorFailed: ActorRef[UpdateCommand]) extends EngineCommand
   case class ChangeDirectionReq(id: ActorRef[UpdateCommand], direction: MoveDirection) extends EngineCommand
   case class ChangeDirectionCur(id: ActorRef[UpdateCommand]) extends EngineCommand
 
-  //TODO gestire logica di registrazione e update
   case class RegisterGhost(actor: ActorRef[UpdateCommand], ghostType: GhostType) extends EngineCommand
   case class RegisterPlayer(actor: ActorRef[UpdateCommand]) extends EngineCommand
-  case class RegisterWatcher(actor: ActorRef[UpdateCommand]) extends EngineCommand
 
   sealed trait UpdateCommand
   case class UpdateMsg(model: UpdateModelDTO) extends UpdateCommand
@@ -41,13 +40,13 @@ object Engine {
 
   def apply(gameId: String, level: Int): Behavior[EngineCommand] =
     Behaviors.setup { context =>
-      new Engine(Setup(gameId, context, Settings.gameRefreshRate, level)).idleRoutine(StarterModel())
+      new Engine(Setup(gameId, context, Settings.gameRefreshRate, level)).idleRoutine(RegistrationModel())
     }
 }
 
 private class Engine(setup: Setup) {
 
-  private def idleRoutine(model: StarterModel): Behavior[EngineCommand] =
+  private def idleRoutine(model: RegistrationModel): Behavior[EngineCommand] =
     Behaviors.receiveMessage {
 
       case RegisterGhost(actor, ghostType) =>
@@ -69,7 +68,7 @@ private class Engine(setup: Setup) {
         } else {
           idleRoutine(upModel)
         }
-      case RegisterWatcher(actor) => ???
+      case _ => unhandledMsg()
     }
 
   private def pauseRoutine(model: EngineModel): Behavior[EngineCommand] =
@@ -77,8 +76,8 @@ private class Engine(setup: Setup) {
       case Resume() =>
         setup.context.log.info("Resume id: " + setup.gameId)
         mainRoutine(model)
-      case RegisterWatcher(actor) => ???
       case Pause() => Behaviors.same
+      case _ => unhandledMsg()
     }
 
   private def mainRoutine(model: EngineModel): Behavior[EngineCommand] =
@@ -92,9 +91,9 @@ private class Engine(setup: Setup) {
           setup.context.log.info("Pause id: " + setup.gameId)
           timers.cancel(WakeUp())
           pauseRoutine(model)
-        case RegisterWatcher(actor) => ???
         case ChangeDirectionCur(actRef) => clearDesiredDir(model, actRef)
         case ChangeDirectionReq(actRef, dir) => changeDesiredDir(model, actRef, dir)
+        case _ => unhandledMsg()
       }
     }
 
@@ -107,7 +106,7 @@ private class Engine(setup: Setup) {
     UpdateModelDTO(gameEntities, model.state, dots, fruit)
   }
 
-  private def initEngineModel(startMod: StarterModel) = {
+  private def initEngineModel(startMod: RegistrationModel) = {
 
     val classicFactory = Level.Classic(setup.level)
     val players = Players(
@@ -133,20 +132,25 @@ private class Engine(setup: Setup) {
     val inky    = updateChar(oldModel.players.inky)
     val clyde   = updateChar(oldModel.players.clyde)
     val blinky  = updateChar(oldModel.players.blinky)
-    val players = Players(pacman = pacman, pinky = pinky, inky = inky, clyde = clyde, blinky = blinky)
+    implicit var players: Players = Players(pacman = pacman, pinky = pinky, inky = inky, clyde = clyde, blinky = blinky)
 
-    val characters = pacman.character :: pinky.character :: inky.character :: clyde.character :: blinky.character :: Nil
-
-    implicit val collisions: List[(Character, GameObject)] = GameTick.collisions(characters)
-    val state = GameTick.calculateGameState(GameState(oldModel.state.score))
-
-    //TODO aggiunrere calcolo personaggi vivi, calcolo delle velocità
-    // da valutare: calcolo direzioni fantasmi(per energizer pacman)
+    implicit val collisions: List[(Character, GameObject)] = GameTick.collisions(players)
 
     val newMap = GameTick.calculateMap(map)
+    var state = GameTick.calculateGameState(GameState(oldModel.state.score) )
+    players = GameTick.calculateDeaths(players, state)
+    players = GameTick.calculateSpeeds(players, setup.level, state)
+    state = GameTick.calculateLevelState(state, players, oldModel.map)
+
     val model: EngineModel = EngineModel(players, newMap, state)
     updateWatcher(model)
-    mainRoutine(model)
+
+    if(state.levelState == LevelState.ONGOING) {
+      mainRoutine(model)
+    } else {
+      setup.context.log.info("Partita terminata spegnimento")
+      Behaviors.stopped
+    }
   }
 
   private def updateChar(participant: GameParticipant)(implicit map: Map): GameParticipant = {
@@ -171,4 +175,9 @@ private class Engine(setup: Setup) {
 
   private def changeDesiredDir(model:EngineModel, actRef:ActorRef[UpdateCommand], move:MoveDirection): Behavior[EngineCommand] =
     updateDesDir(model, actRef, Some(move))
+
+  private def unhandledMsg(): Behavior[EngineCommand] = {
+    setup.context.log.warn("Ricevuto messaggio non gestito")
+    Behaviors.same
+  }
 }

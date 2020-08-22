@@ -13,7 +13,7 @@ object GameTick {
   private def characterCollisions(characters: List[Character])(character: Character)(implicit map: Map): List[(Character, GameObject)] =
     (character.tile.eatable ++: characters.filter(_ != character).filter(_.tile eq character.tile)).map(obj => (character, obj))
 
-  def calculateGameState(gameState: GameState)(implicit collisions: List[(Character, GameObject)]): GameState = GameState(
+  def calculateGameState(gameState: GameState)(implicit collisions: List[(Character, GameObject)]): GameState = gameState.copy(
     score = (collisions collect { case (_, e: Eatable) => e } map (_.points) sum) + gameState.score,
     ghostInFear = isEnergizerEaten,
     pacmanEmpowered = isEnergizerEaten,
@@ -85,7 +85,7 @@ object GameTick {
     }
 
   def calculateLevelState(gameState: GameState, characters: List[Character], map: Map): GameState = gameState.copy(
-    levelState = calculateLevelState(characters.collect { case p@Pacman(_, _, _, _) => p }, map.eatablesToSeq[Dot.Val])
+    levelState = calculateLevelState(characters.collect { case p@Pacman(_, _, _, _) => p }, map.dots)
   )
 
   private def calculateLevelState(pacmans: List[Pacman], dots: Seq[((Int, Int), Dot.Val)]): LevelState = (pacmans, dots) match {
