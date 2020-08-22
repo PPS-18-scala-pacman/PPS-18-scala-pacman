@@ -12,7 +12,7 @@ object GameTick {
     characters collect { case p: Pacman => p } flatMap characterCollisions(characters)
 
   private def characterCollisions(characters: List[Character])(character: Character)(implicit map: Map): List[(Character, GameObject)] =
-    (character.tile.eatable ++: characters.filter(_ != character).filter(_.tile eq character.tile)).map(obj => (character, obj))
+    (character.tile.eatable ++: characters.filter(_ != character).filter(_.tileIndexes == character.tileIndexes)).map(obj => (character, obj))
 
   def calculateGameState(gameState: GameState)(implicit collisions: List[(Character, GameObject)]): GameState = GameState(
     score = (collisions collect { case (_, e: Eatable) => e } map (_.points) sum) + gameState.score,
