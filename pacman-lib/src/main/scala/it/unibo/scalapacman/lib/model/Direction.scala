@@ -32,7 +32,6 @@ object Direction extends Enumeration {
 
     def sharpTurnLeft: Direction = dir.sharpTurnRight.reverse
   }
-  import scala.language.implicitConversions
   implicit def valueToDirectionVal(x: Value): DirectionVal = new DirectionVal(x)
 
   def windRose: Set[Direction.Value] = Set(NORTH, SOUTH, EAST, WEST)
