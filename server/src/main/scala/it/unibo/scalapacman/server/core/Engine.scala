@@ -10,10 +10,11 @@ import it.unibo.scalapacman.lib.engine.GameHelpers.MapHelper
 import it.unibo.scalapacman.lib.model.Direction.Direction
 import it.unibo.scalapacman.lib.model.GhostType.{BLINKY, CLYDE, GhostType, INKY, PINKY}
 import it.unibo.scalapacman.lib.model.{Character, GameObject, GameState, GhostType, Level, LevelState, Map}
-import it.unibo.scalapacman.server.core.Engine.{ChangeDirectionCur, ChangeDirectionReq, EngineCommand, Pause, RegisterGhost, RegisterPlayer, Resume, Setup, UpdateCommand, UpdateMsg, WakeUp}
+import it.unibo.scalapacman.server.core.Engine.{ChangeDirectionCur, ChangeDirectionReq, EngineCommand, Pause,
+  RegisterGhost, RegisterPlayer, Resume, Setup, UpdateCommand, UpdateMsg, WakeUp}
 import it.unibo.scalapacman.server.model.GameParticipant.gameParticipantToGameEntity
 import it.unibo.scalapacman.server.model.MoveDirection.MoveDirection
-import it.unibo.scalapacman.server.model.{EngineModel, GameParticipant, Players, RegisteredParticipant, StarterModel}
+import it.unibo.scalapacman.server.model.{EngineModel, GameParticipant, Players, RegisteredParticipant, RegistrationModel}
 import it.unibo.scalapacman.server.util.Settings
 
 import scala.concurrent.duration.FiniteDuration
@@ -25,6 +26,7 @@ object Engine {
   case class WakeUp() extends EngineCommand
   case class Pause() extends EngineCommand
   case class Resume() extends EngineCommand
+  case class ActorRecovery(actorFailed: ActorRef[UpdateCommand]) extends EngineCommand
   case class ChangeDirectionReq(id: ActorRef[UpdateCommand], direction: MoveDirection) extends EngineCommand
   case class ChangeDirectionCur(id: ActorRef[UpdateCommand]) extends EngineCommand
 
@@ -38,13 +40,13 @@ object Engine {
 
   def apply(gameId: String, level: Int): Behavior[EngineCommand] =
     Behaviors.setup { context =>
-      new Engine(Setup(gameId, context, Settings.gameRefreshRate, level)).idleRoutine(StarterModel())
+      new Engine(Setup(gameId, context, Settings.gameRefreshRate, level)).idleRoutine(RegistrationModel())
     }
 }
 
 private class Engine(setup: Setup) {
 
-  private def idleRoutine(model: StarterModel): Behavior[EngineCommand] =
+  private def idleRoutine(model: RegistrationModel): Behavior[EngineCommand] =
     Behaviors.receiveMessage {
 
       case RegisterGhost(actor, ghostType) =>
@@ -66,9 +68,7 @@ private class Engine(setup: Setup) {
         } else {
           idleRoutine(upModel)
         }
-      case _ =>
-        setup.context.log.warn("Ricevuto messaggio non gestito")
-        Behaviors.same
+      case _ => unhandledMsg()
     }
 
   private def pauseRoutine(model: EngineModel): Behavior[EngineCommand] =
@@ -77,9 +77,7 @@ private class Engine(setup: Setup) {
         setup.context.log.info("Resume id: " + setup.gameId)
         mainRoutine(model)
       case Pause() => Behaviors.same
-      case _ =>
-        setup.context.log.warn("Ricevuto messaggio non gestito")
-        Behaviors.same
+      case _ => unhandledMsg()
     }
 
   private def mainRoutine(model: EngineModel): Behavior[EngineCommand] =
@@ -95,9 +93,7 @@ private class Engine(setup: Setup) {
           pauseRoutine(model)
         case ChangeDirectionCur(actRef) => clearDesiredDir(model, actRef)
         case ChangeDirectionReq(actRef, dir) => changeDesiredDir(model, actRef, dir)
-        case _ =>
-          setup.context.log.warn("Ricevuto messaggio non gestito")
-          Behaviors.same
+        case _ => unhandledMsg()
       }
     }
 
@@ -110,7 +106,7 @@ private class Engine(setup: Setup) {
     UpdateModelDTO(gameEntities, model.state, dots, fruit)
   }
 
-  private def initEngineModel(startMod: StarterModel) = {
+  private def initEngineModel(startMod: RegistrationModel) = {
 
     val classicFactory = Level.Classic(setup.level)
     val players = Players(
@@ -179,4 +175,9 @@ private class Engine(setup: Setup) {
 
   private def changeDesiredDir(model:EngineModel, actRef:ActorRef[UpdateCommand], move:MoveDirection): Behavior[EngineCommand] =
     updateDesDir(model, actRef, Some(move))
+
+  private def unhandledMsg(): Behavior[EngineCommand] = {
+    setup.context.log.warn("Ricevuto messaggio non gestito")
+    Behaviors.same
+  }
 }

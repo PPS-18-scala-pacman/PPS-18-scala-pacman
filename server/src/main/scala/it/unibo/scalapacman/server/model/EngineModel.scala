@@ -31,12 +31,12 @@ object MoveDirection extends Enumeration {
 
 case class RegisteredParticipant(actor: ActorRef[UpdateCommand])
 
-case class StarterModel(
-                         blinky: Option[RegisteredParticipant] = None,
-                         pinky: Option[RegisteredParticipant] = None,
-                         inky: Option[RegisteredParticipant] = None,
-                         clyde: Option[RegisteredParticipant] = None,
-                         pacman: Option[RegisteredParticipant] = None
+case class RegistrationModel(
+                         blinky : Option[RegisteredParticipant] = None,
+                         pinky  : Option[RegisteredParticipant] = None,
+                         inky   : Option[RegisteredParticipant] = None,
+                         clyde  : Option[RegisteredParticipant] = None,
+                         pacman : Option[RegisteredParticipant] = None
                        ) {
   def toSeq: immutable.Seq[RegisteredParticipant] =
     (blinky :: pinky :: inky :: clyde :: pacman :: Nil) filter (_.isDefined) map (_.get)
