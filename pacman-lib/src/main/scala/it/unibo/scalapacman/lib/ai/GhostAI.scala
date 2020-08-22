@@ -3,7 +3,7 @@ package it.unibo.scalapacman.lib.ai
 import alice.tuprolog.{Struct, Term}
 import it.unibo.scalapacman.lib.Utility
 import it.unibo.scalapacman.lib.prolog.Scala2P.{PrologEngine, convertibleToTerm, extractTerm, mkPrologEngine}
-import it.unibo.scalapacman.lib.model.{Character, Direction, Map}
+import it.unibo.scalapacman.lib.model.{Character, Direction, Map, MapType}
 import it.unibo.scalapacman.lib.prolog.{Graph, GraphVertex, MinDistance, MinDistanceClassic}
 import it.unibo.scalapacman.lib.model.Character.{Ghost, Pacman}
 import it.unibo.scalapacman.lib.engine.GameHelpers.{CharacterHelper, MapHelper}
@@ -41,15 +41,15 @@ object GhostAI {
     Option(shortestPath(ghost, pacman.tileIndexes)(engine, map)) collect { case List(a, b, _*) => (a, b) } map Direction.byPath getOrElse ghost.direction
 
   def desiredDirectionClassic(char: Character, endTileIndexes: MapIndexes)(implicit engine: PrologEngine): Option[Direction] = {
-    implicit val map: Map = Map.classic
+    implicit val map: Map = Map.create(MapType.CLASSIC)
     shortestPathClassic(char.tileIndexes, endTileIndexes)(engine) match {
       case List(tile1, tile2, _*) => Direction.byCrossTile((tile1, tile2), char)
       case _ => None
     }
   }
 
-  def calculateDirectionClassic(self: Ghost, char: Character):Option[Direction] = {
-    implicit val map: Map = Map.classic
+  def calculateDirectionClassic(self: Ghost, char: Character): Option[Direction] = {
+    implicit val map: Map = Map.create(MapType.CLASSIC)
     val selfTile = self.tileIndexes
 
     if(self.tileIsCross) {

@@ -9,7 +9,7 @@ import it.unibo.scalapacman.client.input.{KeyMap, UserInput}
 import it.unibo.scalapacman.client.gui.View.MENU
 import it.unibo.scalapacman.client.map.{ElementsCode, PacmanMap}
 import it.unibo.scalapacman.client.map.PacmanMap.PacmanMap
-import it.unibo.scalapacman.lib.model.{GameState, LevelState, Map}
+import it.unibo.scalapacman.lib.model.{GameState, LevelState, Map, MapType}
 import javax.swing.{BorderFactory, JButton, JComponent, JLabel, SwingConstants}
 
 object PlayView {
@@ -94,7 +94,7 @@ class PlayView(implicit controller: Controller, viewChanger: ViewChanger) extend
     _map = None
     _gameState = None
     userMessage setText GOOD_LUCK
-    updateGameView(PacmanMap.toPacmanMap(Map.classic), GameState(0), gameCanvas, scoreCount)
+    updateGameView(PacmanMap.toPacmanMap(Map.create(MapType.CLASSIC)), GameState(0), gameCanvas, scoreCount)
   })
 
   endGameButton addActionListener (_ => {

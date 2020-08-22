@@ -1,17 +1,17 @@
 package it.unibo.scalapacman.client.map
 
 import org.scalatest.wordspec.AnyWordSpecLike
-import it.unibo.scalapacman.client.map.ElementsCode.{DOT_CODE, ENERGIZER_DOT_CODE, EMPTY_SPACE_CODE, WALL_CODE}
+import it.unibo.scalapacman.client.map.ElementsCode.{DOT_CODE, EMPTY_SPACE_CODE, ENERGIZER_DOT_CODE, WALL_CODE}
 import it.unibo.scalapacman.client.map.PacmanMap.PacmanMap
 import it.unibo.scalapacman.common.{DirectionHolder, GameCharacter, GameCharacterHolder, GameEntityDTO}
-import it.unibo.scalapacman.lib.model.{Direction, Map}
+import it.unibo.scalapacman.lib.model.{Direction, Map, MapType}
 import it.unibo.scalapacman.lib.Utility
 import it.unibo.scalapacman.lib.math.Point2D
 import org.scalatest.matchers.should.Matchers
 
 class PacmanMapTest
   extends AnyWordSpecLike
-  with Matchers {
+    with Matchers {
 
   // scalastyle:off
   val mapClassicBuilt: PacmanMap = List(
@@ -50,7 +50,7 @@ class PacmanMapTest
 
   "PacmanMap" should {
     "convert a Map object in a PacmanMap object" in {
-      PacmanMap.toPacmanMap(Map.classic) shouldEqual mapClassicBuilt
+      PacmanMap.toPacmanMap(Map.create(MapType.CLASSIC)) shouldEqual mapClassicBuilt
     }
 
     "create a PacmanMap object from a Map object with the info of the characters" in {
@@ -66,12 +66,12 @@ class PacmanMapTest
           ElementsCode.GHOST_CODE_CLYDE + ElementsCode.ARROW_UP_CODE :: Nil,
       )
 
-      val gameEntities :Set[GameEntityDTO] = Set(
-        GameEntityDTO(GameCharacterHolder(GameCharacter.PACMAN), Point2D(0, 9), 1, isDead=false, DirectionHolder(Direction.NORTH)),
-        GameEntityDTO(GameCharacterHolder(GameCharacter.BLINKY), Point2D(9, 9), 1, isDead=false, DirectionHolder(Direction.NORTH)),
-        GameEntityDTO(GameCharacterHolder(GameCharacter.PINKY), Point2D(18, 9), 1, isDead=false, DirectionHolder(Direction.NORTH)),
-        GameEntityDTO(GameCharacterHolder(GameCharacter.INKY), Point2D(27, 9), 1, isDead=false, DirectionHolder(Direction.NORTH)),
-        GameEntityDTO(GameCharacterHolder(GameCharacter.CLYDE), Point2D(36, 9), 1, isDead=false, DirectionHolder(Direction.NORTH))
+      val gameEntities: Set[GameEntityDTO] = Set(
+        GameEntityDTO(GameCharacterHolder(GameCharacter.PACMAN), Point2D(0, 9), 1, isDead = false, DirectionHolder(Direction.NORTH)),
+        GameEntityDTO(GameCharacterHolder(GameCharacter.BLINKY), Point2D(9, 9), 1, isDead = false, DirectionHolder(Direction.NORTH)),
+        GameEntityDTO(GameCharacterHolder(GameCharacter.PINKY), Point2D(18, 9), 1, isDead = false, DirectionHolder(Direction.NORTH)),
+        GameEntityDTO(GameCharacterHolder(GameCharacter.INKY), Point2D(27, 9), 1, isDead = false, DirectionHolder(Direction.NORTH)),
+        GameEntityDTO(GameCharacterHolder(GameCharacter.CLYDE), Point2D(36, 9), 1, isDead = false, DirectionHolder(Direction.NORTH))
       )
 
       PacmanMap.createWithCharacters(map, gameEntities) shouldEqual expectedMap

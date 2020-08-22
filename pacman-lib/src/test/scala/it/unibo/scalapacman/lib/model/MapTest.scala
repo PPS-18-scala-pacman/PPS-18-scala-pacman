@@ -15,7 +15,7 @@ class MapTest extends AnyWordSpec with BeforeAndAfterAll {
 
   override protected def beforeAll(): Unit = {
     super.beforeAll()
-    classicMap = Map.classic
+    classicMap = Map.create(MapType.CLASSIC)
   }
 
   "The map" which {

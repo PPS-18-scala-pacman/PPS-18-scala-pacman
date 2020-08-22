@@ -10,7 +10,7 @@ import it.unibo.scalapacman.client.map.PacmanMap
 import it.unibo.scalapacman.client.model.GameModel
 import it.unibo.scalapacman.common.MoveCommandType.MoveCommandType
 import it.unibo.scalapacman.common.{Command, CommandType, CommandTypeHolder, JSONConverter, MapUpdater, MoveCommandTypeHolder, UpdateModelDTO}
-import it.unibo.scalapacman.lib.model.Map
+import it.unibo.scalapacman.lib.model.{Map, MapType}
 
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor}
 import scala.util.{Failure, Success}
@@ -53,7 +53,7 @@ private case class ControllerImpl(pacmanRestClient: PacmanRestClient) extends Co
   var _prevUserAction: Option[MoveCommandType] = None
   val _publisher: PacmanPublisher = PacmanPublisher()
   val _webSocketRunnable = new WebSocketConsumer(updateFromServer)
-  var model: GameModel = GameModel(None, _defaultKeyMap, Map.classic)
+  var model: GameModel = GameModel(None, _defaultKeyMap, Map.create(MapType.CLASSIC))
 
   def handleAction(action: Action, param: Option[Any]): Unit = action match {
     case START_GAME => evalStartGame(model.gameId)
@@ -138,7 +138,7 @@ private case class ControllerImpl(pacmanRestClient: PacmanRestClient) extends Co
     System.exit(0)
   }
 
-  private def clearModel(): Unit = model = model.copy(gameId = None, map = Map.classic)
+  private def clearModel(): Unit = model = model.copy(gameId = None, map = Map.create(MapType.CLASSIC))
 
   private def updateFromServer(updateModelDTO: UpdateModelDTO): Unit = {
     model = model.copy(map = MapUpdater.update(model.map, updateModelDTO.dots, updateModelDTO.fruit))

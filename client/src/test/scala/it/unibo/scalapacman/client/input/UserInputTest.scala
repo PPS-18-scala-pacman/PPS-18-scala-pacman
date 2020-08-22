@@ -6,7 +6,7 @@ import it.unibo.scalapacman.client.controller.{Action, Controller}
 import it.unibo.scalapacman.client.model.GameModel
 import it.unibo.scalapacman.common.MoveCommandType
 import it.unibo.scalapacman.common.MoveCommandType.MoveCommandType
-import it.unibo.scalapacman.lib.model.Map
+import it.unibo.scalapacman.lib.model.{Map, MapType}
 import javax.swing.{JComponent, JTextField}
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
@@ -22,7 +22,7 @@ class UserInputTest extends AnyWordSpec with Matchers {
   private case class ControllerMock() extends Controller {
     override def handleAction(action: Action, param: Option[Any]): Unit = Unit
     override def userAction: Option[MoveCommandType] = None
-    override var model: GameModel = GameModel(None, _keyMap, Map.classic)
+    override var model: GameModel = GameModel(None, _keyMap, Map.create(MapType.CLASSIC))
   }
 
   "UserInput" should {
