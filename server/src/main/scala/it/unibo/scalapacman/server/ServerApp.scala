@@ -2,7 +2,6 @@ package it.unibo.scalapacman.server
 
 import akka.actor.typed.{ActorSystem, Behavior}
 import akka.actor.typed.scaladsl.Behaviors
-import com.typesafe.config.ConfigFactory
 import it.unibo.scalapacman.server.communication.HttpService
 import it.unibo.scalapacman.server.core.Master
 import it.unibo.scalapacman.server.util.{ConfLoader, Settings}

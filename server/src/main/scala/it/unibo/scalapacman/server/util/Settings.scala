@@ -22,5 +22,7 @@ object Settings {
 
   val bufferSizeWS = 100
 
+  val levelDifficulty = 1
+
   // scalastyle:on magic.number
 }
