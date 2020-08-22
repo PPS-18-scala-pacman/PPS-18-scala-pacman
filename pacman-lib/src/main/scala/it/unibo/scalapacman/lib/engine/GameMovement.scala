@@ -34,13 +34,18 @@ object GameMovement {
    * @return The updated character
    */
   @scala.annotation.tailrec
-  def move(character: Character, timeMs: Double, desiredDirection: Direction)(implicit map: Map): Character = (character, timeMs, desiredDirection) match {
-    case (_, 0, _) => character
-    case _ if character desireRevert desiredDirection => move(character revert, timeMs, desiredDirection)
-    case _ if character.position == character.nextTileCenter => (character changeDirectionIfPossible desiredDirection) moveIfPossible timeMs
-    case _ if moveUntil(character, character.nextTileCenter) > timeMs => character changePosition moveFor(character, timeMs)
-    case _ => move(character changePosition character.nextTileCenter, timeMs - moveUntil(character, character.nextTileCenter), desiredDirection)
-  }
+  def move(character: Character, timeMs: Double, desiredDirection: Direction)(implicit map: Map): Character =
+    if (timeMs == 0 || character.isDead) {
+      character
+    } else if (character desireRevert desiredDirection) {
+      move(character revert, timeMs, desiredDirection)
+    } else if (character.position == character.nextTileCenter) {
+      (character changeDirectionIfPossible desiredDirection) moveIfPossible timeMs
+    } else if (moveUntil(character, character.nextTileCenter) > timeMs) {
+      character.copy(position = moveFor(character, timeMs))
+    } else {
+      move(character.copy(position = character.nextTileCenter), timeMs - moveUntil(character, character.nextTileCenter), desiredDirection)
+    }
 
   def move(character: Character, time: FiniteDuration, desiredDirection: Option[Direction])(implicit map: Map): Character =
     move(character, time.toMillis, desiredDirection getOrElse character.direction)

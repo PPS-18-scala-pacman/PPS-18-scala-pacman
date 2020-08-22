@@ -3,7 +3,6 @@ package it.unibo.scalapacman.lib.model
 object Fruit extends Enumeration {
 
   case class Val(points: Int) extends super.Val with Eatable
-  import scala.language.implicitConversions
   implicit def valueToFruitVal(x: Value): Val = x.asInstanceOf[Val]
 
   // scalastyle:off magic.number

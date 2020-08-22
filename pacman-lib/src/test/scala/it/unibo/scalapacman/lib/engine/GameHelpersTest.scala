@@ -2,7 +2,8 @@ package it.unibo.scalapacman.lib.engine
 
 import it.unibo.scalapacman.lib.engine.GameHelpers.{CharacterHelper, MapHelper}
 import it.unibo.scalapacman.lib.math.{Point2D, TileGeography, Vector2D}
-import it.unibo.scalapacman.lib.model.{Direction, Dot, Eatable, Fruit, Ghost, Map, Pacman, Tile}
+import it.unibo.scalapacman.lib.model.Character.{Ghost, Pacman}
+import it.unibo.scalapacman.lib.model.{Direction, Dot, Eatable, Fruit, GhostType, Map, MapType, Tile}
 import org.scalatest.wordspec.AnyWordSpec
 
 class GameHelpersTest extends AnyWordSpec {
@@ -17,8 +18,9 @@ class GameHelpersTest extends AnyWordSpec {
       List.tabulate(MAP_WIDTH)(Map.emptyTrack)
     )
   )
+  val MAP_CLASSIC: Map = Map.create(MapType.CLASSIC)
   val PACMAN: Pacman = Pacman(Point2D(0, 0), 1.0, Direction.EAST)
-  val GHOST: Ghost = Ghost.inky(Point2D(0, 0), 1.0, Direction.EAST)
+  val GHOST: Ghost = Ghost(GhostType.INKY, Point2D(0, 0), 1.0, Direction.EAST)
 
   "Game helpers" should {
     "contains a map helper with pacman effect" which {
@@ -129,13 +131,13 @@ class GameHelpersTest extends AnyWordSpec {
         assertResult(PACMAN.copy(direction = Direction.SOUTH))(PACMAN.copy(direction = Direction.SOUTH).moveIfPossible(1))
       }
       "change character position" in {
-        assertResult(PACMAN.copy(position = Point2D(17.3, 9)))(PACMAN.changePosition(Point2D(17.3, 9))) // scalastyle:ignore magic.number
-        assertResult(GHOST.copy(position = Point2D(17.3, 9)))(GHOST.changePosition(Point2D(17.3, 9))) // scalastyle:ignore magic.number
+        assertResult(PACMAN.copy(position = Point2D(17.3, 9)))(PACMAN.copy(position = Point2D(17.3, 9))) // scalastyle:ignore magic.number
+        assertResult(GHOST.copy(position = Point2D(17.3, 9)))(GHOST.copy(position = Point2D(17.3, 9))) // scalastyle:ignore magic.number
       }
       "change character direction" when {
         "always" in {
-          assertResult(PACMAN.copy(direction = Direction.NORTH))(PACMAN.changeDirection(Direction.NORTH))
-          assertResult(GHOST.copy(direction = Direction.NORTH))(GHOST.changeDirection(Direction.NORTH))
+          assertResult(PACMAN.copy(direction = Direction.NORTH))(PACMAN.copy(direction = Direction.NORTH))
+          assertResult(GHOST.copy(direction = Direction.NORTH))(GHOST.copy(direction = Direction.NORTH))
         }
         "is possible" in {
           assertResult(PACMAN.copy(direction = Direction.NORTH))(PACMAN.changeDirectionIfPossible(Direction.NORTH))
@@ -211,26 +213,26 @@ class GameHelpersTest extends AnyWordSpec {
         //scalastyle:off magic.number
         var endTile    = Some(12,5)
         var initTile   = Point2D(6 * TileGeography.SIZE, 1 * TileGeography.SIZE)
-        assertResult(endTile)(CharacterHelper(PACMAN.copy(position = initTile))(Map.classic).nextCrossTile())
+        assertResult(endTile)(CharacterHelper(PACMAN.copy(position = initTile))(MAP_CLASSIC).nextCrossTile())
 
         endTile    = Some(15,29)
         initTile   = Point2D(24 * TileGeography.SIZE, 26 * TileGeography.SIZE)
-        assertResult(endTile)(CharacterHelper(PACMAN.copy(position = initTile))(Map.classic).nextCrossTile())
+        assertResult(endTile)(CharacterHelper(PACMAN.copy(position = initTile))(MAP_CLASSIC).nextCrossTile())
 
         endTile    = Some(6,20)
         initTile   = Point2D(3 * TileGeography.SIZE, 26 * TileGeography.SIZE)
-        assertResult(endTile)(CharacterHelper(PACMAN.copy(position = initTile, direction = Direction.NORTH))(Map.classic).nextCrossTile())
+        assertResult(endTile)(CharacterHelper(PACMAN.copy(position = initTile, direction = Direction.NORTH))(MAP_CLASSIC).nextCrossTile())
         //scalastyle:on magic.number
       }
       "provide next direction for turn" in {
         var pacman = PACMAN.copy(position = Point2D(24 * TileGeography.SIZE, 26 * TileGeography.SIZE))
-        assertResult(Some(Direction.SOUTH))( CharacterHelper(pacman)(Map.classic).directionForTurn )
+        assertResult(Some(Direction.SOUTH))( CharacterHelper(pacman)(MAP_CLASSIC).directionForTurn )
 
         pacman = pacman.copy(direction = Direction.NORTH)
-        assertResult(Some(Direction.EAST))( CharacterHelper(pacman)(Map.classic).directionForTurn )
+        assertResult(Some(Direction.EAST))( CharacterHelper(pacman)(MAP_CLASSIC).directionForTurn )
 
         pacman = pacman.copy(direction = Direction.SOUTH)
-        assertResult(Some(Direction.WEST))( CharacterHelper(pacman)(Map.classic).directionForTurn )
+        assertResult(Some(Direction.WEST))( CharacterHelper(pacman)(MAP_CLASSIC).directionForTurn )
       }
       "eat the eatable in the current tile" in {
         val pacman1 = PACMAN.copy(position = Point2D(0, TileGeography.SIZE * 3))

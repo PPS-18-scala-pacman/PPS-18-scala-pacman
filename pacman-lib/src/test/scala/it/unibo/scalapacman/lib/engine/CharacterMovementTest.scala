@@ -2,7 +2,8 @@ package it.unibo.scalapacman.lib.engine
 
 import it.unibo.scalapacman.lib.engine.CharacterMovement.{moveFor, moveUntil}
 import it.unibo.scalapacman.lib.math.{Point2D, Vector2D}
-import it.unibo.scalapacman.lib.model.{Pacman, Direction}
+import it.unibo.scalapacman.lib.model.Character.Pacman
+import it.unibo.scalapacman.lib.model.Direction
 import org.scalatest.wordspec.AnyWordSpec
 
 class CharacterMovementTest extends AnyWordSpec {

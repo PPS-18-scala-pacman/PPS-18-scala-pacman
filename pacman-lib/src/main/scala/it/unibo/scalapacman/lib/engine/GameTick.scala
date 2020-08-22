@@ -1,17 +1,23 @@
 package it.unibo.scalapacman.lib.engine
 
-import it.unibo.scalapacman.lib.model.{Character, Dot, Eatable, GameObject, GameState, Ghost, LevelState, Map, Pacman, SpeedCondition, Tile}
+import it.unibo.scalapacman.lib.model.{Character, Dot, Eatable, GameObject, GameState, LevelState, Map, SpeedCondition, Tile}
 import it.unibo.scalapacman.lib.engine.GameHelpers.{CharacterHelper, MapHelper}
+import it.unibo.scalapacman.lib.model.Character.{Ghost, Pacman}
 import it.unibo.scalapacman.lib.model.Level.{ghostSpeed, pacmanSpeed}
 import it.unibo.scalapacman.lib.model.LevelState.LevelState
 import it.unibo.scalapacman.lib.model.SpeedCondition.SpeedCondition
 
+/**
+ * Steps to be called at every game tick in the following order:
+ * - calculateBackToLife
+ *
+ */
 object GameTick {
   def collisions(characters: List[Character])(implicit map: Map): List[(Character, GameObject)] =
     characters collect { case p: Pacman => p } flatMap characterCollisions(characters)
 
   private def characterCollisions(characters: List[Character])(character: Character)(implicit map: Map): List[(Character, GameObject)] =
-    (character.tile.eatable ++: characters.filter(_ != character).filter(_.tile eq character.tile)).map(obj => (character, obj))
+    (character.tile.eatable ++: characters.filter(_ != character).filter(_.tileIndexes == character.tileIndexes)).map(obj => (character, obj))
 
   def calculateGameState(gameState: GameState)(implicit collisions: List[(Character, GameObject)]): GameState = gameState.copy(
     score = (collisions collect { case (_, e: Eatable) => e } map (_.points) sum) + gameState.score,
@@ -33,6 +39,20 @@ object GameTick {
     collisions.map(_._1).foldLeft(map)(calculateMapTile(_, _)).tiles
 
   private def calculateMapTile(implicit map: Map, character: Character): Map = character.eat
+
+//  def calculateBackToLife(characters: List[Character]): List[Character] =
+//    for (
+//      character <- characters
+//    ) yield calculateBackToLife(character)
+//
+//  private def calculateBackToLife(character: Character): Character =
+//    character match {
+//      case g@Ghost(GhostType.BLINKY, _, _, _, true) => g.copy(position = g.deadPosition, isDead = false)
+//      case g@Ghost(GhostType.PINKY, _, _, _, true) => g.copy(position = g.deadPosition, isDead = false)
+//      case g@Ghost(GhostType.INKY, _, _, _, true) => g.copy(position = g.deadPosition, isDead = false)
+//      case g@Ghost(GhostType.CLYDE, _, _, _, true) => g.copy(position = g.deadPosition, isDead = false)
+//      case _ => character
+//    }
 
   def calculateDeaths(characters: List[Character], gameState: GameState)(implicit collisions: List[(Character, GameObject)]): List[Character] =
     for (

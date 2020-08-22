@@ -1,6 +1,7 @@
 package it.unibo.scalapacman.common
 import it.unibo.scalapacman.lib.math.Point2D
-import it.unibo.scalapacman.lib.model.{Character, Direction, Dot, Fruit, Ghost, GhostType, Pacman}
+import it.unibo.scalapacman.lib.model.Character.{Ghost, Pacman}
+import it.unibo.scalapacman.lib.model.{Character, Direction, Dot, Fruit, GhostType}
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec

@@ -1,9 +1,10 @@
 package it.unibo.scalapacman.common
 
 import it.unibo.scalapacman.lib.math.Point2D
+import it.unibo.scalapacman.lib.model.Character.{Ghost, Pacman}
 import it.unibo.scalapacman.lib.model.GhostType.{BLINKY, CLYDE, INKY, PINKY}
 import it.unibo.scalapacman.lib.model.Map.MapIndexes
-import it.unibo.scalapacman.lib.model.{Dot, Fruit, GameState, Ghost, Pacman}
+import it.unibo.scalapacman.lib.model.{Dot, Fruit, GameState}
 
 
 case class GameEntityDTO(gameCharacterHolder: GameCharacterHolder, position: Point2D, speed: Double, isDead: Boolean, dir: DirectionHolder) {

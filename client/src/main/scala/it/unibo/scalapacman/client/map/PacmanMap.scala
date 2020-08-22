@@ -1,8 +1,9 @@
 package it.unibo.scalapacman.client.map
 
-import it.unibo.scalapacman.common.{DotDTO, FruitDTO, GameEntityDTO, UpdateModelDTO}
-import it.unibo.scalapacman.lib.model.{Character, Dot, Fruit, Ghost, Map}
-import it.unibo.scalapacman.lib.engine.GameHelpers.{CharacterHelper, MapHelper}
+import it.unibo.scalapacman.common.GameEntityDTO
+import it.unibo.scalapacman.lib.model.{Character, Map}
+import it.unibo.scalapacman.lib.engine.GameHelpers.CharacterHelper
+import it.unibo.scalapacman.lib.model.Character.Ghost
 import it.unibo.scalapacman.lib.model.Direction.Direction
 import it.unibo.scalapacman.lib.model.Dot.{ENERGIZER_DOT, SMALL_DOT}
 import it.unibo.scalapacman.lib.model.GhostType.GhostType

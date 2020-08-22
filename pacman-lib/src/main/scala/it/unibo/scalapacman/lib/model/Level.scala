@@ -1,11 +1,12 @@
 package it.unibo.scalapacman.lib.model
 
-import it.unibo.scalapacman.lib.math.{Point2D, TileGeography}
-import it.unibo.scalapacman.lib.engine.GameHelpers.MapHelper
+import it.unibo.scalapacman.lib.model.Character.{Ghost, Pacman}
 import it.unibo.scalapacman.lib.model.GhostType.GhostType
 import it.unibo.scalapacman.lib.model.Map.MapIndexes
 import it.unibo.scalapacman.lib.model.SpeedCondition.SpeedCondition
 import it.unibo.scalapacman.lib.model.SpeedLevel.SpeedLevel
+
+import scala.reflect.ClassTag
 
 trait LevelGenerator {
   def map: Map
@@ -22,28 +23,22 @@ object Level {
   val BASE_SPEED = 0.07575757625
 
   case class Classic(level: Int) extends LevelGenerator {
-    val map: Map = Map.classic
-
-    val PACMAN_START_POSITION : Point2D = map.tileOrigin((14, 23)) + TileGeography.center
-    val BLINKY_START_POSITION : Point2D = map.tileOrigin((13, 11)) + TileGeography.center
-    val PINKY_START_POSITION  : Point2D = map.tileOrigin((11, 14)) + TileGeography.center
-    val INKY_START_POSITION   : Point2D = map.tileOrigin((13, 15)) + TileGeography.center
-    val CLYDE_START_POSITION  : Point2D = map.tileOrigin((15, 14)) + TileGeography.center
-    val FRUIT_INDEXES: MapIndexes = (14, 17)
+    private val mapType = MapType.CLASSIC
+    val map: Map = Map.create(mapType)
 
     def characters: List[Character] = pacman :: ghost(GhostType.BLINKY) :: ghost(GhostType.PINKY) ::
       ghost(GhostType.INKY) :: ghost(GhostType.CLYDE) :: Nil
 
-    def pacman: Pacman = Pacman(PACMAN_START_POSITION, pacmanSpeed(level), Direction.WEST)
+    def pacman: Pacman = Pacman(Map.getStartPosition(mapType, Pacman, None), pacmanSpeed(level), Direction.WEST)
 
     def ghost(gType: GhostType): Ghost = gType match {
-      case GhostType.BLINKY => Ghost(gType, BLINKY_START_POSITION, ghostSpeed(level), Direction.WEST)
-      case GhostType.PINKY  => Ghost(gType, PINKY_START_POSITION,  ghostSpeed(level), Direction.EAST)
-      case GhostType.INKY   => Ghost(gType, INKY_START_POSITION,   ghostSpeed(level), Direction.NORTH)
-      case GhostType.CLYDE  => Ghost(gType, CLYDE_START_POSITION,  ghostSpeed(level), Direction.WEST)
+      case GhostType.BLINKY => Ghost(gType, Map.getStartPosition(mapType, Ghost, Some(gType)), ghostSpeed(level), Direction.WEST)
+      case GhostType.PINKY  => Ghost(gType, Map.getStartPosition(mapType, Ghost, Some(gType)), ghostSpeed(level), Direction.EAST)
+      case GhostType.INKY   => Ghost(gType, Map.getStartPosition(mapType, Ghost, Some(gType)), ghostSpeed(level), Direction.NORTH)
+      case GhostType.CLYDE  => Ghost(gType, Map.getStartPosition(mapType, Ghost, Some(gType)), ghostSpeed(level), Direction.WEST)
     }
 
-    def fruit: (MapIndexes, Fruit.Value) = (FRUIT_INDEXES, Level.fruit(level))
+    def fruit: (MapIndexes, Fruit.Value) = (Map.getFruitMapIndexes(mapType), Level.fruit(level))
 
     def gameState: GameState = GameState(0)
   }

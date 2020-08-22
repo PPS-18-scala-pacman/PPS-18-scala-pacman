@@ -1,8 +1,9 @@
 package it.unibo.scalapacman.lib.engine
 
 import it.unibo.scalapacman.lib.math.{Point2D, TileGeography}
-import it.unibo.scalapacman.lib.model.{Direction, Map, Pacman, Tile}
+import it.unibo.scalapacman.lib.model.{Direction, Map, Tile}
 import it.unibo.scalapacman.lib.engine.CircularMovement.{moveFor, moveUntil}
+import it.unibo.scalapacman.lib.model.Character.Pacman
 import org.scalatest.wordspec.AnyWordSpec
 
 class CircularMovementTest extends AnyWordSpec {

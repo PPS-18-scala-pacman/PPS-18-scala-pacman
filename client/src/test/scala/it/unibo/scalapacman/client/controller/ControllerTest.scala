@@ -16,7 +16,7 @@ import it.unibo.scalapacman.client.input.JavaKeyBinding.DefaultJavaKeyBinding
 import it.unibo.scalapacman.client.input.KeyMap
 import it.unibo.scalapacman.client.model.GameModel
 import it.unibo.scalapacman.common.MoveCommandType
-import it.unibo.scalapacman.lib.model.Map
+import it.unibo.scalapacman.lib.model.{Map, MapType}
 import org.scalamock.function.MockFunction1
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
@@ -58,6 +58,7 @@ class ControllerTest
   var _pacmanRestClientWithMockClientHandler: PacmanRestClientWithMockClientHandler = _
   var _controller: Controller = _
   val GAME_ID = "fakeID"
+  val MAP_CLASSIC: Map = Map.create(MapType.CLASSIC)
 
   override protected def beforeAll(): Unit = {
     super.beforeAll()
@@ -118,14 +119,14 @@ class ControllerTest
       }
 
       "not start a new game when one is already on" in {
-        _controller.model = GameModel(Some(GAME_ID), _defaultKeyMap, Map.classic)
+        _controller.model = GameModel(Some(GAME_ID), _defaultKeyMap, MAP_CLASSIC)
 
         _controller.handleAction(START_GAME, None)
         _controller.model.gameId shouldEqual Some(GAME_ID)
       }
 
       "be able to end a game when request is successful" in {
-        _controller.model = GameModel(Some(GAME_ID), _defaultKeyMap, Map.classic)
+        _controller.model = GameModel(Some(GAME_ID), _defaultKeyMap, MAP_CLASSIC)
         _controller.model.gameId shouldEqual Some(GAME_ID)
 
         val uri = s"${PacmanRestClient.GAMES_URL}/$GAME_ID"
@@ -144,7 +145,7 @@ class ControllerTest
       }
 
       "be able to end a game when request is not successful" in {
-        _controller.model = GameModel(Some(GAME_ID), _defaultKeyMap, Map.classic)
+        _controller.model = GameModel(Some(GAME_ID), _defaultKeyMap, MAP_CLASSIC)
         _controller.model.gameId shouldEqual Some(GAME_ID)
 
         val uri = s"${PacmanRestClient.GAMES_URL}/$GAME_ID"
@@ -196,7 +197,7 @@ class ControllerTest
       "be able to save a user action while a game is on" in {
         _controller.userAction shouldEqual None
 
-        _controller.model = GameModel(Some(GAME_ID), _defaultKeyMap, Map.classic)
+        _controller.model = GameModel(Some(GAME_ID), _defaultKeyMap, MAP_CLASSIC)
 
         _controller.handleAction(MOVEMENT, Some(MoveCommandType.UP))
         _controller.userAction shouldEqual Some(MoveCommandType.UP)
@@ -217,7 +218,7 @@ class ControllerTest
       "handle same user action while a game is on" in {
         _controller.userAction shouldEqual None
 
-        _controller.model = GameModel(Some(GAME_ID), _defaultKeyMap, Map.classic)
+        _controller.model = GameModel(Some(GAME_ID), _defaultKeyMap, MAP_CLASSIC)
 
         _controller.handleAction(MOVEMENT, Some(MoveCommandType.NONE))
         _controller.userAction shouldEqual Some(MoveCommandType.NONE)
@@ -229,7 +230,7 @@ class ControllerTest
       "handle missing user action" in {
         _controller.userAction shouldEqual None
 
-        _controller.model = GameModel(Some(GAME_ID), _defaultKeyMap, Map.classic)
+        _controller.model = GameModel(Some(GAME_ID), _defaultKeyMap, MAP_CLASSIC)
 
         _controller.handleAction(MOVEMENT, Some(MoveCommandType.NONE))
         _controller.userAction shouldEqual Some(MoveCommandType.NONE)
