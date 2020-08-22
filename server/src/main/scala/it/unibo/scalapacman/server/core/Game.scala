@@ -8,6 +8,7 @@ import it.unibo.scalapacman.lib.model.GhostType
 import it.unibo.scalapacman.server.core.Engine.EngineCommand
 import it.unibo.scalapacman.server.core.Game.{CloseCommand, GameCommand, RegisterPlayer, Setup}
 import it.unibo.scalapacman.server.core.Player.{PlayerCommand, PlayerRegistration, RegistrationRejected}
+import it.unibo.scalapacman.server.util.Settings
 
 object Game {
 
@@ -29,10 +30,8 @@ object Game {
       val gameServiceKey: ServiceKey[GameCommand] = ServiceKey[GameCommand](id)
       context.system.receptionist ! Receptionist.Register(gameServiceKey, context.self)
 
-      val engine = context.spawn(Engine(id, 1), "EngineActor")
-      context.watch(engine)
+      val engine = context.spawn(Engine(id, Settings.levelDifficulty), "EngineActor")
       val player = context.spawn(Player(id, engine), "PlayerActor")
-      context.watch(player)
 
       val props   = MailboxSelector.fromConfig("server-app.ghost-mailbox")
       val pinky   = context.spawn(GhostAct(id, engine, GhostType.PINKY), "PinkyActor", props)
