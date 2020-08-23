@@ -99,7 +99,7 @@ class PlayView(implicit controller: Controller, viewChanger: ViewChanger) extend
 
   endGameButton addActionListener (_ => {
     updateGameView(_map.getOrElse(Nil), _gameState.getOrElse(GameState(score = 0)).copy(levelState = LevelState.DEFEAT), gameCanvas, scoreCount)
-    askToController(END_GAME, None)
+//    askToController(END_GAME, None)
   })
 
   backButton addActionListener (_ => {
