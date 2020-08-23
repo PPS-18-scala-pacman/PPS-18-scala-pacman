@@ -1,77 +1,96 @@
-% Is based on idea of neighbourhood and graph is represented as a list of vertices and its neighbourhood
-% Calcola il peso del percorso più breve dal nodo di partenza +Start a tutti i nodi del grafo
-% ?- min_dist([0-[1-1], 1-[2-1, 3-1], 2-[], 3-[]], 0, 3, X).
-% Result: X = [0, 1, 3]    X / [0,1,3]
-
-% min_dist(+Graph,+Start,+End,-Path)
-min_dist(Graph,Start,End,Path):-
-   dijkstra(Graph,[],[Start-0-[Start]],End,_-_-ReversePath),
+% Ricerca del percorso più breve dal vertice di partenza a quello di destinazione
+%
+% shortest_path(+Graph, +Start, +End, -Path)
+shortest_path(Graph, Start, End, Path):-
+   dijkstra(Graph, [], [Start-0-[Start]], End, _-_-ReversePath),
    reverse(ReversePath, Path).
-% min_dist(+Start,+End,-Path) based on the classic map of pacman
-min_dist(Start,End,Path):-
+% shortest_path(+Start, +End, -Path) basato sulla mappa classica di Pacman
+shortest_path(Start, End, Path):-
    classicMap(Graph),
-   dijkstra(Graph,[],[Start-0-[Start]],End,_-_-ReversePath),
+   dijkstra(Graph, [], [Start-0-[Start]], End, _-_-ReversePath),
    reverse(ReversePath, Path).
 
-% dijkstra(+Graph,+ClosedVertices,+OpenVertices,+End,-Path)
-dijkstra(_,Closed,_,End,End-D-P):-
-    member(End-D-P,Closed), !.
-dijkstra(Graph,Closed,Open,End,MinDist):-
-   choose_v(Open,V-D-P,RestOpen),
-   neighbourhood(Graph,V,NB),  % NB is a list of adjacent vertices+distance to V
-   diff(NB,Closed,NewNB),
-   add_path(NewNB, P, NBP),    % NBP is a list of adjacent vertices+distance and path to V
-   merge(NBP,RestOpen,D,NewOpen),
-   dijkstra(Graph,[V-D-P|Closed],NewOpen,MinDist,End).
+% Implementazione dell'algoritmo di Dijkstra per il calcolo del percorso minore fino ad un dato vertice
+% Graph è il grafo di riferimento
+% ClosedVertices sono i vertici già visitati
+% OpenVertices sono i vertici da visitare
+% End è il vertice al quale si vuole arrivare
+% Path è il percorso restituito dall'algoritmo
+%
+% dijkstra(+Graph, +ClosedVertices, +OpenVertices, +End, -Path)
+dijkstra(_, _, Open, End, End-D-P):-
+   next_best_vertex(Open, End-D-P, _), !.
+dijkstra(Graph, Closed, Open, End, MinDist):-
+   next_best_vertex(Open, V-D-P, RestOpen),
+   neighbourhood(Graph, V, NB),
+   prune_neighboors(NB, Closed, NewNB),
+   concat_path(NewNB, P, NBP),
+   merge(NBP, RestOpen, D, NewOpen),
+   dijkstra(Graph, [V-D-P|Closed], NewOpen, End, MinDist).
 
+% Seleziona il prossimo vertice, scegliendo quello con distanza minore
+% Se ci sono più vertici con distanza minore, prende il primo
+%
+% next_best_vertex(+OpenVertices, -VertexToExpand, -RestOpenVertices)
+next_best_vertex([H|T], MinV, Rest):-
+   next_best_vertex_min(T, H, MinV, Rest).
+next_best_vertex_min([], MinV, MinV, []).
+next_best_vertex_min([H|T], LocalMin, MinV, [H2|Rest]):-
+   (nearest(H, LocalMin) -> NextM = H, H2 = LocalMin; NextM = LocalMin, H2 = H),
+   next_best_vertex_min(T, NextM, MinV, Rest).
 
-neighbourhood(Graph,V,NB):-
-   member(V-NB,Graph).
+% nearest(A, B) restituisce true se la distanza del primo elemento è inferiore a quella del secondo
+% A e B sono elementi così composti Vertex-Distance-Path
+%
+% nearest(+A, +B)
+nearest(_-Dx-_, _-Dy-_):- Dx < Dy.
 
-% add_path(+Neighbourhood,+Path,-NeighbourhoodWithPath)
-add_path([], _, []).
-add_path([V-D|T], P, [V-D-[V|P]|NewT]):-
-    add_path(T, P, NewT).
+% Recupera la lista dei vertici (con l'informazione sulla distanza) a cui il vertice passato è collegato
+%
+% neighbourhood(+Graph, +Vertex, -Neighbourhood)
+neighbourhood(Graph, V, NB):-
+   member(V-NB, Graph).
 
-% choose_v(+OpenVertices,-VertexToExpand,-RestOpenVertices)
-choose_v([H|T],MinV,Rest):-
-   choose_minv(T,H,MinV,Rest).
-choose_minv([],MinV,MinV,[]).
-choose_minv([H|T],M,MinV,[H2|Rest]):-
-   H=_-D1-_, M=_-D-_,
-   (D1<D -> NextM=H,H2=M
-          ; NextM=M,H2=H),
-   choose_minv(T,NextM,MinV,Rest).
+% Ritorna la lista di vertici passata in ingresso filtrata dei vertici già visitati
+%
+% prune_neighboors(+ListOfVertices, +Closed, -ListOfNonClosedVertices)
+prune_neighboors([], _, []).
+prune_neighboors([H|T], Closed, L):-
+   H = V-_,
+   (member(V-_-_, Closed) -> L = NewT; L = [H|NewT]),
+   prune_neighboors(T, Closed, NewT).
 
-% diff(+ListOfVertices,+Closed,-ListOfNonClosedVertices)
-diff([],_,[]).
-diff([H|T],Closed,L):-
-   H=V-_,
-   (member(V-_-_,Closed) -> L=NewT ; L=[H|NewT]),
-   diff(T,Closed,NewT).
+% Ritorna la lista dei vicini arricchita del path passato in ingresso
+%
+% concat_path(+Neighbourhood, +Path, -NeighbourhoodWithPath)
+concat_path([], _, []).
+concat_path([V-D|T], P, [V-D-[V|P]|NewT]):-
+    concat_path(T, P, NewT).
 
-% merge(+ListOfVertices,+OldOpenVertices,+Distance,-AllOpenVertices)
-merge([],L,_,L).
-merge([V1-D1-P1|T],Open,D,NewOpen):-
-   (remove(Open,V1-D2-P2,RestOpen)
-      -> (D2<D+D1 -> VD=D2, VP=P2 ; VD is D+D1, VP=P1)  % VP deve prendere il valore in base a VD
-       ; (RestOpen=Open,VD is D+D1, VP=P1) ),
-   NewOpen=[V1-VD-VP|SubOpen],
-   merge(T,RestOpen,D,SubOpen).
+% Ritorna la lista di tutti i vertici aperti creata a partire dalla lista di vertici in esame (i vicini)
+% e la lista attuale dei vertici aperti
+% Se un elemento in ListOfVertices ha lo stesso vertice di un elemento in OldOpenVertices, l'elemento
+% con la distanza minore verrà aggiunto ad AllOpenVertices
+%
+% merge(+ListOfVertices, +OldOpenVertices, +Distance, -AllOpenVertices)
+merge([], L, _, L).
+merge([V1-D1-P1|T], Open, D, NewOpen):-
+   (remove(Open, V1-D2-P2, RestOpen)
+      -> (D2 < D+D1 -> VD = D2, VP = P2; VD is D+D1, VP = P1)  % VP deve prendere il valore in base a VD
+       ; (RestOpen = Open, VD is D+D1, VP = P1)),
+   NewOpen = [V1-VD-VP|SubOpen],
+   merge(T, RestOpen, D, SubOpen).
 
-% remove(+List, +ElementToRemove, -Rest)
-remove([H|T],H,T).
-remove([H|T],X,[H|NT]):-
-   H\=X,
-   remove(T,X,NT).
+% Rimuove un elemento da una lista, ritornando l'elemento rimosso e la lista filtrata
+% remove(L, X, L2) ritorna `true` se l'elemento è presente nella lista, false altrimenti
+%
+% remove(+List, ?ElementToRemove, -Rest)
+remove([H|T], H, T).
+remove([H|T], X, [H|NT]):-
+   H \= X,
+   remove(T, X, NT).
 
-% reverse(+List, -RevertedList)
-reverse(L1,L2):- reverse(L1,L2,[]).
-reverse([],Z,Z).
-reverse([H|T],Z,Acc) :- reverse(T,Z,[H|Acc]).
-
-
-% map for the version of pacman
+% Rappresentazione della mappa classica con i soli incroci (tutte le zone dei GhostSpawn sono considerati incroci)
 classicMap([
     t(6,1)-[t(1,5)-9, t(6,5)-4, t(12,5)-10], t(21,1)-[t(15,5)-10, t(21,5)-4, t(26,5)-9],
     t(1,5)-[t(6,1)-9, t(6,5)-5, t(6,8)-8], t(6,5)-[t(6,1)-4, t(1,5)-5, t(9,5)-3, t(6,8)-3], t(9,5)-[t(6,5)-3, t(12,5)-3, t(12,11)-9], t(12,5)-[t(6,1)-10, t(9,5)-3, t(15,5)-3], t(15,5)-[t(21,1)-10, t(12,5)-3, t(18,5)-3], t(18,5)-[t(15,5)-3, t(15,11)-9, t(21,5)-3], t(21,5)-[t(21,1)-4, t(18,5)-3, t(21,8)-3, t(26,5)-5], t(26,5)-[t(21,1)-9, t(21,5)-5, t(21,8)-8],
