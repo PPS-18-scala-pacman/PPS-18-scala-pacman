@@ -4,6 +4,8 @@ import akka.actor.typed.scaladsl.{ActorContext, Behaviors}
 import akka.actor.typed.{ActorRef, Behavior}
 import akka.http.scaladsl.model.ws.{Message, TextMessage}
 import it.unibo.scalapacman.common.{Command, CommandType, CommandTypeHolder, JSONConverter, MoveCommandType, MoveCommandTypeHolder}
+import it.unibo.scalapacman.server.communication.ConnectionProtocol.{ConnectionAck, ConnectionData, ConnectionEnded,
+  ConnectionFailed, ConnectionInit, ConnectionMsg}
 import it.unibo.scalapacman.server.core.Engine.UpdateCommand
 import it.unibo.scalapacman.server.core.Player.{PlayerCommand, RegisterUser, RegistrationAccepted, RegistrationRejected, Setup, WrapRespMessage, WrapRespUpdate}
 import it.unibo.scalapacman.server.model.MoveDirection
@@ -13,11 +15,11 @@ object Player {
   sealed trait PlayerCommand
   case class RegisterUser(replyTo: ActorRef[PlayerRegistration], sourceAct: ActorRef[Message]) extends PlayerCommand
 
-  case class WrapRespMessage(response: Message) extends PlayerCommand
+  case class WrapRespMessage(response: ConnectionMsg) extends PlayerCommand
   case class WrapRespUpdate(response: Engine.UpdateCommand) extends PlayerCommand
 
   sealed trait PlayerRegistration
-  case class RegistrationAccepted(messageHandler: ActorRef[Message]) extends PlayerRegistration
+  case class RegistrationAccepted(messageHandler: ActorRef[ConnectionMsg]) extends PlayerRegistration
   case class RegistrationRejected(cause: String) extends PlayerRegistration
 
   private case class Setup(gameId: String,
@@ -32,7 +34,7 @@ object Player {
 
 class Player(setup: Setup) {
 
-  val clientMsgAdapter: ActorRef[Message] = setup.context.messageAdapter(WrapRespMessage)
+  val clientMsgAdapter: ActorRef[ConnectionMsg] = setup.context.messageAdapter(WrapRespMessage)
   val updateMsgAdapter: ActorRef[Engine.UpdateCommand] = setup.context.messageAdapter(WrapRespUpdate)
 
   private def initRoutine(): Behavior[PlayerCommand] =
@@ -42,7 +44,7 @@ class Player(setup: Setup) {
         replyTo ! RegistrationAccepted(clientMsgAdapter)
         mainRoutine(sourceAct)
       case WrapRespUpdate(Engine.UpdateMsg(updateMsg)) =>
-        setup.context.log.info("Ricevuto update: " + updateMsg)
+        setup.context.log.warn("Ricevuto update: " + updateMsg)
         Behaviors.same
       case _ =>
         setup.context.log.warn("Ricevuto messaggio non gestito")
@@ -54,18 +56,30 @@ class Player(setup: Setup) {
       case RegisterUser(replyTo, _) =>
         replyTo ! RegistrationRejected("Player occupato")
         Behaviors.same
-      case WrapRespMessage(TextMessage.Strict(msg)) =>
-        setup.context.log.info("Ricevuto messaggio: " + msg)
-        val command = JSONConverter.fromJSON[Command](msg) flatMap (parseClientCommand(_, updateMsgAdapter))
-        if(command.isDefined) setup.engine ! command.get
-        Behaviors.same
       case WrapRespUpdate(Engine.UpdateMsg(model)) =>
         setup.context.log.debug("Ricevuto update: " + model)
         val msg = JSONConverter.toJSON(model)
         sourceAct ! TextMessage(msg)
         Behaviors.same
-      case _ =>
-        setup.context.log.warn("Ricevuto messaggio non gestito")
+      case WrapRespMessage(ConnectionData(act, TextMessage.Strict(msg))) =>
+        setup.context.log.debug("Ricevuto messaggio: " + msg)
+        val command = JSONConverter.fromJSON[Command](msg) flatMap (parseClientCommand(_, updateMsgAdapter))
+        if(command.isDefined) setup.engine ! command.get
+        act ! ConnectionAck()
+        Behaviors.same
+      case WrapRespMessage(ConnectionInit(act)) =>
+        setup.context.log.info("Ricevuto messaggio connessione instaurata")
+        act ! ConnectionAck()
+        Behaviors.same
+      case WrapRespMessage(ConnectionEnded()) =>
+        setup.context.log.info("Ricevuto messaggio connessione chiusa")
+        Behaviors.stopped
+      case WrapRespMessage(ConnectionFailed(ex)) =>
+        setup.context.log.error(s"Ricevuto messaggio connessione fallita ${ex.getMessage}")
+        setup.context.log.debug(ex.getStackTrace.toString)
+        throw ex
+      case msg:Any =>
+        setup.context.log.warn(s"Ricevuto messaggio non gestito: $msg")
         Behaviors.same
     }
 
