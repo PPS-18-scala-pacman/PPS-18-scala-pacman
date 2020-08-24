@@ -6,7 +6,7 @@ import it.unibo.scalapacman.lib.model.{Character, Direction, Dot, Eatable, Fruit
 import it.unibo.scalapacman.lib.model.Direction.Direction
 import it.unibo.scalapacman.lib.model.Direction.{EAST, NORTH, SOUTH, WEST}
 import it.unibo.scalapacman.lib.model.Map.MapIndexes
-import it.unibo.scalapacman.lib.model.Tile.Track
+import it.unibo.scalapacman.lib.model.Tile.{Track, TrackSafe}
 
 import scala.reflect.ClassTag
 
@@ -167,8 +167,8 @@ object GameHelpers {
       row.updated(index, putEatableOnTile(row(index), option))
 
     private def putEatableOnTile(tile: Tile, option: Option[Eatable]): Tile = tile match {
-      case Track(_) => Track(option)
-      case t: Tile => t
+      case Track(_) | TrackSafe(_) => Track(option)
+      case _ => throw new IllegalArgumentException("This tile can't contains an eatable, only Track and TrackSafe")
     }
 
     def eatablesToSeq[A <: Eatable : ClassTag]: Seq[(MapIndexes, A)] =
@@ -178,9 +178,9 @@ object GameHelpers {
         eatable <- map.tiles(y)(x).eatable collect { case a: A => a }
       ) yield ((x, y), eatable)
 
-    def dots: Seq[(MapIndexes, Dot.Val)] = map.eatablesToSeq[Dot.Val]
+    def dots: Seq[(MapIndexes, Dot.Dot)] = map.eatablesToSeq[Dot.Dot]
 
-    def fruit: Option[(MapIndexes, Fruit.Val)] = map.eatablesToSeq[Fruit.Val] match {
+    def fruit: Option[(MapIndexes, Fruit.Fruit)] = map.eatablesToSeq[Fruit.Fruit] match {
       case Seq(fruit) => Some(fruit)
       case Seq() => None
     }

@@ -1,8 +1,8 @@
 package it.unibo.scalapacman.lib.model
 
 import it.unibo.scalapacman.lib.model.Character.{Ghost, Pacman}
+import it.unibo.scalapacman.lib.engine.GameHelpers.MapHelper
 import it.unibo.scalapacman.lib.model.GhostType.GhostType
-import it.unibo.scalapacman.lib.model.Map.MapIndexes
 import it.unibo.scalapacman.lib.model.SpeedCondition.SpeedCondition
 import it.unibo.scalapacman.lib.model.SpeedLevel.SpeedLevel
 
@@ -13,7 +13,7 @@ trait LevelGenerator {
 
   def characters: List[Character]
 
-  def fruit: (MapIndexes, Fruit.Value)
+  def fruit: Fruit.Value
 
   def gameState: GameState
 }
@@ -33,14 +33,21 @@ object Level {
 
     def ghost(gType: GhostType): Ghost = gType match {
       case GhostType.BLINKY => Ghost(gType, Map.getStartPosition(mapType, Ghost, Some(gType)), ghostSpeed(level), Direction.WEST)
-      case GhostType.PINKY  => Ghost(gType, Map.getStartPosition(mapType, Ghost, Some(gType)), ghostSpeed(level), Direction.EAST)
-      case GhostType.INKY   => Ghost(gType, Map.getStartPosition(mapType, Ghost, Some(gType)), ghostSpeed(level), Direction.NORTH)
-      case GhostType.CLYDE  => Ghost(gType, Map.getStartPosition(mapType, Ghost, Some(gType)), ghostSpeed(level), Direction.WEST)
+      case GhostType.PINKY  => Ghost(gType, Map.getStartPosition(mapType, Ghost, Some(gType)), ghostSpeed(level), Direction.NORTH)
+      case GhostType.INKY   => Ghost(gType, Map.getStartPosition(mapType, Ghost, Some(gType)), ghostSpeed(level), Direction.EAST, isDead = true)
+      case GhostType.CLYDE  => Ghost(gType, Map.getStartPosition(mapType, Ghost, Some(gType)), ghostSpeed(level), Direction.WEST, isDead = true)
     }
 
-    def fruit: (MapIndexes, Fruit.Value) = (Map.getFruitMapIndexes(mapType), Level.fruit(level))
+    def fruit: Fruit.Value = Level.fruit(level)
 
     def gameState: GameState = GameState(0)
+
+    def gameEvents: List[GameTimedEvent[_]] =
+      GameTimedEvent(GameTimedEventType.FRUIT_SPAWN, dots = Some(map.dots.size - 70), payload = Some(fruit)) ::
+      GameTimedEvent(GameTimedEventType.FRUIT_SPAWN, dots = Some(map.dots.size - 170), payload = Some(fruit)) ::
+      GameTimedEvent(GameTimedEventType.GHOST_RESTART, dots = Some(map.dots.size - 30), payload = Some(GhostType.INKY)) ::
+      GameTimedEvent(GameTimedEventType.GHOST_RESTART, dots = Some(map.dots.size - 60), payload = Some(GhostType.CLYDE)) ::
+      Nil
   }
 
   def pacmanSpeed(level: Int, condition: SpeedCondition = SpeedCondition.NORM): Double = BASE_SPEED * ((speedLevel(level), condition) match {
@@ -81,5 +88,22 @@ object Level {
     case 9 | 10 => Fruit.GALAXIAN
     case 11 | 12 => Fruit.BELL
     case _ => Fruit.KEY
+  }
+
+  def energizerDuration(level: Int): Int = (level match {
+    case 1 => 6
+    case 2 | 6 | 10 => 5
+    case 3 => 4
+    case 4 | 14 => 3
+    case 5 | 7 | 8 | 11 => 2
+    case 17 => 0
+    case _ if level <= 18 => 1
+    case _ => 0
+  }) * 1000
+
+  def ghostRespawnDotCounter(level: Int, ghostType: GhostType): Int = ghostType match {
+    case GhostType.INKY => 7
+    case GhostType.CLYDE => 17
+    case _ => 0
   }
 }

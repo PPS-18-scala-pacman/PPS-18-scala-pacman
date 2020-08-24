@@ -31,6 +31,8 @@ case object Map {
 
   def energizerDot(f: Int = 0): Track = Track(Some(ENERGIZER_DOT))
 
+  def trackSafe(f: Int = 0): TrackSafe = TrackSafe(None)
+
   def wall(f: Int = 0): Wall = Wall()
 
   object Classic {
@@ -47,13 +49,13 @@ case object Map {
       wall() :: List.tabulate(6)(smallDot) ::: wall() :: wall() :: List.tabulate(4)(smallDot) ::: wall() :: Nil,
       List.tabulate(6)(wall) ::: smallDot() :: List.tabulate(5)(wall) ::: emptyTrack() :: wall() :: Nil,
       List.tabulate(6)(wall) ::: smallDot() :: List.tabulate(5)(wall) ::: emptyTrack() :: wall() :: Nil,
-      List.tabulate(6)(wall) ::: smallDot() :: wall() :: wall() :: emptyTrack() :: emptyTrack() :: List.tabulate(3)(_ => TrackSafe()),
+      List.tabulate(6)(wall) ::: smallDot() :: wall() :: wall() :: emptyTrack() :: emptyTrack() :: List.tabulate(3)(trackSafe),
       List.tabulate(6)(wall) ::: smallDot() :: wall() :: wall() :: emptyTrack() :: wall() :: wall() :: wall() :: GhostSpawn() :: Nil,
       List.tabulate(6)(wall) ::: smallDot() :: wall() :: wall() :: emptyTrack() :: wall() :: List.tabulate(3)(_ => GhostSpawn()),
       List.tabulate(6)(_ => TrackTunnel()) ::: smallDot() :: List.tabulate(3)(emptyTrack) ::: wall() :: List.tabulate(3)(_ => GhostSpawn()),
       List.tabulate(6)(wall) ::: smallDot() :: wall() :: wall() :: emptyTrack() :: wall() :: List.tabulate(3)(_ => GhostSpawn()),
       List.tabulate(6)(wall) ::: smallDot() :: wall() :: wall() :: emptyTrack() :: List.tabulate(4)(wall),
-      List.tabulate(6)(wall) ::: smallDot() :: wall() :: wall() :: emptyTrack() :: emptyTrack() :: List.tabulate(3)(_ => TrackSafe()),
+      List.tabulate(6)(wall) ::: smallDot() :: wall() :: wall() :: emptyTrack() :: emptyTrack() :: List.tabulate(3)(trackSafe),
       List.tabulate(6)(wall) ::: smallDot() :: wall() :: wall() :: emptyTrack() :: List.tabulate(4)(wall),
       List.tabulate(6)(wall) ::: smallDot() :: wall() :: wall() :: emptyTrack() :: List.tabulate(4)(wall),
       wall() :: List.tabulate(12)(smallDot) ::: wall() :: Nil,
@@ -73,7 +75,7 @@ case object Map {
     val PACMAN_START_POSITION: Point2D = Point2D(14 * TileGeography.SIZE, 23 * TileGeography.SIZE) + TileGeography.center
     val BLINKY_START_POSITION: Point2D = Point2D(13 * TileGeography.SIZE, 11 * TileGeography.SIZE) + TileGeography.center
     val PINKY_START_POSITION: Point2D = Point2D(11 * TileGeography.SIZE, 14 * TileGeography.SIZE) + TileGeography.center
-    val INKY_START_POSITION: Point2D = Point2D(13 * TileGeography.SIZE, 15 * TileGeography.SIZE) + TileGeography.center
+    val INKY_START_POSITION: Point2D = Point2D(13 * TileGeography.SIZE, 14 * TileGeography.SIZE) + TileGeography.center
     val CLYDE_START_POSITION: Point2D = Point2D(15 * TileGeography.SIZE, 14 * TileGeography.SIZE) + TileGeography.center
     val FRUIT_INDEXES: MapIndexes = (14, 17)
 
