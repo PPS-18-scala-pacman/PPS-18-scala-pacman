@@ -73,7 +73,7 @@ case object Map {
     val PACMAN_START_POSITION: Point2D = Point2D(14 * TileGeography.SIZE, 23 * TileGeography.SIZE) + TileGeography.center
     val BLINKY_START_POSITION: Point2D = Point2D(13 * TileGeography.SIZE, 11 * TileGeography.SIZE) + TileGeography.center
     val PINKY_START_POSITION: Point2D = Point2D(11 * TileGeography.SIZE, 14 * TileGeography.SIZE) + TileGeography.center
-    val INKY_START_POSITION: Point2D = Point2D(13 * TileGeography.SIZE, 15 * TileGeography.SIZE) + TileGeography.center
+    val INKY_START_POSITION: Point2D = Point2D(13 * TileGeography.SIZE, 14 * TileGeography.SIZE) + TileGeography.center
     val CLYDE_START_POSITION: Point2D = Point2D(15 * TileGeography.SIZE, 14 * TileGeography.SIZE) + TileGeography.center
     val FRUIT_INDEXES: MapIndexes = (14, 17)
 
