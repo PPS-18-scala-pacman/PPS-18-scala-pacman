@@ -19,7 +19,7 @@ object GhostAct {
                            engine: ActorRef[Engine.EngineCommand],
                            ghostType: GhostType)
 
-  case class Model(state: GameState, desMove: Option[MoveDirection])
+  private case class Model(state: GameState, desMove: Option[MoveDirection])
 
   def apply(id: String, engine: ActorRef[Engine.EngineCommand], ghostType: GhostType): Behavior[Engine.UpdateCommand] =
     Behaviors.setup { context =>
@@ -29,7 +29,7 @@ object GhostAct {
 
 private class GhostAct(setup: Setup) {
 
-  setup.context.log.info(s"GhostActor per fantasma ${setup.ghostType}")
+  setup.context.log.info(s"GhostAct avviato, fantasma: ${setup.ghostType}")
   setup.engine ! Engine.RegisterGhost(setup.context.self, setup.ghostType)
 
   private def coreRoutine(model: Model): Behaviors.Receive[Engine.UpdateCommand] =
