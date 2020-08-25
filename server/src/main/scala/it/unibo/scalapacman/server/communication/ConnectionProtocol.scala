@@ -5,12 +5,13 @@ import akka.http.scaladsl.model.ws.Message
 
 object ConnectionProtocol {
 
-  case class ConnectionAck()
+  sealed trait Ack
+  case class ConnectionAck() extends Ack
 
   sealed trait ConnectionMsg
 
-  case class ConnectionInit(ackTo: ActorRef[ConnectionAck]) extends ConnectionMsg
-  case class ConnectionData(ackTo: ActorRef[ConnectionAck], msg: Message) extends ConnectionMsg
+  case class ConnectionInit(ackTo: ActorRef[Ack]) extends ConnectionMsg
+  case class ConnectionData(ackTo: ActorRef[Ack], msg: Message) extends ConnectionMsg
   case class ConnectionEnded() extends ConnectionMsg
   case class ConnectionFailed(ex: Throwable) extends ConnectionMsg
 

@@ -6,14 +6,14 @@ import akka.http.scaladsl.model.ws.Message
 import akka.stream.OverflowStrategy
 import akka.stream.scaladsl.{Sink, Source}
 import akka.stream.typed.scaladsl.{ActorSink, ActorSource}
-import it.unibo.scalapacman.server.communication.ConnectionProtocol.{ConnectionAck, ConnectionData,
+import it.unibo.scalapacman.server.communication.ConnectionProtocol.{Ack, ConnectionAck, ConnectionData,
   ConnectionEnded, ConnectionFailed, ConnectionInit, ConnectionMsg}
 import it.unibo.scalapacman.server.util.Settings
 
 object StreamFactory {
 
   def createActorWBSink(actor: ActorRef[ConnectionMsg]): Sink[Message, NotUsed] =
-    ActorSink.actorRefWithBackpressure[Message, ConnectionMsg, ConnectionAck](
+    ActorSink.actorRefWithBackpressure[Message, ConnectionMsg, Ack](
       ref = actor,
       onInitMessage = ConnectionInit.apply,
       messageAdapter = ConnectionData.apply,

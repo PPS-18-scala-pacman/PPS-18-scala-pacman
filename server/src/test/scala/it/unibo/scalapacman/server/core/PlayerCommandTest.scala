@@ -3,7 +3,7 @@ package it.unibo.scalapacman.server.core
 import akka.actor.testkit.typed.scaladsl.{ScalaTestWithActorTestKit, TestProbe}
 import akka.actor.typed.ActorRef
 import akka.http.scaladsl.model.ws.{Message, TextMessage}
-import it.unibo.scalapacman.server.communication.ConnectionProtocol.{ConnectionAck, ConnectionData, ConnectionMsg}
+import it.unibo.scalapacman.server.communication.ConnectionProtocol.{Ack, ConnectionAck, ConnectionData, ConnectionMsg}
 import it.unibo.scalapacman.server.core.Engine.{EngineCommand, UpdateCommand}
 import it.unibo.scalapacman.server.model.MoveDirection
 import org.scalatest.wordspec.AnyWordSpecLike
@@ -13,7 +13,7 @@ class PlayerCommandTest  extends ScalaTestWithActorTestKit with AnyWordSpecLike 
   private var playerCmdAdapter: ActorRef[ConnectionMsg] = _
   private var playerUpdAdapter: ActorRef[UpdateCommand] = _
   private var engineProbe     : TestProbe[EngineCommand] = _
-  private var ackProbe        : TestProbe[ConnectionAck] = _
+  private var ackProbe        : TestProbe[Ack] = _
 
   private var testCommandPauseJSON        : String = _
   private var testCommandResumeJSON       : String = _
@@ -27,7 +27,7 @@ class PlayerCommandTest  extends ScalaTestWithActorTestKit with AnyWordSpecLike 
 
   override def beforeAll(): Unit = {
     // creazione e registrazione attore player
-    ackProbe = createTestProbe[ConnectionAck]()
+    ackProbe = createTestProbe[Ack]()
     engineProbe = createTestProbe[EngineCommand]()
     val fakeGameId = "fakeCreateGameId"
     val playerActor = spawn(Player(fakeGameId, engineProbe.ref))
