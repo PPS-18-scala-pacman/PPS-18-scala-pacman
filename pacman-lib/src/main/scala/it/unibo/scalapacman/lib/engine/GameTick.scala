@@ -1,11 +1,16 @@
 package it.unibo.scalapacman.lib.engine
 
-import it.unibo.scalapacman.lib.model.{Character, Dot, Eatable, GameObject, GameState, LevelState, Map, SpeedCondition, Tile}
+import it.unibo.scalapacman.lib.model.{Character, Dot, Eatable, Fruit, GameObject, GameState, GameTimedEvent,
+  Level, LevelState, Map, SpeedCondition, Tile}
+import it.unibo.scalapacman.lib.model.GameTimedEventType.{FRUIT_STOP, GHOST_RESTART, FRUIT_SPAWN, ENERGIZER_STOP, GameTimedEventType}
 import it.unibo.scalapacman.lib.engine.GameHelpers.{CharacterHelper, MapHelper}
 import it.unibo.scalapacman.lib.model.Character.{Ghost, Pacman}
+import it.unibo.scalapacman.lib.model.GhostType.GhostType
 import it.unibo.scalapacman.lib.model.Level.{ghostSpeed, pacmanSpeed}
 import it.unibo.scalapacman.lib.model.LevelState.LevelState
 import it.unibo.scalapacman.lib.model.SpeedCondition.SpeedCondition
+
+import scala.concurrent.duration.FiniteDuration
 
 /**
  * Steps to be called at every game tick in the following order:
@@ -13,16 +18,17 @@ import it.unibo.scalapacman.lib.model.SpeedCondition.SpeedCondition
  *
  */
 object GameTick {
-  def collisions(characters: List[Character])(implicit map: Map): List[(Character, GameObject)] =
-    characters collect { case p: Pacman => p } flatMap characterCollisions(characters)
+  def collisions(characters: List[Character])(implicit map: Map): List[(Character, GameObject)] = {
+    def characterCollisions(character: Character): List[(Character, GameObject)] =
+      (character.tile.eatable ++: characters.filter(_ != character).filter(_.tileIndexes == character.tileIndexes)).map(obj => (character, obj))
 
-  private def characterCollisions(characters: List[Character])(character: Character)(implicit map: Map): List[(Character, GameObject)] =
-    (character.tile.eatable ++: characters.filter(_ != character).filter(_.tileIndexes == character.tileIndexes)).map(obj => (character, obj))
+    characters collect { case p: Pacman => p } flatMap characterCollisions
+  }
 
   def calculateGameState(gameState: GameState)(implicit collisions: List[(Character, GameObject)]): GameState = gameState.copy(
     score = (collisions collect { case (_, e: Eatable) => e } map (_.points) sum) + gameState.score,
-    ghostInFear = isEnergizerEaten,
-    pacmanEmpowered = isEnergizerEaten,
+    ghostInFear = gameState.ghostInFear || isEnergizerEaten,
+    pacmanEmpowered = gameState.pacmanEmpowered || isEnergizerEaten,
   )
 
   private def isEnergizerEaten(implicit collisions: List[(Character, GameObject)]) =
@@ -40,37 +46,33 @@ object GameTick {
 
   private def calculateMapTile(implicit map: Map, character: Character): Map = character.eat
 
-//  def calculateBackToLife(characters: List[Character]): List[Character] =
-//    for (
-//      character <- characters
-//    ) yield calculateBackToLife(character)
-//
-//  private def calculateBackToLife(character: Character): Character =
-//    character match {
-//      case g@Ghost(GhostType.BLINKY, _, _, _, true) => g.copy(position = g.deadPosition, isDead = false)
-//      case g@Ghost(GhostType.PINKY, _, _, _, true) => g.copy(position = g.deadPosition, isDead = false)
-//      case g@Ghost(GhostType.INKY, _, _, _, true) => g.copy(position = g.deadPosition, isDead = false)
-//      case g@Ghost(GhostType.CLYDE, _, _, _, true) => g.copy(position = g.deadPosition, isDead = false)
-//      case _ => character
-//    }
-
-  def calculateDeaths(characters: List[Character], gameState: GameState)(implicit collisions: List[(Character, GameObject)]): List[Character] =
+  def calculateDeaths(characters: List[Character], gameState: GameState)(implicit collisions: List[(Character, GameObject)], map: Map): List[Character] =
     for (
       character <- characters
     ) yield calculateDeath(character, gameState, collisions.collect({ case (c1: Character, c2: Character) => (c1, c2) }))
 
-  private def calculateDeath(character: Character, gameState: GameState, collisions: List[(Character, Character)]): Character =
-    if (gameState.ghostInFear) {
+  private def calculateDeath(character: Character, gameState: GameState, collisions: List[(Character, Character)])(implicit map: Map): Character = {
+    def pacmanCollideGhost(pacman: Pacman)(collision: (Character, Character)): Boolean = collision match {
+      case (pacman: Pacman, _: Ghost) if pacman.eq(pacman) => true
+      case _ => false
+    }
+    def killGhost(ghost: Ghost): Ghost = ghost.copy(isDead = true, position = Map.getRestartPosition(map.mapType, Ghost, Some(ghost.ghostType)))
+    def killPacman(pacman: Pacman): Pacman = pacman.copy(isDead = true, position = Map.getRestartPosition(map.mapType, Pacman))
+
+    if (ghostCanBeKilled(gameState)) {
       character match {
-        case g@Ghost(_, _, _, _, _) => g.copy(isDead = collisions.exists { case (Pacman(_, _, _, _), ghost) if g.eq(ghost) => true })
+        case ghost: Ghost if collisions.exists(_._2 eq ghost) => killGhost(ghost)
         case _ => character
       }
     } else {
       character match {
-        case p@Pacman(_, _, _, _) => p.copy(isDead = collisions.exists { case (pacman, Ghost(_, _, _, _, _)) if p.eq(pacman) => true })
+        case pacman: Pacman if collisions.exists(pacmanCollideGhost(pacman)) => killPacman(pacman)
         case _ => character
       }
     }
+  }
+
+  private def ghostCanBeKilled(gameState: GameState) = gameState.ghostInFear
 
   /**
    * Calcola la velocità dei personaggi.
@@ -108,9 +110,120 @@ object GameTick {
     levelState = calculateLevelState(characters.collect { case p@Pacman(_, _, _, _) => p }, map.dots)
   )
 
-  private def calculateLevelState(pacmans: List[Pacman], dots: Seq[((Int, Int), Dot.Val)]): LevelState = (pacmans, dots) match {
+  private def calculateLevelState(pacmans: List[Pacman], dots: Seq[((Int, Int), Dot.Dot)]): LevelState = (pacmans, dots) match {
     case (_, dots) if dots.isEmpty => LevelState.VICTORY
     case (pacmans, _) if pacmans forall (_.isDead == true) => LevelState.DEFEAT
     case _ => LevelState.ONGOING
   }
+
+  def consumeTimeOfGameEvents(gameEvents: List[GameTimedEvent[Any]], timeMs: FiniteDuration): List[GameTimedEvent[Any]] =
+    consumeTimeOfGameEvents(gameEvents, timeMs.toMillis)
+
+  def consumeTimeOfGameEvents(gameEvents: List[GameTimedEvent[Any]], timeMs: Double): List[GameTimedEvent[Any]] =
+    gameEvents.map(event => event.copy(
+      timeMs = event.timeMs.map(_ - timeMs),
+    ))
+
+  def removeTimedOutGameEvents(gameEvents: List[GameTimedEvent[Any]])(implicit map: Map): List[GameTimedEvent[Any]] =
+    gameEvents.filter(!filterTimedOutEvent(map)(_))
+
+  def updateEvents(
+                    gameEvents: List[GameTimedEvent[Any]],
+                    gameState: GameState,
+                    collisions: List[(Character, GameObject)]
+                  )
+                  (implicit map: Map): List[GameTimedEvent[_]] = {
+    val FRUIT_TIMER = 9000
+    def chainedEvent(gameEvent: GameTimedEvent[_]): Option[GameTimedEvent[_]] = gameEvent match {
+      case GameTimedEvent(FRUIT_SPAWN, _, _, _) => Some(GameTimedEvent(FRUIT_STOP, timeMs = Some(FRUIT_TIMER)))
+      case _ => None
+    }
+
+    def energizerStop: Option[GameTimedEvent[_]] =
+      if (isEnergizerEaten(collisions)) {
+        Some(GameTimedEvent(ENERGIZER_STOP, timeMs = Some(Level.energizerDuration(gameState.levelNumber))))
+      } else {
+        None
+      }
+
+    def ghostResume: List[Option[GameTimedEvent[_]]] =
+      if (ghostCanBeKilled(gameState)) {
+        collisions.map(_._2).collect { case ghost: Ghost => ghost } .map(ghost => Some(GameTimedEvent(
+          GHOST_RESTART,
+          dots = Some(Level.ghostRespawnDotCounter(gameState.levelNumber, ghost.ghostType)),
+          payload = Some(ghost.ghostType))
+        ))
+      } else {
+        Nil
+      }
+
+    gameEvents :::
+      (
+        gameEvents.filter(filterTimedOutEvent(map)).map(chainedEvent) :::
+          ghostResume :::
+          energizerStop :: Nil
+        ).filter(_ isDefined).map(_ get)
+  }
+
+  /**
+   * Fa vivere o resuscitare i fantasmi
+   *
+   * @param gameEvents
+   * @param characters
+   * @return
+   */
+  def handleEvents(gameEvents: List[GameTimedEvent[Any]], characters: List[Character])(implicit map: Map): List[Character] = {
+    def handleEvent(gameEvent: GameTimedEvent[Any], characters: List[Character])(implicit map: Map): List[Character] = gameEvent match {
+      case GameTimedEvent(GHOST_RESTART, _, _, Some(ghostType: GhostType)) => characters.map {
+        case ghost: Ghost if ghost.ghostType == ghostType => ghost.copy(isDead = false, position = Map.getStartPosition(map.mapType, Ghost, Some(ghostType)))
+        case character: Character => character
+      }
+      case _ => characters
+    }
+
+    gameEvents.filter(filterTimedOutEvent(map))
+      .foldRight(characters)(handleEvent)
+  }
+
+  /**
+   * Fa spawnare o distrugge i frutti
+   *
+   * @param gameEvents
+   * @param map
+   * @return
+   */
+  def handleEvents(gameEvents: List[GameTimedEvent[Any]], map: Map): Map = {
+    def handleEvent(gameEvent: GameTimedEvent[Any], map: Map): Map = gameEvent match {
+      case GameTimedEvent(FRUIT_SPAWN, _, _, fruit@Some(Fruit.Fruit(_))) => map.putEatable(
+        Map getFruitMapIndexes map.mapType,
+        fruit.asInstanceOf[Some[Fruit.Fruit]]
+      )
+      case GameTimedEvent(FRUIT_STOP, _, _, _) => map empty Map.getFruitMapIndexes(map.mapType)
+      case _ => map
+    }
+
+    gameEvents.filter(filterTimedOutEvent(map))
+      .foldRight(map)(handleEvent)
+  }
+
+  /**
+   * Aggiorna ghostInFear e pacmanEmpowered
+   *
+   * @param gameEvents
+   * @param gameState
+   * @return
+   */
+  def handleEvents(gameEvents: List[GameTimedEvent[Any]], gameState: GameState)(implicit map: Map): GameState = {
+    def handleEvent(gameEvent: GameTimedEvent[Any], gameState: GameState): GameState = gameEvent match {
+      case GameTimedEvent(ENERGIZER_STOP, _, _, _) => gameState.copy(ghostInFear = false, pacmanEmpowered = false)
+      case _ => gameState
+    }
+
+    gameEvents.filter(filterTimedOutEvent(map))
+      .foldRight(gameState)(handleEvent)
+  }
+
+  private def filterTimedOutEvent(map: Map)(gameEvent: GameTimedEvent[Any]): Boolean =
+    !gameEvent.timeMs.exists(_ > 0) && !gameEvent.dots.exists(_ <= map.dots.size)
+
 }

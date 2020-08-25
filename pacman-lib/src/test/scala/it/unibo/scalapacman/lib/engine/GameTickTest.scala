@@ -1,11 +1,19 @@
 package it.unibo.scalapacman.lib.engine
 
+import java.util.concurrent.TimeUnit
+
 import it.unibo.scalapacman.lib.math.{Point2D, TileGeography}
-import it.unibo.scalapacman.lib.model.{Direction, Dot, Fruit, GameState, GhostType, LevelState, Map, Tile}
-import it.unibo.scalapacman.lib.engine.GameTick.{calculateDeaths, calculateGameState, calculateLevelState, calculateMap, calculateSpeeds, collisions}
+import it.unibo.scalapacman.lib.model.{Direction, Dot, Fruit, GameState, GameTimedEvent, GhostType, LevelState, Map, MapType, Tile}
+import it.unibo.scalapacman.lib.engine.GameTick.{
+  calculateDeaths, calculateGameState, calculateLevelState, calculateMap,
+  calculateSpeeds, collisions, consumeTimeOfGameEvents, removeTimedOutGameEvents, updateEvents, handleEvents
+}
 import it.unibo.scalapacman.lib.engine.GameHelpers.{CharacterHelper, MapHelper}
 import it.unibo.scalapacman.lib.model.Character.{Ghost, Pacman}
+import it.unibo.scalapacman.lib.model.GameTimedEventType.{ENERGIZER_STOP, GHOST_RESTART, FRUIT_SPAWN, FRUIT_STOP}
 import org.scalatest.wordspec.AnyWordSpec
+
+import scala.concurrent.duration.FiniteDuration
 
 class GameTickTest extends AnyWordSpec {
   val GHOST_1: Ghost = Ghost(GhostType.BLINKY, Point2D(0, 0), 0.0, Direction.WEST)
@@ -105,12 +113,16 @@ class GameTickTest extends AnyWordSpec {
       }
       "calculate when ghost are feared and pacman is empowered" when {
         "pacman eat an energizer dot" in {
-          val gameState = calculateGameState(OLD_GAME_STATE)((PACMAN, Dot.ENERGIZER_DOT) :: Nil)
-          assert(gameState.ghostInFear == !OLD_GAME_STATE.ghostInFear && gameState.pacmanEmpowered == !OLD_GAME_STATE.pacmanEmpowered)
+          var gameState = calculateGameState(OLD_GAME_STATE)((PACMAN, Dot.ENERGIZER_DOT) :: Nil)
+          assert(gameState.ghostInFear && gameState.pacmanEmpowered)
+          gameState = calculateGameState(gameState)((PACMAN, Dot.ENERGIZER_DOT) :: Nil)
+          assert(gameState.ghostInFear && gameState.pacmanEmpowered)
         }
         "in any other case" in {
-          val gameState = calculateGameState(OLD_GAME_STATE)(Nil)
-          assert(gameState.ghostInFear == OLD_GAME_STATE.ghostInFear && gameState.pacmanEmpowered == OLD_GAME_STATE.pacmanEmpowered)
+          var gameState = calculateGameState(OLD_GAME_STATE)(Nil)
+          assert(!gameState.ghostInFear && !gameState.pacmanEmpowered)
+          gameState = calculateGameState(gameState.copy(ghostInFear = true, pacmanEmpowered = true))(Nil)
+          assert(gameState.ghostInFear && gameState.pacmanEmpowered)
         }
       }
       "calculate the level state" when {
@@ -171,27 +183,31 @@ class GameTickTest extends AnyWordSpec {
     "evaluate the new characters" which {
       "kill pacman" when {
         "it collide with a ghost not in fear" in {
+          val map = Map.create(MapType.CLASSIC)
           val characters = PACMAN :: GHOST_1 :: Nil
           val state = GameState(0)
           val noCollisions = Nil
-          assert(calculateDeaths(characters, state)(noCollisions) == characters)
+          assert(calculateDeaths(characters, state)(noCollisions, map) == characters)
           val charactersCollisions = (PACMAN, GHOST_1) :: Nil
-          assert(calculateDeaths(characters, state)(charactersCollisions) == PACMAN.copy(isDead = true) :: GHOST_1 :: Nil)
+          val expectedResult = PACMAN.copy(isDead = true, position = Map.getRestartPosition(map.mapType, Pacman)) :: GHOST_1 :: Nil
+          assert(calculateDeaths(characters, state)(charactersCollisions, map) == expectedResult)
         }
       }
       "kill a ghost" when {
         "it is in fear and collide with pacman" in {
+          val map = Map.create(MapType.CLASSIC)
           val characters = PACMAN :: GHOST_1 :: Nil
           val state = GameState(0, ghostInFear = true)
           val noCollisions = Nil
-          assert(calculateDeaths(characters, state)(noCollisions) == characters)
+          assert(calculateDeaths(characters, state)(noCollisions, map) == characters)
           val charactersCollisions = (PACMAN, GHOST_1) :: Nil
-          assert(calculateDeaths(characters, state)(charactersCollisions) == PACMAN :: GHOST_1.copy(isDead = true) :: Nil)
+          val expectedResult = PACMAN :: GHOST_1.copy(isDead = true, position = Map.getRestartPosition(map.mapType, Ghost, Some(GhostType.PINKY))) :: Nil
+          assert(calculateDeaths(characters, state)(charactersCollisions, map) == expectedResult)
         }
       }
       "change the speed" when {
         "pacman is empowered" in {
-          var gameState = GameState(0, pacmanEmpowered = false, ghostInFear = false)
+          var gameState = GameState(0)
           val noCollisions = Nil
           val characters = calculateSpeeds(PACMAN :: GHOST_1 :: GHOST_3 :: Nil, 1, gameState)(noCollisions, MAP)
           gameState = GameState(0, pacmanEmpowered = true, ghostInFear = true)
@@ -201,7 +217,7 @@ class GameTickTest extends AnyWordSpec {
           assert(newCharacters(2).speed < characters(2).speed)
         }
         "a ghost is in the tunnel" in {
-          var gameState = GameState(0, pacmanEmpowered = false, ghostInFear = false)
+          var gameState = GameState(0)
           val noCollisions = Nil
           val characters = calculateSpeeds(PACMAN :: GHOST_1 :: GHOST_3 :: Nil, 1, gameState)(noCollisions, MAP)
           val map = Map(tiles = List[List[Tile]](Tile.TrackTunnel() :: Tile.Track(None) :: Nil))
@@ -211,6 +227,62 @@ class GameTickTest extends AnyWordSpec {
           assert(newCharacters(1).speed < characters(1).speed)
           assert(newCharacters(2) == characters(2))
         }
+      }
+    }
+    "handle game events" which {
+      "should be updated when the time is passing" in {
+        // scalastyle:off magic.number
+        assert(consumeTimeOfGameEvents(GameTimedEvent(ENERGIZER_STOP, timeMs = Some(100)) :: Nil, 16).head.timeMs.get == 84)
+        assert(consumeTimeOfGameEvents(GameTimedEvent(ENERGIZER_STOP, timeMs = Some(100)) :: Nil, FiniteDuration(16, TimeUnit.MILLISECONDS))
+          .head.timeMs.get == 84)
+        assert(consumeTimeOfGameEvents(GameTimedEvent(ENERGIZER_STOP, timeMs = None) :: Nil, 16).head.timeMs.isEmpty)
+        assert(consumeTimeOfGameEvents(GameTimedEvent(ENERGIZER_STOP, timeMs = None) :: Nil, FiniteDuration(16, TimeUnit.MILLISECONDS)).head.timeMs.isEmpty)
+        // scalastyle:on magic.number
+      }
+      "should be removed when they are timed out" in {
+        assert(removeTimedOutGameEvents(GameTimedEvent(ENERGIZER_STOP) :: Nil)(MAP) == Nil)
+        assert(removeTimedOutGameEvents(GameTimedEvent(ENERGIZER_STOP, timeMs = Some(0)) :: Nil)(MAP) == Nil)
+        assert(removeTimedOutGameEvents(GameTimedEvent(ENERGIZER_STOP, dots = Some(10)) :: Nil)(MAP) == Nil) // scalastyle:ignore magic.number
+
+        assert(removeTimedOutGameEvents(GameTimedEvent(ENERGIZER_STOP, timeMs = Some(10)) :: Nil)(MAP).size == 1) // scalastyle:ignore magic.number
+        assert(removeTimedOutGameEvents(GameTimedEvent(ENERGIZER_STOP, dots = Some(0)) :: Nil)(MAP).size == 1)
+      }
+      "should include fruit stop event when a fruit spawn event is timed out" in {
+        val newEvents = updateEvents(GameTimedEvent(FRUIT_SPAWN) :: Nil, GameState(0), Nil)(MAP)
+        assert(newEvents.exists(_.eventType == FRUIT_SPAWN) && newEvents.exists(_.eventType == FRUIT_STOP) && newEvents.size == 2)
+      }
+      "should include energizer effects stop event when an energizer is eaten" in {
+        val newEvents = updateEvents(Nil, GameState(0), (PACMAN, Dot.ENERGIZER_DOT) :: Nil)(MAP)
+        assert(newEvents.exists(_.eventType == ENERGIZER_STOP))
+      }
+      "should include ghost restart event when a ghost died" in {
+        val newEvents = updateEvents(Nil, GameState(score = 0, ghostInFear = true, pacmanEmpowered = true), (PACMAN, GHOST_1) :: Nil)(MAP)
+        assert(newEvents.exists(e => e.eventType == GHOST_RESTART && e.payload.contains(GHOST_1.ghostType)) && newEvents.size == 1)
+      }
+      "should be handled updating characters" in {
+        val characters = PACMAN :: GHOST_1.copy(isDead = true) :: GHOST_2.copy(isDead = true) :: Nil
+        val events = GameTimedEvent(GHOST_RESTART, payload = Some(GHOST_1.ghostType)) ::
+          GameTimedEvent(GHOST_RESTART, timeMs = Some(1), payload = Some(GHOST_2.ghostType)) ::
+          Nil
+        val newCharacters = handleEvents(events, characters)(Map.create(MapType.CLASSIC))
+        assert(newCharacters.exists { case Ghost(GHOST_1.ghostType, _, _, _, false) => true; case _ => false } &&
+          newCharacters.exists { case Ghost(GHOST_2.ghostType, _, _, _, true) => true; case _ => false } &&
+          newCharacters.size == 3)
+      }
+      "should be handled adding and removing the fruit" in {
+        var events = GameTimedEvent(FRUIT_SPAWN, payload = Some(Fruit.CHERRIES)) :: Nil
+        var newMap = handleEvents(events, Map.create(MapType.CLASSIC))
+        assert(newMap.fruit exists { case (_, Fruit.CHERRIES) => true })
+
+        events = GameTimedEvent(FRUIT_STOP) :: Nil
+        newMap = handleEvents(events, newMap)
+        assert(newMap.fruit isEmpty)
+      }
+      "should be handled updating game state" in {
+        val gameState = GameState(score = 0, ghostInFear = true, pacmanEmpowered = true)
+        val events = GameTimedEvent(ENERGIZER_STOP) :: Nil
+        val newGameState = handleEvents(events, gameState)(MAP)
+        assert(!newGameState.ghostInFear && !newGameState.pacmanEmpowered)
       }
     }
   }

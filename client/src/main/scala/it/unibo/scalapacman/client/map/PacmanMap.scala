@@ -1,7 +1,7 @@
 package it.unibo.scalapacman.client.map
 
 import it.unibo.scalapacman.common.GameEntityDTO
-import it.unibo.scalapacman.lib.model.{Character, Map}
+import it.unibo.scalapacman.lib.model.{Character, Fruit, Map}
 import it.unibo.scalapacman.lib.engine.GameHelpers.CharacterHelper
 import it.unibo.scalapacman.lib.model.Character.Ghost
 import it.unibo.scalapacman.lib.model.Direction.Direction
@@ -30,9 +30,10 @@ object PacmanMap {
 
   def toPacmanMap(map: Map): PacmanMap = map.tiles map (row => row map {
     case Wall() => ElementsCode.WALL_CODE
-    case GhostSpawn() | TrackSafe() | Track(None) => ElementsCode.EMPTY_SPACE_CODE
+    case GhostSpawn() | TrackSafe(None) | Track(None) => ElementsCode.EMPTY_SPACE_CODE
     case Track(Some(SMALL_DOT)) => ElementsCode.DOT_CODE
     case Track(Some(ENERGIZER_DOT)) => ElementsCode.ENERGIZER_DOT_CODE
+    case tile@(Track(Some(Fruit.Fruit(_))) | TrackSafe(Some(Fruit.Fruit(_)))) => ElementsCode.FRUIT_CODES_MAP(tile.eatable.get.asInstanceOf[Fruit.Fruit])
     case _ => ElementsCode.EMPTY_SPACE_CODE
   })
 

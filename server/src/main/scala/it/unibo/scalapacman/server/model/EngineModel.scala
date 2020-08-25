@@ -3,8 +3,8 @@ package it.unibo.scalapacman.server.model
 import akka.actor.typed.ActorRef
 import it.unibo.scalapacman.common.{DirectionHolder, GameCharacter, GameCharacterHolder, GameEntityDTO}
 import it.unibo.scalapacman.lib.model.Character.{Ghost, Pacman}
-import it.unibo.scalapacman.lib.model.Direction.{Direction, EAST, NORTH, SOUTH, WEST, NORTHEAST, NORTHWEST, SOUTHWEST, SOUTHEAST}
-import it.unibo.scalapacman.lib.model.{Character, GameState, Map, GhostType}
+import it.unibo.scalapacman.lib.model.Direction.{Direction, EAST, NORTH, NORTHEAST, NORTHWEST, SOUTH, SOUTHEAST, SOUTHWEST, WEST}
+import it.unibo.scalapacman.lib.model.{Character, GameState, GameTimedEvent, GhostType, Map}
 import it.unibo.scalapacman.server.core.Engine.UpdateCommand
 
 import scala.collection.immutable
@@ -90,5 +90,6 @@ object Players {
 case class EngineModel(
                         players: Players,
                         map: Map,
-                        state: GameState = GameState(score = 0)
+                        state: GameState = GameState(score = 0),
+                        gameEvents: List[GameTimedEvent[Any]]
                       )

@@ -31,6 +31,8 @@ case object Map {
 
   def energizerDot(f: Int = 0): Track = Track(Some(ENERGIZER_DOT))
 
+  def trackSafe(f: Int = 0): TrackSafe = TrackSafe(None)
+
   def wall(f: Int = 0): Wall = Wall()
 
   object Classic {
@@ -47,13 +49,13 @@ case object Map {
       wall() :: List.tabulate(6)(smallDot) ::: wall() :: wall() :: List.tabulate(4)(smallDot) ::: wall() :: Nil,
       List.tabulate(6)(wall) ::: smallDot() :: List.tabulate(5)(wall) ::: emptyTrack() :: wall() :: Nil,
       List.tabulate(6)(wall) ::: smallDot() :: List.tabulate(5)(wall) ::: emptyTrack() :: wall() :: Nil,
-      List.tabulate(6)(wall) ::: smallDot() :: wall() :: wall() :: emptyTrack() :: emptyTrack() :: List.tabulate(3)(_ => TrackSafe()),
+      List.tabulate(6)(wall) ::: smallDot() :: wall() :: wall() :: emptyTrack() :: emptyTrack() :: List.tabulate(3)(trackSafe),
       List.tabulate(6)(wall) ::: smallDot() :: wall() :: wall() :: emptyTrack() :: wall() :: wall() :: wall() :: GhostSpawn() :: Nil,
       List.tabulate(6)(wall) ::: smallDot() :: wall() :: wall() :: emptyTrack() :: wall() :: List.tabulate(3)(_ => GhostSpawn()),
       List.tabulate(6)(_ => TrackTunnel()) ::: smallDot() :: List.tabulate(3)(emptyTrack) ::: wall() :: List.tabulate(3)(_ => GhostSpawn()),
       List.tabulate(6)(wall) ::: smallDot() :: wall() :: wall() :: emptyTrack() :: wall() :: List.tabulate(3)(_ => GhostSpawn()),
       List.tabulate(6)(wall) ::: smallDot() :: wall() :: wall() :: emptyTrack() :: List.tabulate(4)(wall),
-      List.tabulate(6)(wall) ::: smallDot() :: wall() :: wall() :: emptyTrack() :: emptyTrack() :: List.tabulate(3)(_ => TrackSafe()),
+      List.tabulate(6)(wall) ::: smallDot() :: wall() :: wall() :: emptyTrack() :: emptyTrack() :: List.tabulate(3)(trackSafe),
       List.tabulate(6)(wall) ::: smallDot() :: wall() :: wall() :: emptyTrack() :: List.tabulate(4)(wall),
       List.tabulate(6)(wall) ::: smallDot() :: wall() :: wall() :: emptyTrack() :: List.tabulate(4)(wall),
       wall() :: List.tabulate(12)(smallDot) ::: wall() :: Nil,

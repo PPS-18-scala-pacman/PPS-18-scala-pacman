@@ -1,12 +1,13 @@
 package it.unibo.scalapacman.client.map
 
 import org.scalatest.wordspec.AnyWordSpecLike
-import it.unibo.scalapacman.client.map.ElementsCode.{DOT_CODE, EMPTY_SPACE_CODE, ENERGIZER_DOT_CODE, WALL_CODE}
+import it.unibo.scalapacman.client.map.ElementsCode.{CHERRIES_CODE, DOT_CODE, EMPTY_SPACE_CODE, ENERGIZER_DOT_CODE, GALAXIAN_CODE, WALL_CODE}
 import it.unibo.scalapacman.client.map.PacmanMap.PacmanMap
 import it.unibo.scalapacman.common.{DirectionHolder, GameCharacter, GameCharacterHolder, GameEntityDTO}
-import it.unibo.scalapacman.lib.model.{Direction, Map, MapType}
+import it.unibo.scalapacman.lib.model.{Direction, Fruit, Map, MapType}
 import it.unibo.scalapacman.lib.Utility
 import it.unibo.scalapacman.lib.math.Point2D
+import it.unibo.scalapacman.lib.model.Tile.{Track, TrackSafe}
 import org.scalatest.matchers.should.Matchers
 
 class PacmanMapTest
@@ -51,6 +52,8 @@ class PacmanMapTest
   "PacmanMap" should {
     "convert a Map object in a PacmanMap object" in {
       PacmanMap.toPacmanMap(Map.create(MapType.CLASSIC)) shouldEqual mapClassicBuilt
+      PacmanMap.toPacmanMap(Map(tiles = (Track(Some(Fruit.CHERRIES)) :: TrackSafe(Some(Fruit.GALAXIAN)) :: Nil) :: Nil)) shouldEqual
+        (CHERRIES_CODE :: GALAXIAN_CODE :: Nil) :: Nil
     }
 
     "create a PacmanMap object from a Map object with the info of the characters" in {
