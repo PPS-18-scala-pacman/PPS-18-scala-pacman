@@ -3,12 +3,12 @@ package it.unibo.scalapacman.server.core
 import akka.actor.testkit.typed.scaladsl.{ScalaTestWithActorTestKit, TestProbe}
 import akka.actor.typed.ActorRef
 import akka.http.scaladsl.model.ws.{Message, TextMessage}
-import it.unibo.scalapacman.server.communication.ConnectionProtocol.{Ack, ConnectionAck, ConnectionData, ConnectionMsg}
+import it.unibo.scalapacman.server.communication.ConnectionProtocol.{Ack, ConnectionAck, ConnectionData, ConnectionInit, ConnectionMsg}
 import it.unibo.scalapacman.server.core.Engine.{EngineCommand, UpdateCommand}
 import it.unibo.scalapacman.server.model.MoveDirection
 import org.scalatest.wordspec.AnyWordSpecLike
 
-class PlayerCommandTest  extends ScalaTestWithActorTestKit with AnyWordSpecLike {
+class PlayerCommandTest extends ScalaTestWithActorTestKit with AnyWordSpecLike {
 
   private var playerCmdAdapter: ActorRef[ConnectionMsg] = _
   private var playerUpdAdapter: ActorRef[UpdateCommand] = _
@@ -43,6 +43,9 @@ class PlayerCommandTest  extends ScalaTestWithActorTestKit with AnyWordSpecLike 
       case Player.RegistrationAccepted(ref) => playerCmdAdapter = ref
       case _ => fail()
     }
+
+    playerCmdAdapter ! ConnectionInit(ackProbe.ref)
+    receiveAck()
 
     //mockup comandi
     testCommandPauseJSON        = "{\"id\":{\"commandType\":\"PAUSE\"},\"data\":null}"
