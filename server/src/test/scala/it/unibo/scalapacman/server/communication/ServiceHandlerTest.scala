@@ -3,7 +3,7 @@ package it.unibo.scalapacman.server.communication
 import akka.actor.testkit.typed.scaladsl.{ScalaTestWithActorTestKit, TestProbe}
 import akka.actor.typed.ActorRef
 import akka.actor.typed.receptionist.{Receptionist, ServiceKey}
-import akka.http.scaladsl.model.ws.Message
+import it.unibo.scalapacman.server.communication.ConnectionProtocol.ConnectionMsg
 import it.unibo.scalapacman.server.core.Game.GameCommand
 import it.unibo.scalapacman.server.core.Player.{RegistrationAccepted, RegistrationRejected}
 import it.unibo.scalapacman.server.core.{Game, Master}
@@ -55,7 +55,7 @@ class ServiceHandlerTest extends ScalaTestWithActorTestKit with AnyWordSpecLike 
     "send a create connection for game request" when {
       "requested" in {
         val clientProbe = createTestProbe[ServiceRoutes.ResponseConnGame]()
-        val fooProbe = createTestProbe[Message]()
+        val fooProbe = createTestProbe[ConnectionMsg]()
 
         serviceHandlerActor ! ServiceRoutes.CreateConnectionGame(clientProbe.ref, fakeGameId)
         gameProbe.receiveMessage() match {
