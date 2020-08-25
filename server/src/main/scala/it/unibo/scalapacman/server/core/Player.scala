@@ -42,10 +42,21 @@ class Player(setup: Setup) {
       case RegisterUser(replyTo, sourceAct) =>
         setup.engine ! Engine.RegisterPlayer(updateMsgAdapter)
         replyTo ! RegistrationAccepted(clientMsgAdapter)
-        mainRoutine(sourceAct)
-      case WrapRespUpdate(Engine.UpdateMsg(updateMsg)) =>
-        setup.context.log.warn("Ricevuto update: " + updateMsg)
+        setUpConnectionRoutine(sourceAct)
+      case _ =>
+        setup.context.log.warn("Ricevuto messaggio non gestito")
         Behaviors.same
+    }
+
+  private def setUpConnectionRoutine(sourceAct: ActorRef[Message]): Behavior[PlayerCommand] =
+    Behaviors.receiveMessage {
+      case RegisterUser(replyTo, sourceAct) =>
+        replyTo ! RegistrationRejected("Player occupato")
+        Behaviors.same
+      case WrapRespMessage(ConnectionInit(act)) =>
+        setup.context.log.info("Ricevuto messaggio connessione instaurata")
+        act ! ConnectionAck()
+        mainRoutine(sourceAct)
       case _ =>
         setup.context.log.warn("Ricevuto messaggio non gestito")
         Behaviors.same
@@ -65,10 +76,6 @@ class Player(setup: Setup) {
         setup.context.log.debug("Ricevuto messaggio: " + msg)
         val command = JSONConverter.fromJSON[Command](msg) flatMap (parseClientCommand(_, updateMsgAdapter))
         if(command.isDefined) setup.engine ! command.get
-        act ! ConnectionAck()
-        Behaviors.same
-      case WrapRespMessage(ConnectionInit(act)) =>
-        setup.context.log.info("Ricevuto messaggio connessione instaurata")
         act ! ConnectionAck()
         Behaviors.same
       case WrapRespMessage(ConnectionEnded()) =>
