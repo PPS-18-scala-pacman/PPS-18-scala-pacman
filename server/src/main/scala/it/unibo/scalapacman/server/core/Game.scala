@@ -84,7 +84,7 @@ private class Game(setup: Setup) {
         context.log.error(s"$act stopped")
         setup.engine ! Engine.ActorRecovery(GameCharacter.PACMAN)
         val player = context.spawn(Player(setup.id, setup.engine), "PlayerActor")
-        prepareBehavior(recBe, model.copy(player = player))
+        prepareBehavior(initRoutine, model.copy(player = player))
       case (context, ChildFailed(act:ActorRef[Engine.UpdateCommand], _)) =>
         context.log.error(s"$act stopped")
         val ghostType = model.ghosts.get(act)
