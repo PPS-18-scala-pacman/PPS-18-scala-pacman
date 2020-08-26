@@ -4,7 +4,7 @@ import akka.actor.testkit.typed.TestException
 import akka.actor.testkit.typed.scaladsl.{ScalaTestWithActorTestKit, TestProbe}
 import akka.actor.typed.ActorRef
 import akka.http.scaladsl.model.ws.Message
-import it.unibo.scalapacman.server.communication.ConnectionProtocol.ConnectionFailed
+import it.unibo.scalapacman.server.communication.ConnectionProtocol.{Ack, ConnectionFailed, ConnectionInit}
 import it.unibo.scalapacman.server.core.Game.{CloseCommand, RegisterPlayer}
 import it.unibo.scalapacman.server.core.Player.{PlayerRegistration, RegistrationAccepted, RegistrationRejected}
 import it.unibo.scalapacman.server.config.{ConfLoader, TestSettings}
@@ -31,6 +31,7 @@ class GameTest extends ScalaTestWithActorTestKit(ConfLoader.config) with AnyWord
       gameActor ! RegisterPlayer(testProbe.ref, fooProbe.ref)
       testProbe.receiveMessage() match {
         case RegistrationAccepted(messageHandler) =>
+          messageHandler ! ConnectionInit(TestProbe[Ack].ref)
           messageHandler ! ConnectionFailed(TestException(exMsg))
         case _ => fail()
       }

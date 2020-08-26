@@ -50,7 +50,7 @@ class Player(setup: Setup) {
 
   private def setUpConnectionRoutine(sourceAct: ActorRef[Message]): Behavior[PlayerCommand] =
     Behaviors.receiveMessage {
-      case RegisterUser(replyTo, sourceAct) =>
+      case RegisterUser(replyTo, _) =>
         replyTo ! RegistrationRejected("Player occupato")
         Behaviors.same
       case WrapRespMessage(ConnectionInit(act)) =>
