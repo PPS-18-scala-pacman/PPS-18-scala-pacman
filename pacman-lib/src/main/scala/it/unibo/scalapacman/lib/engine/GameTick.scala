@@ -150,7 +150,7 @@ object GameTick {
       if (ghostCanBeKilled(gameState)) {
         collisions.map(_._2).collect { case ghost: Ghost => ghost } .map(ghost => Some(GameTimedEvent(
           GHOST_RESTART,
-          dots = Some(Level.ghostRespawnDotCounter(gameState.levelNumber, ghost.ghostType)),
+          dots = Some(map.dots.size - Level.ghostRespawnDotCounter(gameState.levelNumber, ghost.ghostType)),
           payload = Some(ghost.ghostType))
         ))
       } else {
