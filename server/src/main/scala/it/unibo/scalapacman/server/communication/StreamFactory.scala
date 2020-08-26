@@ -8,7 +8,7 @@ import akka.stream.scaladsl.{Sink, Source}
 import akka.stream.typed.scaladsl.{ActorSink, ActorSource}
 import it.unibo.scalapacman.server.communication.ConnectionProtocol.{Ack, ConnectionAck, ConnectionData,
   ConnectionEnded, ConnectionFailed, ConnectionInit, ConnectionMsg}
-import it.unibo.scalapacman.server.util.Settings
+import it.unibo.scalapacman.server.config.Settings
 
 object StreamFactory {
 

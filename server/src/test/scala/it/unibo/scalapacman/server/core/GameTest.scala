@@ -7,7 +7,7 @@ import akka.http.scaladsl.model.ws.Message
 import it.unibo.scalapacman.server.communication.ConnectionProtocol.ConnectionFailed
 import it.unibo.scalapacman.server.core.Game.{CloseCommand, RegisterPlayer}
 import it.unibo.scalapacman.server.core.Player.{PlayerRegistration, RegistrationAccepted, RegistrationRejected}
-import it.unibo.scalapacman.server.util.{ConfLoader, TestSettings}
+import it.unibo.scalapacman.server.config.{ConfLoader, TestSettings}
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.wordspec.AnyWordSpecLike
 

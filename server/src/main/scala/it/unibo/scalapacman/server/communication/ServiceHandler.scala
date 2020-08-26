@@ -14,8 +14,8 @@ import it.unibo.scalapacman.server.communication.ServiceHandler.{PlayerRegisterR
 import it.unibo.scalapacman.server.communication.StreamFactory.{createActorWBSink, createActorWBSource}
 import it.unibo.scalapacman.server.core.Player.{PlayerRegistration, RegistrationAccepted, RegistrationRejected}
 import it.unibo.scalapacman.server.core.{Game, Master}
-import it.unibo.scalapacman.server.util.Settings
-import it.unibo.scalapacman.server.util.Settings.askTimeout
+import it.unibo.scalapacman.server.config.Settings
+import it.unibo.scalapacman.server.config.Settings.askTimeout
 
 object ServiceHandler {
 

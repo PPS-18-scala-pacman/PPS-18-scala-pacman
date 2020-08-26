@@ -1,4 +1,4 @@
-package it.unibo.scalapacman.server.util
+package it.unibo.scalapacman.server.config
 
 import com.typesafe.config.{Config, ConfigFactory}
 

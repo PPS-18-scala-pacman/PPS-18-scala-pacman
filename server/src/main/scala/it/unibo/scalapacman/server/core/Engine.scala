@@ -15,7 +15,7 @@ import it.unibo.scalapacman.server.core.Engine.{ChangeDirectionCur, ChangeDirect
 import it.unibo.scalapacman.server.model.GameParticipant.gameParticipantToGameEntity
 import it.unibo.scalapacman.server.model.MoveDirection.MoveDirection
 import it.unibo.scalapacman.server.model.{EngineModel, GameParticipant, Players, RegisteredParticipant, RegistrationModel}
-import it.unibo.scalapacman.server.util.Settings
+import it.unibo.scalapacman.server.config.Settings
 
 import scala.concurrent.duration.FiniteDuration
 

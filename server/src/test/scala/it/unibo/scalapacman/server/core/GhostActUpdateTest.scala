@@ -5,7 +5,7 @@ import akka.actor.typed.{ActorRef, MailboxSelector}
 import it.unibo.scalapacman.common.{DirectionHolder, GameCharacter, GameCharacterHolder, GameEntityDTO, UpdateModelDTO}
 import it.unibo.scalapacman.lib.math.Point2D
 import it.unibo.scalapacman.lib.model.{Direction, GameState, GhostType}
-import it.unibo.scalapacman.server.util.ConfLoader
+import it.unibo.scalapacman.server.config.ConfLoader
 import org.scalatest.wordspec.AnyWordSpecLike
 
 class GhostActUpdateTest  extends ScalaTestWithActorTestKit(ConfLoader.config) with AnyWordSpecLike {

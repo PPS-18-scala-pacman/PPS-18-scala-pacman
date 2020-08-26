@@ -7,7 +7,7 @@ import it.unibo.scalapacman.server.communication.ConnectionProtocol.ConnectionMs
 import it.unibo.scalapacman.server.core.Game.GameCommand
 import it.unibo.scalapacman.server.core.Player.{RegistrationAccepted, RegistrationRejected}
 import it.unibo.scalapacman.server.core.{Game, Master}
-import it.unibo.scalapacman.server.util.TestSettings
+import it.unibo.scalapacman.server.config.TestSettings
 import org.scalatest.wordspec.AnyWordSpecLike
 
 class ServiceHandlerTest extends ScalaTestWithActorTestKit with AnyWordSpecLike {

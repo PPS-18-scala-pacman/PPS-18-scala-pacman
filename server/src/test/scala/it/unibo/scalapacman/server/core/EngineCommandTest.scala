@@ -3,7 +3,7 @@ package it.unibo.scalapacman.server.core
 import akka.actor.testkit.typed.scaladsl.{ScalaTestWithActorTestKit, TestProbe}
 import akka.actor.typed.ActorRef
 import it.unibo.scalapacman.lib.model.GhostType
-import it.unibo.scalapacman.server.util.TestSettings
+import it.unibo.scalapacman.server.config.TestSettings
 import org.scalatest.wordspec.AnyWordSpecLike
 
 class EngineCommandTest extends ScalaTestWithActorTestKit with AnyWordSpecLike {

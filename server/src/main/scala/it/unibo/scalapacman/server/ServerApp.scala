@@ -4,7 +4,7 @@ import akka.actor.typed.{ActorSystem, Behavior}
 import akka.actor.typed.scaladsl.Behaviors
 import it.unibo.scalapacman.server.communication.HttpService
 import it.unibo.scalapacman.server.core.Master
-import it.unibo.scalapacman.server.util.{ConfLoader, Settings}
+import it.unibo.scalapacman.server.config.{ConfLoader, Settings}
 
 object Bootstrap {
   def apply(): Behavior[String] = Behaviors.setup { context =>

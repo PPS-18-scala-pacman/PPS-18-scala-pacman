@@ -1,4 +1,4 @@
-package it.unibo.scalapacman.server.util
+package it.unibo.scalapacman.server.config
 
 import java.util.concurrent.TimeUnit
 import scala.concurrent.duration.DurationInt

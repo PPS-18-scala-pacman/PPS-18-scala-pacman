@@ -10,7 +10,7 @@ import it.unibo.scalapacman.lib.model.GhostType.GhostType
 import it.unibo.scalapacman.server.core.Engine.EngineCommand
 import it.unibo.scalapacman.server.core.Game.{CloseCommand, GameCommand, Model, RegisterPlayer, Setup}
 import it.unibo.scalapacman.server.core.Player.{PlayerCommand, PlayerRegistration, RegistrationRejected}
-import it.unibo.scalapacman.server.util.Settings
+import it.unibo.scalapacman.server.config.Settings
 
 object Game {
 

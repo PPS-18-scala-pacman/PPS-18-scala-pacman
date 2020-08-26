@@ -3,7 +3,7 @@ package it.unibo.scalapacman.server.core
 import akka.actor.testkit.typed.scaladsl.ScalaTestWithActorTestKit
 import akka.actor.typed.{ActorRef, MailboxSelector}
 import it.unibo.scalapacman.lib.model.GhostType
-import it.unibo.scalapacman.server.util.ConfLoader
+import it.unibo.scalapacman.server.config.ConfLoader
 import org.scalatest.wordspec.AnyWordSpecLike
 
 class GhostActRegistrationTest extends ScalaTestWithActorTestKit(ConfLoader.config) with AnyWordSpecLike {
