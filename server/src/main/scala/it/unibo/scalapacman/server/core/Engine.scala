@@ -117,7 +117,7 @@ private class Engine(setup: Setup) {
       pinky  = GameParticipant(classicFactory.ghost(GhostType.PINKY), startMod.pinky.get.actor),
     )
 
-    EngineModel(players, classicFactory.map, classicFactory.gameState)
+    EngineModel(players, classicFactory.map, classicFactory.gameState, classicFactory.gameEvents)
   }
 
   private def updateWatcher(model: EngineModel): Unit =
@@ -136,16 +136,24 @@ private class Engine(setup: Setup) {
 
     implicit val collisions: List[(Character, GameObject)] = GameTick.collisions(players)
 
-    val newMap = GameTick.calculateMap(map)
-    var state = GameTick.calculateGameState(GameState(oldModel.state.score) )
+    var newMap = GameTick.calculateMap(map)
+    var state = GameTick.calculateGameState(oldModel.state)
     players = GameTick.calculateDeaths(players, state)
     players = GameTick.calculateSpeeds(players, setup.level, state)
     state = GameTick.calculateLevelState(state, players, oldModel.map)
 
-    val model: EngineModel = EngineModel(players, newMap, state)
+    var gameEvents = oldModel.gameEvents
+    gameEvents = GameTick.consumeTimeOfGameEvents(gameEvents, setup.gameRefreshRate)
+    gameEvents = GameTick.updateEvents(gameEvents, state, collisions)
+    players = GameTick.handleEvents(gameEvents, players)
+    newMap = GameTick.handleEvents(gameEvents, newMap)
+    state = GameTick.handleEvents(gameEvents, state)
+    gameEvents = GameTick.removeTimedOutGameEvents(gameEvents)
+
+    val model: EngineModel = EngineModel(players, newMap, state, gameEvents)
     updateWatcher(model)
 
-    if(state.levelState == LevelState.ONGOING) {
+    if (state.levelState == LevelState.ONGOING) {
       mainRoutine(model)
     } else {
       setup.context.log.info("Partita terminata spegnimento")

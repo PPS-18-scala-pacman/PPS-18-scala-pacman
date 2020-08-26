@@ -6,6 +6,8 @@ import it.unibo.scalapacman.lib.model.Character.{Ghost, Pacman}
 import it.unibo.scalapacman.lib.model.Direction.Direction
 import it.unibo.scalapacman.lib.model.GhostType.{BLINKY, CLYDE, INKY, PINKY}
 import it.unibo.scalapacman.lib.model.{Character, GameState, Map}
+import it.unibo.scalapacman.lib.model.Direction.{Direction, EAST, NORTH, NORTHEAST, NORTHWEST, SOUTH, SOUTHEAST, SOUTHWEST, WEST}
+import it.unibo.scalapacman.lib.model.{Character, GameState, GameTimedEvent, GhostType, Map}
 import it.unibo.scalapacman.server.core.Engine.UpdateCommand
 
 
@@ -55,5 +57,6 @@ object Players {
 case class EngineModel(
                         players: Players,
                         map: Map,
-                        state: GameState = GameState(score = 0)
+                        state: GameState = GameState(score = 0),
+                        gameEvents: List[GameTimedEvent[Any]]
                       )

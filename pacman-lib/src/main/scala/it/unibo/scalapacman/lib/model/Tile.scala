@@ -22,7 +22,7 @@ object Tile {
 
   case class Track(override val eatable: Option[Eatable] = None) extends TileAbstract()
 
-  case class TrackSafe() extends TileAbstract()
+  case class TrackSafe(override val eatable: Option[Eatable] = None) extends TileAbstract()
 
   case class TrackTunnel() extends TileAbstract() {
     override def speedModifier(character: Character, speed: Double): Double = character match {
