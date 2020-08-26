@@ -44,15 +44,20 @@ class PlayView(implicit controller: Controller, viewChanger: ViewChanger) extend
   private val PACMAN_SN = "pacman"
   private val PACMAN_COLOR: Color = Color.YELLOW
   private val GHOST_SN = "ghost"
+  private val GHOST_FEARED_COLOR: Color = Color.LIGHT_GRAY
   private val GHOST_COLOR: Color = Color.RED
   private val DOT_SN = "dot"
   private val DOT_COLOR: Color = Color.WHITE
   private val WALL_SN = "wall"
   private val WALL_COLOR: Color = Color.BLUE
 
-  private val elementStyles: List[ElementStyle] =
+  private val defaultElementStyles: List[ElementStyle] =
     ElementStyle(PACMAN_SN, PACMAN_COLOR) :: ElementStyle(DOT_SN, DOT_COLOR) ::
       ElementStyle(GHOST_SN, GHOST_COLOR) :: ElementStyle(WALL_SN, WALL_COLOR) :: Nil
+
+  private val energizerElementStyles: List[ElementStyle] =
+    ElementStyle(PACMAN_SN, PACMAN_COLOR) :: ElementStyle(DOT_SN, DOT_COLOR) ::
+      ElementStyle(GHOST_SN, GHOST_FEARED_COLOR) :: ElementStyle(WALL_SN, WALL_COLOR) :: Nil
 
   private var _map: Option[PacmanMap] = None
   private var _gameState: Option[GameState] = None
@@ -171,9 +176,12 @@ class PlayView(implicit controller: Controller, viewChanger: ViewChanger) extend
     doPrint(map, gameState, gameCanvas)
   }
 
-  // TODO sfruttare gameState per cambiare colore ai fantasmi?
   private def doPrint(map: PacmanMap, gameState: GameState, gameCanvas: GameCanvas): Unit = {
-    def styleGetter(name: String): Option[ElementStyle] = elementStyles.find(style => style.styleName == name)
+    def styleGetter(name: String): Option[ElementStyle] = if (gameState.ghostInFear) {
+      energizerElementStyles.find(style => style.styleName == name)
+    } else {
+      defaultElementStyles.find(style => style.styleName == name)
+    }
 
     gameCanvas setText (
       (for (x <- map.head.indices;

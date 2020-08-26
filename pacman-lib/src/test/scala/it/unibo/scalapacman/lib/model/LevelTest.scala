@@ -1,7 +1,7 @@
 package it.unibo.scalapacman.lib.model
 
 import it.unibo.scalapacman.lib.model.Character.{Ghost, Pacman}
-import it.unibo.scalapacman.lib.model.Level.{BASE_SPEED, Classic, fruit, ghostSpeed, pacmanSpeed}
+import it.unibo.scalapacman.lib.model.Level.{BASE_SPEED, Classic, fruit, ghostSpeed, pacmanSpeed, energizerDuration, ghostRespawnDotCounter}
 import it.unibo.scalapacman.lib.model.Fruit.{APPLE, BELL, CHERRIES, GALAXIAN, GRAPES, KEY, PEACH, STRAWBERRY}
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.wordspec.AnyWordSpec
@@ -46,13 +46,33 @@ class LevelTest extends AnyWordSpec with BeforeAndAfterAll {
     "generate the correct fruit" in {
       assertResult(
         CHERRIES :: STRAWBERRY :: PEACH :: PEACH :: APPLE :: APPLE ::
-        GRAPES :: GRAPES :: GALAXIAN :: GALAXIAN :: BELL :: BELL :: List.fill(8)(KEY)
+          GRAPES :: GRAPES :: GALAXIAN :: GALAXIAN :: BELL :: BELL :: List.fill(8)(KEY)
       )(
         (for (level <- 1 until 21) yield fruit(level)) toList
       )
     }
+    "generate the energizer duration" in {
+      val durations = (for (level <- 1 until 21) yield energizerDuration(level)).toList
+      assert(durations == List(6000, 5000, 4000, 3000, 2000, 5000, 2000, 2000, 1000, 5000, 2000, 1000, 1000, 3000, 1000, 1000, 0, 1000, 0, 0))
+    }
+    "generate the dot counter to respawn a ghost" in {
+      assert(ghostRespawnDotCounter(1, GhostType.INKY) == 7)
+      assert(ghostRespawnDotCounter(1, GhostType.CLYDE) == 17)
+      assert(ghostRespawnDotCounter(1, GhostType.BLINKY) == 0)
+      assert(ghostRespawnDotCounter(1, GhostType.PINKY) == 0)
+    }
     "generate the starting game state" in {
       assert(Classic(1).gameState == GameState(0))
+    }
+    "generate the starting game events" in {
+      assert(
+        Classic(1).gameEvents ==
+          GameTimedEvent(GameTimedEventType.FRUIT_SPAWN, dots = Some(174), payload = Some(CHERRIES)) ::
+            GameTimedEvent(GameTimedEventType.FRUIT_SPAWN, dots = Some(74), payload = Some(CHERRIES)) ::
+            GameTimedEvent(GameTimedEventType.GHOST_RESTART, dots = Some(214), payload = Some(GhostType.INKY)) ::
+            GameTimedEvent(GameTimedEventType.GHOST_RESTART, dots = Some(184), payload = Some(GhostType.CLYDE)) ::
+            Nil
+      )
     }
     "be generated using a generator" which {
       "create a classic game level" which {
@@ -74,7 +94,7 @@ class LevelTest extends AnyWordSpec with BeforeAndAfterAll {
           assert(Classic(1).gameState == GameState(0))
         }
         "can create fruit" in {
-          assert(Classic(1).fruit == ((14, 17), CHERRIES))
+          assert(Classic(1).fruit == CHERRIES)
         }
       }
     }

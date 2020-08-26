@@ -154,7 +154,7 @@ object ElementsCode {
   /**
    * Mappa che associa ad ogni valore dell'Enum Fruit un codice di un frutto
    */
-  val FRUIT_CODES_MAP: Map[Fruit.Value, String] = Map(
+  val FRUIT_CODES_MAP: Map[Fruit.Fruit, String] = Map(
     Fruit.CHERRIES -> CHERRIES_CODE,
     Fruit.STRAWBERRY -> STRAWBERRY_CODE,
     Fruit.PEACH -> PEACH_CODE,
