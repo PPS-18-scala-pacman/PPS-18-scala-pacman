@@ -166,7 +166,7 @@ object GameTick {
   }
 
   /**
-   * Fa vivere o resuscitare i fantasmi
+   * Fa partire o ripartire i fantasmi
    *
    * @param gameEvents
    * @param characters
@@ -175,7 +175,7 @@ object GameTick {
   def handleEvents(gameEvents: List[GameTimedEvent[Any]], characters: List[Character])(implicit map: Map): List[Character] = {
     def handleEvent(gameEvent: GameTimedEvent[Any], characters: List[Character])(implicit map: Map): List[Character] = gameEvent match {
       case GameTimedEvent(GHOST_RESTART, _, _, Some(ghostType: GhostType)) => characters.map {
-        case ghost: Ghost if ghost.ghostType == ghostType => ghost.copy(isDead = false, position = Map.getStartPosition(map.mapType, Ghost, Some(ghostType)))
+        case ghost: Ghost if ghost.ghostType == ghostType => ghost.copy(isDead = false)
         case character: Character => character
       }
       case _ => characters
