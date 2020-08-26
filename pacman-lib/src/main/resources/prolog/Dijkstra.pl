@@ -75,16 +75,16 @@ concat_path([V-D|T], P, [V-D-[V|P]|NewT]):-
 % merge(+ListOfVertices, +OldOpenVertices, +Distance, -AllOpenVertices)
 merge([], L, _, L).
 merge([V1-D1-P1|T], Open, D, NewOpen):-
-   (remove(Open, V1-D2-P2, RestOpen)
-      -> (D2 < D+D1 -> VD = D2, VP = P2; VD is D+D1, VP = P1)  % VP deve prendere il valore in base a VD
-       ; (RestOpen = Open, VD is D+D1, VP = P1)),
+   remove(Open, V1-D2-P2, RestOpen),
+   (integer(D2), D2 < D+D1 -> VD = D2, VP = P2; VD is D+D1, VP = P1),  % VP deve prendere il valore in base a VD
    NewOpen = [V1-VD-VP|SubOpen],
    merge(T, RestOpen, D, SubOpen).
 
 % Rimuove un elemento da una lista, ritornando l'elemento rimosso e la lista filtrata
-% remove(L, X, L2) ritorna `true` se l'elemento è presente nella lista, false altrimenti
+% Se l'elemento non è presente nella lista, ritorna la lista invariata
 %
 % remove(+List, ?ElementToRemove, -Rest)
+remove([], _, []):- !.
 remove([H|T], H, T).
 remove([H|T], X, [H|NT]):-
    H \= X,
