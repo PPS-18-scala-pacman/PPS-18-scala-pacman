@@ -1,6 +1,7 @@
 package it.unibo.scalapacman.server.model
 
 import akka.actor.typed.ActorRef
+import it.unibo.scalapacman.common.GameCharacter.GameCharacter
 import it.unibo.scalapacman.common.{DirectionHolder, GameCharacter, GameCharacterHolder, GameEntityDTO}
 import it.unibo.scalapacman.lib.model.Character.{Ghost, Pacman}
 import it.unibo.scalapacman.lib.model.GhostType.{BLINKY, CLYDE, INKY, PINKY}
@@ -34,6 +35,14 @@ case class Players(
                     pacman: GameParticipant
                   ) {
   def toSet: Set[GameParticipant] = Set(blinky, pinky, inky, clyde, pacman)
+
+  def get(charType: GameCharacter): GameParticipant = charType match {
+    case GameCharacter.PACMAN => pacman
+    case GameCharacter.BLINKY => blinky
+    case GameCharacter.INKY   => inky
+    case GameCharacter.PINKY  => pinky
+    case GameCharacter.CLYDE  => clyde
+  }
 }
 
 object Players {
@@ -43,7 +52,7 @@ object Players {
 
   implicit def updatePlayers(characters: List[Character])(implicit pl: Players): Players =
     characters.foldRight(pl) {
-      case (c@Pacman(_, _, _, _), pl)                   => pl.copy(pacman  = pl.pacman.copy(c))
+      case (c@Pacman(_, _, _, _), pl)         => pl.copy(pacman  = pl.pacman.copy(c))
       case (c@Ghost(BLINKY, _, _, _, _), pl)  => pl.copy(blinky  = pl.blinky.copy(c))
       case (c@Ghost(CLYDE, _, _, _, _), pl)   => pl.copy(clyde   = pl.clyde.copy(c))
       case (c@Ghost(INKY, _, _, _, _), pl)    => pl.copy(inky    = pl.inky.copy(c))

@@ -4,18 +4,20 @@ import akka.actor.typed.{ActorRef, Behavior}
 import akka.actor.typed.scaladsl.{ActorContext, Behaviors}
 import it.unibo.scalapacman.common.DotDTO.rawToDotDTO
 import it.unibo.scalapacman.common.FruitDTO.rawToFruitDTO
+import it.unibo.scalapacman.common.GameCharacter.{GameCharacter, PACMAN}
 import it.unibo.scalapacman.common.{DotDTO, FruitDTO, GameEntityDTO, UpdateModelDTO}
 import it.unibo.scalapacman.lib.engine.{GameMovement, GameTick}
 import it.unibo.scalapacman.lib.engine.GameHelpers.MapHelper
 import it.unibo.scalapacman.lib.model.Direction.Direction
-import it.unibo.scalapacman.lib.model.GhostType.{BLINKY, CLYDE, GhostType, INKY, PINKY}
-import it.unibo.scalapacman.lib.model.{Character, GameObject, GameState, GhostType, Level, LevelState, Map}
-import it.unibo.scalapacman.server.core.Engine.{ChangeDirectionCur, ChangeDirectionReq, EngineCommand, Pause,
-  RegisterGhost, RegisterPlayer, Resume, Setup, UpdateCommand, UpdateMsg, WakeUp}
+import it.unibo.scalapacman.lib.model.GhostType.GhostType
+import it.unibo.scalapacman.lib.model.{Character, GameObject, GhostType, Level, LevelState, Map}
+import it.unibo.scalapacman.server.core.Engine.{ActorRecovery, ChangeDirectionCur, ChangeDirectionReq, EngineCommand,
+  Pause, RegisterGhost, RegisterPlayer, Resume, Setup, UpdateCommand, UpdateMsg, WakeUp}
 import it.unibo.scalapacman.server.model.GameParticipant.gameParticipantToGameEntity
 import it.unibo.scalapacman.server.model.MoveDirection.MoveDirection
-import it.unibo.scalapacman.server.model.{EngineModel, GameParticipant, Players, RegisteredParticipant, RegistrationModel}
+import it.unibo.scalapacman.server.model.{EngineModel, GameParticipant, Players, RegistrationModel}
 import it.unibo.scalapacman.server.config.Settings
+import it.unibo.scalapacman.server.util.{RecoveryHelper, RegistrationHelper}
 
 import scala.concurrent.duration.FiniteDuration
 
@@ -26,7 +28,7 @@ object Engine {
   case class WakeUp() extends EngineCommand
   case class Pause() extends EngineCommand
   case class Resume() extends EngineCommand
-  case class ActorRecovery(actorFailed: ActorRef[UpdateCommand]) extends EngineCommand
+  case class ActorRecovery(entityFailed: GameCharacter) extends EngineCommand
   case class ChangeDirectionReq(id: ActorRef[UpdateCommand], direction: MoveDirection) extends EngineCommand
   case class ChangeDirectionCur(id: ActorRef[UpdateCommand]) extends EngineCommand
 
@@ -50,24 +52,34 @@ private class Engine(setup: Setup) {
     Behaviors.receiveMessage {
 
       case RegisterGhost(actor, ghostType) =>
-        val upModel = ghostType match {
-          case BLINKY => model.copy(blinky = Some(RegisteredParticipant(actor)))
-          case INKY   => model.copy(inky   = Some(RegisteredParticipant(actor)))
-          case PINKY  => model.copy(pinky  = Some(RegisteredParticipant(actor)))
-          case CLYDE  => model.copy(clyde  = Some(RegisteredParticipant(actor)))
-        }
-        if(upModel.isFull) {
-          mainRoutine( initEngineModel(upModel) )
-        } else {
-          idleRoutine(upModel)
-        }
+        val upModel = RegistrationHelper.registerPartecipant(model, ghostType, actor)
+        if(upModel.isFull) mainRoutine( initEngineModel(upModel)) else idleRoutine(upModel)
+
       case RegisterPlayer(actor) =>
-        val upModel = model.copy(pacman = Some(RegisteredParticipant(actor)))
-        if(upModel.isFull) {
-          mainRoutine( initEngineModel(upModel) )
-        } else {
-          idleRoutine(upModel)
-        }
+        val upModel = RegistrationHelper.registerPartecipant(model, PACMAN, actor)
+        if(upModel.isFull) mainRoutine( initEngineModel(upModel)) else idleRoutine(upModel)
+
+      case ActorRecovery(charType) =>
+        val upModel = RegistrationHelper.unRegisterPartecipant(model, charType)
+        idleRoutine(upModel)
+
+      case _ => unhandledMsg()
+    }
+
+  private def recoveryRoutine(regModel: RegistrationModel, engModel:EngineModel): Behavior[EngineCommand] =
+    Behaviors.receiveMessage {
+      case RegisterGhost(actor, ghostType) =>
+        val (upRegModel, upEngModel) = RecoveryHelper.replacePartecipant(regModel, engModel, ghostType, actor)
+        if(upRegModel.isFull) pauseRoutine(upEngModel) else recoveryRoutine(upRegModel, upEngModel)
+
+      case RegisterPlayer(actor) =>
+        val (upRegModel, upEngModel) = RecoveryHelper.replacePartecipant(regModel, engModel, PACMAN, actor)
+        if(upRegModel.isFull) pauseRoutine(upEngModel) else recoveryRoutine(upRegModel, upEngModel)
+
+      case ActorRecovery(charType) =>
+        val upModel = RegistrationHelper.unRegisterPartecipant(regModel, charType)
+        recoveryRoutine(upModel, engModel)
+
       case _ => unhandledMsg()
     }
 
@@ -77,6 +89,9 @@ private class Engine(setup: Setup) {
         setup.context.log.info("Resume id: " + setup.gameId)
         mainRoutine(model)
       case Pause() => Behaviors.same
+      case ActorRecovery(charType) =>
+        val recovModel = RecoveryHelper.createRecoveryModel(charType, model)
+        recoveryRoutine(recovModel, model)
       case _ => unhandledMsg()
     }
 
@@ -93,6 +108,10 @@ private class Engine(setup: Setup) {
           pauseRoutine(model)
         case ChangeDirectionCur(actRef) => clearDesiredDir(model, actRef)
         case ChangeDirectionReq(actRef, dir) => changeDesiredDir(model, actRef, dir)
+        case ActorRecovery(charType) =>
+          val recovModel = RecoveryHelper.createRecoveryModel(charType, model)
+          timers.cancel(WakeUp())
+          recoveryRoutine(recovModel, model)
         case _ => unhandledMsg()
       }
     }
