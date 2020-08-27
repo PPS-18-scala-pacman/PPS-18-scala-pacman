@@ -35,9 +35,11 @@ dijkstra(Graph, Closed, Open, End, MinDist):-
 next_best_vertex([H|T], MinV, Rest):-
    next_best_vertex_min(T, H, MinV, Rest).
 next_best_vertex_min([], MinV, MinV, []).
-next_best_vertex_min([H|T], LocalMin, MinV, [H2|Rest]):-
-   (nearest(H, LocalMin) -> NextM = H, H2 = LocalMin; NextM = LocalMin, H2 = H),
-   next_best_vertex_min(T, NextM, MinV, Rest).
+next_best_vertex_min([H|T], LocalMin, MinV, [LocalMin|Rest]):-
+   nearest(H, LocalMin), !,
+   next_best_vertex_min(T, H, MinV, Rest).
+next_best_vertex_min([H|T], LocalMin, MinV, [H|Rest]):-
+   next_best_vertex_min(T, LocalMin, MinV, Rest).
 
 % nearest(A, B) restituisce true se la distanza del primo elemento è inferiore a quella del secondo
 % A e B sono elementi così composti Vertex-Distance-Path
@@ -55,10 +57,11 @@ neighbourhood(Graph, V, NB):-
 %
 % prune_neighboors(+ListOfVertices, +Closed, -ListOfNonClosedVertices)
 prune_neighboors([], _, []).
-prune_neighboors([H|T], Closed, L):-
+prune_neighboors([H|T], Closed, NewT):-
    H = V-_,
-   (member(V-_-_, Closed) -> L = NewT; L = [H|NewT]),
+   member(V-_-_, Closed), !,
    prune_neighboors(T, Closed, NewT).
+prune_neighboors([H|T], Closed, [H|NewT]):- prune_neighboors(T, Closed, NewT).
 
 % Ritorna la lista dei vicini arricchita del path passato in ingresso
 %
@@ -74,11 +77,12 @@ concat_path([V-D|T], P, [V-D-[V|P]|NewT]):-
 %
 % merge(+ListOfVertices, +OldOpenVertices, +Distance, -AllOpenVertices)
 merge([], L, _, L).
-merge([V1-D1-P1|T], Open, D, NewOpen):-
+merge([V1-D1-_|T], Open, D, [V1-D2-P2|SubOpen]):-
    remove(Open, V1-D2-P2, RestOpen),
-   (integer(D2), D2 < D+D1 -> VD = D2, VP = P2; VD is D+D1, VP = P1),  % VP deve prendere il valore in base a VD
-   NewOpen = [V1-VD-VP|SubOpen],
+   integer(D2), D2 < D+D1, !,
    merge(T, RestOpen, D, SubOpen).
+merge([V1-D1-P1|T], Open, D, [V1-(D+D1)-P1|SubOpen]):-
+   merge(T, Open, D, SubOpen).
 
 % Rimuove un elemento da una lista, ritornando l'elemento rimosso e la lista filtrata
 % Se l'elemento non è presente nella lista, ritorna la lista invariata
