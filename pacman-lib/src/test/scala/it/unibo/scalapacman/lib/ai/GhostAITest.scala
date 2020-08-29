@@ -30,7 +30,7 @@ class GhostAITest extends AnyWordSpec {
       }
       "target tile is behind a wall" in {
         val path = GhostAI.shortestPath(Ghost(GhostType.CLYDE, ORIGIN + Point2D(TileGeography.SIZE, 0), 1.0, Direction.WEST), (2, 3))
-        assert(path == (2, 1) :: (3, 1) :: (3, 2) :: (3, 3) :: (2, 1) :: Nil || path == (2, 1) :: (1, 1) :: (1, 2) :: (1, 3) :: (2, 3) :: Nil)
+        assert(path == (2, 1) :: (3, 1) :: (3, 2) :: (3, 3) :: (2, 3) :: Nil || path == (2, 1) :: (1, 1) :: (1, 2) :: (1, 3) :: (2, 3) :: Nil)
       }
     }
     "calculate the desired direction" when {
@@ -77,7 +77,8 @@ class GhostAITest extends AnyWordSpec {
         assert(classicPath == (6, 1) :: (6, 5) :: (6, 8) :: (6, 14) :: (6, 20) :: (6, 23) :: Nil)
 
         classicPath = GhostAI.shortestPathClassic((1, 5), (18, 17))
-        assert(classicPath == (1, 5) :: (6, 5) :: (9, 5) :: (12, 11) :: (13,11) :: (14,11) :: (15, 11) :: (18, 14) :: (18, 17) :: Nil)
+        assert(classicPath == (1, 5) :: (6, 5) :: (9, 5) :: (12, 11) :: (13,11) :: (14,11) :: (15, 11) :: (18, 14) :: (18, 17) :: Nil ||
+          classicPath == (1, 5) :: (6, 8) :: (6, 14) :: (9, 14) :: (9, 17) :: (18, 17) :: Nil)
 
         classicPath = GhostAI.shortestPathClassic((13, 13), (12, 11))
         assert(classicPath == (13,13) :: (13,12) :: (13,11) :: (12,11) :: Nil)

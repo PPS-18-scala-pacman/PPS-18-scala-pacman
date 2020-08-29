@@ -4,7 +4,7 @@ import alice.tuprolog.{Struct, Term}
 import it.unibo.scalapacman.lib.Utility
 import it.unibo.scalapacman.lib.prolog.Scala2P.{PrologEngine, convertibleToTerm, extractTerm, mkPrologEngine}
 import it.unibo.scalapacman.lib.model.{Character, Direction, Map, MapType}
-import it.unibo.scalapacman.lib.prolog.{Graph, GraphVertex, MinDistance, MinDistanceClassic}
+import it.unibo.scalapacman.lib.prolog.{Graph, GraphVertex, ShortestPath, ShortestPathClassic}
 import it.unibo.scalapacman.lib.model.Character.{Ghost, Pacman}
 import it.unibo.scalapacman.lib.engine.GameHelpers.{CharacterHelper, MapHelper}
 import it.unibo.scalapacman.lib.model.Direction.Direction
@@ -12,17 +12,21 @@ import it.unibo.scalapacman.lib.model.Map.MapIndexes
 
 object GhostAI {
 
-  implicit val prologEngine: PrologEngine = mkPrologEngine(Utility.readFile(getClass.getResource("/prolog/Dijkstra.pl")))
+  implicit val prologEngine: PrologEngine = mkPrologEngine(
+    Utility.readFile(getClass.getResource("/prolog/ShortestPath.pl")),
+    Utility.readFile(getClass.getResource("/prolog/Dijkstra.pl")),
+    Utility.readFile(getClass.getResource("/prolog/Maps.pl"))
+  )
 
   def shortestPath(character: Character, endTileIndexes: MapIndexes)(implicit engine: PrologEngine, map: Map): List[MapIndexes] = {
     val graph = Graph.fromMap(map).filterWalkable(character)
-    val quest: (GraphVertex,GraphVertex)=>Term = (tileStart, tileEnd) => MinDistance(graph, tileStart, tileEnd)
+    val quest: (GraphVertex,GraphVertex)=>Term = (tileStart, tileEnd) => ShortestPath(graph, tileStart, tileEnd)
     calculatePath(character.tileIndexes, endTileIndexes, quest, 3)(engine)
   }
 
   def shortestPathClassic(startTileIndexes: MapIndexes, endTileIndexes: MapIndexes)(implicit engine: PrologEngine): List[MapIndexes] = {
-    val quest: (GraphVertex,GraphVertex)=>Term = (tileStart, tileEnd) => MinDistanceClassic(tileStart, tileEnd)
-    calculatePath(startTileIndexes, endTileIndexes, quest, 2)(engine)
+    val quest: (GraphVertex,GraphVertex)=>Term = (tileStart, tileEnd) => ShortestPathClassic(tileStart, tileEnd)
+    calculatePath(startTileIndexes, endTileIndexes, quest, 3)(engine)
   }
 
   private def calculatePath(startTileIndexes: MapIndexes, endTileIndexes: MapIndexes, quest:(GraphVertex,GraphVertex)=>Term, index:Int)
