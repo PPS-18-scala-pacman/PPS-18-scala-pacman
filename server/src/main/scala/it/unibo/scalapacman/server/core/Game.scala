@@ -96,7 +96,8 @@ private class Game(setup: Setup) {
           val updatedGhosts = (model.ghosts - act) + (ghost -> ghostType.get)
           prepareBehavior(recBe, model.copy(ghosts = updatedGhosts))
         } else {
-          Behaviors.same
+          context.log.error(s"$act non è un attore noto")
+          prepareBehavior(recBe, model)
         }
       case (context, Terminated(ref)) =>
         context.log.info(s"Attore terminato: $ref")
