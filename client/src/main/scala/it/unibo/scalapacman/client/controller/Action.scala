@@ -1,14 +1,14 @@
 package it.unibo.scalapacman.client.controller
 
 sealed trait Action
-sealed trait UserIntention extends Action
 
 object Action {
-  case object START_GAME extends UserIntention
-  case object END_GAME extends UserIntention
-  case object SUBSCRIBE_TO_EVENTS extends UserIntention
-  case object EXIT_APP extends UserIntention
-  case object SAVE_KEY_MAP extends UserIntention
-  case object RESET_KEY_MAP extends UserIntention
-  case object MOVEMENT extends UserIntention
+  case object START_GAME extends Action
+  case object END_GAME extends Action
+  case object SUBSCRIBE_TO_EVENTS extends Action
+  case object EXIT_APP extends Action
+  case object SAVE_KEY_MAP extends Action
+  case object RESET_KEY_MAP extends Action
+  case object MOVEMENT extends Action
+  case object PAUSE_RESUME extends Action
 }

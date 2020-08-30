@@ -2,12 +2,13 @@ package it.unibo.scalapacman.client.controller
 
 import grizzled.slf4j.Logging
 import it.unibo.scalapacman.client.communication.PacmanRestClient
-import Action.{END_GAME, EXIT_APP, MOVEMENT, RESET_KEY_MAP, SAVE_KEY_MAP, START_GAME, SUBSCRIBE_TO_EVENTS}
-import it.unibo.scalapacman.client.event.{GameUpdate, NewKeyMap, PacmanPublisher, PacmanSubscriber}
+import Action.{END_GAME, EXIT_APP, MOVEMENT, PAUSE_RESUME, RESET_KEY_MAP, SAVE_KEY_MAP, START_GAME, SUBSCRIBE_TO_EVENTS}
+import it.unibo.scalapacman.client.event.{GamePaused, GameUpdate, NewKeyMap, PacmanPublisher, PacmanSubscriber}
 import it.unibo.scalapacman.client.input.JavaKeyBinding.DefaultJavaKeyBinding
 import it.unibo.scalapacman.client.input.KeyMap
 import it.unibo.scalapacman.client.map.PacmanMap
 import it.unibo.scalapacman.client.model.GameModel
+import it.unibo.scalapacman.common.CommandType.CommandType
 import it.unibo.scalapacman.common.MoveCommandType.MoveCommandType
 import it.unibo.scalapacman.common.{Command, CommandType, CommandTypeHolder, JSONConverter, MapUpdater, MoveCommandTypeHolder, UpdateModelDTO}
 import it.unibo.scalapacman.lib.model.{Map, MapType}
@@ -49,17 +50,19 @@ private case class ControllerImpl(pacmanRestClient: PacmanRestClient) extends Co
    * Viene utilizzata in PlayView per applicare la mappatura iniziale della board di gioco.
    * Viene utilizzata in OptionsView per inizializzare i campi di testo.
    */
-  val _defaultKeyMap: KeyMap = KeyMap(DefaultJavaKeyBinding.UP, DefaultJavaKeyBinding.DOWN, DefaultJavaKeyBinding.RIGHT, DefaultJavaKeyBinding.LEFT)
+  val _defaultKeyMap: KeyMap = KeyMap(DefaultJavaKeyBinding.UP, DefaultJavaKeyBinding.DOWN, DefaultJavaKeyBinding.RIGHT,
+    DefaultJavaKeyBinding.LEFT, DefaultJavaKeyBinding.PAUSE)
   var _prevUserAction: Option[MoveCommandType] = None
   val _publisher: PacmanPublisher = PacmanPublisher()
   val _webSocketRunnable = new WebSocketConsumer(updateFromServer)
-  var model: GameModel = GameModel(None, _defaultKeyMap, Map.create(MapType.CLASSIC))
+  var model: GameModel = GameModel(keyMap = _defaultKeyMap, map = Map.create(MapType.CLASSIC))
 
   def handleAction(action: Action, param: Option[Any]): Unit = action match {
     case START_GAME => evalStartGame(model.gameId)
     case END_GAME => evalEndGame(model.gameId)
     case SUBSCRIBE_TO_EVENTS => evalSubscribeToGameUpdates(param.asInstanceOf[Option[PacmanSubscriber]])
     case MOVEMENT => evalMovement(param.asInstanceOf[Option[MoveCommandType]], _prevUserAction, model.gameId)
+    case PAUSE_RESUME => evalPauseResume(param.asInstanceOf[Option[CommandType]], model.paused, model.gameId)
     case SAVE_KEY_MAP => evalSaveKeyMap(param.asInstanceOf[Option[KeyMap]])
     case RESET_KEY_MAP => evalSaveKeyMap(Some(_defaultKeyMap))
     case EXIT_APP => evalExitApp()
@@ -111,15 +114,32 @@ private case class ControllerImpl(pacmanRestClient: PacmanRestClient) extends Co
           info("Invio aggiornamento al server")
           debug(s"Invio al server l'azione ${newUserAction.get} dell'utente")
           _prevUserAction = newUserAction
-          sendMovement(newUserAction.get)
+          sendMovement(newUserAction)
       }
     }
 
-  private def sendMovement(moveCommandType: MoveCommandType): Unit = pacmanRestClient.sendOverWebSocket(
+  private def sendMovement(moveCommandType: Option[MoveCommandType]): Unit = sendOverWebsocket(CommandType.MOVE, moveCommandType)
+
+  private def evalPauseResume(newPauseResume: Option[CommandType], gamePaused: Boolean, gameId: Option[String]): Unit =
+    if (gameId.isDefined) {
+      newPauseResume match {
+        case Some(CommandType.PAUSE) if gamePaused => info("Gioco già in pausa")
+        case Some(CommandType.RESUME) if !gamePaused => info("Gioco già in esecuzione")
+        case None => error("Pause/Resume è None")
+        case _ =>
+          model = model.copy(paused = !model.paused)
+          sendPauseResume(newPauseResume.get)
+          _publisher.notifySubscribers(GamePaused(model.paused))
+      }
+    }
+
+  private def sendPauseResume(commandType: CommandType): Unit = sendOverWebsocket(commandType, None)
+
+  private def sendOverWebsocket(commandType: CommandType, moveCommandType: Option[MoveCommandType]): Unit = pacmanRestClient.sendOverWebSocket(
     JSONConverter.toJSON(
       Command(
-        CommandTypeHolder(CommandType.MOVE),
-        Some(JSONConverter.toJSON(MoveCommandTypeHolder(moveCommandType)))
+        CommandTypeHolder(commandType),
+        if (moveCommandType.isDefined) Some(JSONConverter.toJSON(MoveCommandTypeHolder(moveCommandType.get))) else None
       )
     )
   )
@@ -138,7 +158,7 @@ private case class ControllerImpl(pacmanRestClient: PacmanRestClient) extends Co
     System.exit(0)
   }
 
-  private def clearModel(): Unit = model = model.copy(gameId = None, map = Map.create(MapType.CLASSIC))
+  private def clearModel(): Unit = model = model.copy(gameId = None, paused = false, map = Map.create(MapType.CLASSIC))
 
   private def updateFromServer(updateModelDTO: UpdateModelDTO): Unit = {
     model = model.copy(map = MapUpdater.update(model.map, updateModelDTO.dots, updateModelDTO.fruit))

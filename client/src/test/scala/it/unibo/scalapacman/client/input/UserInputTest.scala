@@ -13,7 +13,7 @@ import org.scalatest.wordspec.AnyWordSpec
 
 class UserInputTest extends AnyWordSpec with Matchers {
 
-  val _keyMap: KeyMap = KeyMap(KeyEvent.VK_UP, KeyEvent.VK_DOWN, KeyEvent.VK_RIGHT, KeyEvent.VK_LEFT)
+  val _keyMap: KeyMap = KeyMap(KeyEvent.VK_UP, KeyEvent.VK_DOWN, KeyEvent.VK_RIGHT, KeyEvent.VK_LEFT, KeyEvent.VK_P)
   var _component: JComponent = _
   implicit var _controller: Controller = _
   var _keyStrokeIdentifiers: List[KeyStrokeIdentifier] = _
@@ -22,7 +22,7 @@ class UserInputTest extends AnyWordSpec with Matchers {
   private case class ControllerMock() extends Controller {
     override def handleAction(action: Action, param: Option[Any]): Unit = Unit
     override def userAction: Option[MoveCommandType] = None
-    override var model: GameModel = GameModel(None, _keyMap, Map.create(MapType.CLASSIC))
+    override var model: GameModel = GameModel(keyMap = _keyMap, map = Map.create(MapType.CLASSIC))
   }
 
   "UserInput" should {
@@ -38,19 +38,19 @@ class UserInputTest extends AnyWordSpec with Matchers {
       _keyStrokeIdentifiers = KeyStrokeIdentifier.UP_PRESSED :: KeyStrokeIdentifier.UP_RELEASED ::
         KeyStrokeIdentifier.DOWN_PRESSED :: KeyStrokeIdentifier.DOWN_RELEASED ::
         KeyStrokeIdentifier.RIGHT_PRESSED :: KeyStrokeIdentifier.RIGHT_RELEASED ::
-        KeyStrokeIdentifier.LEFT_PRESSED :: KeyStrokeIdentifier.LEFT_RELEASED :: Nil
+        KeyStrokeIdentifier.LEFT_PRESSED :: KeyStrokeIdentifier.LEFT_RELEASED :: KeyStrokeIdentifier.PAUSE_RESUME :: Nil
 
       for (i <- inputMap.keys().indices) {
-        inputMap.get(inputMap.keys()(i)) shouldEqual _keyStrokeIdentifiers(i)
+        assert(_keyStrokeIdentifiers contains inputMap.get(inputMap.keys()(i)))
       }
 
-      _gameActions = GameAction(MoveCommandType.UP) :: GameAction(MoveCommandType.NONE) ::
-        GameAction(MoveCommandType.DOWN) :: GameAction(MoveCommandType.NONE) ::
-        GameAction(MoveCommandType.RIGHT) :: GameAction(MoveCommandType.NONE) ::
-        GameAction(MoveCommandType.LEFT) :: GameAction(MoveCommandType.NONE) :: Nil
+      _gameActions = GameMovement(MoveCommandType.UP) :: GameMovement(MoveCommandType.NONE) ::
+        GameMovement(MoveCommandType.DOWN) :: GameMovement(MoveCommandType.NONE) ::
+        GameMovement(MoveCommandType.RIGHT) :: GameMovement(MoveCommandType.NONE) ::
+        GameMovement(MoveCommandType.LEFT) :: GameMovement(MoveCommandType.NONE):: GamePause() :: Nil
 
       for (i <- actionMap.keys().indices) {
-        actionMap.get(actionMap.keys()(i)) shouldEqual _gameActions(i)
+        assert(_gameActions contains actionMap.get(actionMap.keys()(i)))
       }
     }
   }

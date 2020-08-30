@@ -11,4 +11,5 @@ object KeyStrokeIdentifier {
   case object RIGHT_RELEASED extends KeyStrokeIdentifier
   case object LEFT_PRESSED extends KeyStrokeIdentifier
   case object LEFT_RELEASED extends KeyStrokeIdentifier
+  case object PAUSE_RESUME extends KeyStrokeIdentifier
 }

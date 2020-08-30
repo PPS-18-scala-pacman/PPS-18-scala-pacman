@@ -4,7 +4,7 @@ import java.awt.{BorderLayout, Color, Font, GridLayout}
 
 import it.unibo.scalapacman.client.controller.Action.{END_GAME, START_GAME, SUBSCRIBE_TO_EVENTS}
 import it.unibo.scalapacman.client.controller.{Action, Controller}
-import it.unibo.scalapacman.client.event.{GameUpdate, NewKeyMap, PacmanEvent, PacmanSubscriber}
+import it.unibo.scalapacman.client.event.{GamePaused, GameUpdate, NewKeyMap, PacmanEvent, PacmanSubscriber}
 import it.unibo.scalapacman.client.input.{KeyMap, UserInput}
 import it.unibo.scalapacman.client.gui.View.MENU
 import it.unibo.scalapacman.client.map.{ElementsCode, PacmanMap}
@@ -32,7 +32,9 @@ class PlayView(implicit controller: Controller, viewChanger: ViewChanger) extend
   private val STARTING_LIVES_COUNT: Int = 1
   private val STARTING_POINTS_COUNT: Int = 0
   private val START_MESSAGE: String = "Per una nuova partita, cliccare sul pulsante 'Inizia partita'"
-  private val GOOD_LUCK: String = "Buona fortuna!"
+  private val GOOD_LUCK_MESSAGE: String = "Buona fortuna!"
+  private val PAUSED_MESSAGE: String = "Gioco in pausa..."
+  private val RESUME_MESSAGE: String = "Gioco ripreso"
   private val VICTORY_MESSAGE: String = "Vittoria!"
   private val GAME_OVER_MESSAGE: String = "Game Over!"
   private val SCORE_MESSAGE: String = "Punteggio"
@@ -98,7 +100,7 @@ class PlayView(implicit controller: Controller, viewChanger: ViewChanger) extend
     _gameRunning = true
     _map = None
     _gameState = None
-    userMessage setText GOOD_LUCK
+    userMessage setText GOOD_LUCK_MESSAGE
     updateGameView(PacmanMap.toPacmanMap(Map.create(MapType.CLASSIC)), GameState(0), gameCanvas, scoreCount)
   })
 
@@ -213,9 +215,10 @@ class PlayView(implicit controller: Controller, viewChanger: ViewChanger) extend
   // scalastyle:on cyclomatic.complexity
 
   private def handlePacmanEvent(pe: PacmanEvent): Unit = pe match {
-    case GameUpdate(map, gameState) if _gameRunning =>
+    case GameUpdate(map, gameState) if _gameRunning && !controller.model.paused =>
       _gameState = Some(gameState)
       updateGameView(map, gameState, gameCanvas, scoreCount)
+    case GamePaused(paused) => if (paused) userMessage setText PAUSED_MESSAGE else userMessage setText RESUME_MESSAGE
     case NewKeyMap(keyMap) => bindKeys(playPanel, keyMap)
     case _ => Unit
   }
