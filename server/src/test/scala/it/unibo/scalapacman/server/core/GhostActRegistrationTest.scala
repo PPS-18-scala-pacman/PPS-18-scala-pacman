@@ -18,10 +18,7 @@ class GhostActRegistrationTest extends ScalaTestWithActorTestKit(ConfLoader.conf
       val props = MailboxSelector.fromConfig("server-app.ghost-mailbox")
       val ghostActor: ActorRef[Engine.UpdateCommand] = spawn(GhostAct(fakeGameId, engineProbe.ref, ghostType), props)
 
-      engineProbe.receiveMessage() match {
-        case Engine.RegisterGhost(`ghostActor`, `ghostType`) =>
-        case _ => fail()
-      }
+      engineProbe.expectMessage(Engine.RegisterGhost(ghostActor, ghostType))
     }
   }
 }

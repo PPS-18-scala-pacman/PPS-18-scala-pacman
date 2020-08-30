@@ -47,10 +47,7 @@ class EngineCommandTest extends ScalaTestWithActorTestKit with AnyWordSpecLike {
       Thread.sleep(waitTime.toMillis)
 
       engineActor ! Engine.Resume()
-      watcherPlayerProbe.receiveMessage(waitTime) match {
-        case Engine.UpdateMsg(_) =>
-        case _ => fail()
-      }
+      watcherPlayerProbe.expectMessageType[Engine.UpdateMsg](waitTime)
     }
 
     "change direction when requested for all game characters" in {

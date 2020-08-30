@@ -57,10 +57,7 @@ class PlayerUpdateTest extends ScalaTestWithActorTestKit with AnyWordSpecLike {
       regReqSender.receiveMessage() match {
         case Player.RegistrationAccepted(ref) =>
           ref! ConnectionInit(ackProbe.ref)
-          ackProbe.receiveMessage() match {
-            case ConnectionAck() =>
-            case _ => fail()
-          }
+          ackProbe.expectMessageType[ConnectionAck]
         case _ => fail()
       }
 
@@ -69,10 +66,7 @@ class PlayerUpdateTest extends ScalaTestWithActorTestKit with AnyWordSpecLike {
         case _ => fail()
       }
 
-      clientProbe.receiveMessage() match {
-        case TextMessage.Strict(msg) => msg shouldEqual testModelJSON
-        case _ => fail()
-      }
+      clientProbe.expectMessage(TextMessage.Strict(testModelJSON))
     }
   }
 }

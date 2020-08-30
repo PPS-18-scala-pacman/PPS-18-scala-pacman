@@ -7,7 +7,7 @@ import it.unibo.scalapacman.server.communication.ConnectionProtocol.ConnectionMs
 import it.unibo.scalapacman.server.core.Game.GameCommand
 import it.unibo.scalapacman.server.core.Player.{RegistrationAccepted, RegistrationRejected}
 import it.unibo.scalapacman.server.core.{Game, Master}
-import it.unibo.scalapacman.server.config.TestSettings
+import it.unibo.scalapacman.server.config.TestSettings.{askTestDuration}
 import org.scalatest.wordspec.AnyWordSpecLike
 
 class ServiceHandlerTest extends ScalaTestWithActorTestKit with AnyWordSpecLike {
@@ -34,10 +34,7 @@ class ServiceHandlerTest extends ScalaTestWithActorTestKit with AnyWordSpecLike 
         system.receptionist ! Receptionist.Register(Master.masterServiceKey, masterProbe.ref)
 
         serviceHandlerActor ! ServiceRoutes.CreateGame(clientProbe.ref)
-        masterProbe.receiveMessage() match {
-          case Master.CreateGame(_) =>
-          case _ => fail()
-        }
+        masterProbe.expectMessageType[Master.CreateGame]
 
         serviceHandlerActor ! ServiceHandler.WrapRespCreateGame(Master.GameCreated(fakeGameId))
         clientProbe.expectMessage(ServiceRoutes.SuccessCrG(fakeGameId))
@@ -63,10 +60,7 @@ class ServiceHandlerTest extends ScalaTestWithActorTestKit with AnyWordSpecLike 
           case _ => fail()
         }
 
-        clientProbe.receiveMessage() match {
-          case ServiceRoutes.SuccessConG(_) =>
-          case _ => fail()
-        }
+        clientProbe.expectMessageType[ServiceRoutes.SuccessConG]
       }
     }
 
@@ -81,10 +75,7 @@ class ServiceHandlerTest extends ScalaTestWithActorTestKit with AnyWordSpecLike 
           case _ => fail()
         }
 
-        clientProbe.receiveMessage() match {
-          case ServiceRoutes.FailureConG(`errMsg`) =>
-          case _ => fail()
-        }
+        clientProbe.expectMessage(ServiceRoutes.FailureConG(errMsg))
       }
     }
 
@@ -93,15 +84,9 @@ class ServiceHandlerTest extends ScalaTestWithActorTestKit with AnyWordSpecLike 
         val clientProbe = createTestProbe[ServiceRoutes.ResponseConnGame]()
 
         serviceHandlerActor ! ServiceRoutes.CreateConnectionGame(clientProbe.ref, fakeGameId)
-        gameProbe.receiveMessage() match {
-          case Game.RegisterPlayer(_, _) =>
-          case _ => fail()
-        }
+        gameProbe.expectMessageType[Game.RegisterPlayer]
 
-        clientProbe.receiveMessage(TestSettings.askTestDuration) match {
-          case ServiceRoutes.FailureConG(_) =>
-          case _ => fail()
-        }
+        clientProbe.expectMessageType[ServiceRoutes.FailureConG](askTestDuration)
       }
     }
   }

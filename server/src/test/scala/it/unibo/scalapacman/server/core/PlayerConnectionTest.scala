@@ -30,10 +30,8 @@ class PlayerConnectionTest extends ScalaTestWithActorTestKit with AnyWordSpecLik
     playerActor = spawn(Player(fakeGameId, engineProbe.ref))
 
     playerActor ! Player.RegisterUser(regReqSender.ref, clientProbe.ref)
-    engineProbe.receiveMessage() match {
-      case Engine.RegisterPlayer(_) =>
-      case _ => fail()
-    }
+    engineProbe.expectMessageType[Engine.RegisterPlayer]
+
     regReqSender.receiveMessage() match {
       case Player.RegistrationAccepted(ref) => playerCmdAdapter = ref
       case _ => fail()
@@ -68,9 +66,5 @@ class PlayerConnectionTest extends ScalaTestWithActorTestKit with AnyWordSpecLik
     }
   }
 
-  private def receiveAck(): Unit =
-    ackProbe.receiveMessage() match {
-      case ConnectionAck() =>
-      case _ => fail()
-    }
+  private def receiveAck(): Unit = ackProbe.expectMessageType[ConnectionAck]
 }

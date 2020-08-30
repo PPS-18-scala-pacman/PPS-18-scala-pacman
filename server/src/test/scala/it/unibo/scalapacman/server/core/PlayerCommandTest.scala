@@ -63,64 +63,43 @@ class PlayerCommandTest extends ScalaTestWithActorTestKit with AnyWordSpecLike {
 
     "handle Pause command" in {
       playerCmdAdapter ! ConnectionData(ackProbe.ref, TextMessage(testCommandPauseJSON))
-      engineProbe.receiveMessage() match {
-        case Engine.Pause() =>
-        case _ => fail()
-      }
+      engineProbe.expectMessageType[Engine.Pause]
       receiveAck()
     }
 
     "handle Resume command" in {
       playerCmdAdapter ! ConnectionData(ackProbe.ref, TextMessage(testCommandResumeJSON))
-      engineProbe.receiveMessage() match {
-        case Engine.Resume() =>
-        case _ => fail()
-      }
+      engineProbe.expectMessageType[Engine.Resume]
       receiveAck()
     }
 
     "handle Move Up command" in {
       playerCmdAdapter ! ConnectionData(ackProbe.ref, TextMessage(testCommandUPJSON))
-      engineProbe.receiveMessage() match {
-        case Engine.ChangeDirectionReq(playerUpRef, MoveDirection.UP) => playerUpRef shouldEqual playerUpdAdapter
-        case _ => fail()
-      }
+      engineProbe.expectMessage(Engine.ChangeDirectionReq(playerUpdAdapter, MoveDirection.UP))
       receiveAck()
     }
 
     "handle Move Down command" in {
       playerCmdAdapter ! ConnectionData(ackProbe.ref, TextMessage(testCommandDOWNJSON))
-      engineProbe.receiveMessage() match {
-        case Engine.ChangeDirectionReq(playerUpRef, MoveDirection.DOWN) => playerUpRef shouldEqual playerUpdAdapter
-        case _ => fail()
-      }
+      engineProbe.expectMessage(Engine.ChangeDirectionReq(playerUpdAdapter, MoveDirection.DOWN))
       receiveAck()
     }
 
     "handle Move Left command" in {
       playerCmdAdapter ! ConnectionData(ackProbe.ref, TextMessage(testCommandLEFTJSON))
-      engineProbe.receiveMessage() match {
-        case Engine.ChangeDirectionReq(playerUpRef, MoveDirection.LEFT) => playerUpRef shouldEqual playerUpdAdapter
-        case _ => fail()
-      }
+      engineProbe.expectMessage(Engine.ChangeDirectionReq(playerUpdAdapter, MoveDirection.LEFT))
       receiveAck()
     }
 
     "handle Move Right command" in {
       playerCmdAdapter ! ConnectionData(ackProbe.ref, TextMessage(testCommandRIGHTJSON))
-      engineProbe.receiveMessage() match {
-        case Engine.ChangeDirectionReq(playerUpRef, MoveDirection.RIGHT) => playerUpRef shouldEqual playerUpdAdapter
-        case _ => fail()
-      }
+      engineProbe.expectMessage(Engine.ChangeDirectionReq(playerUpdAdapter, MoveDirection.RIGHT))
       receiveAck()
     }
 
     "handle Move None command" in {
       playerCmdAdapter ! ConnectionData(ackProbe.ref, TextMessage(testCommandNONEJSON))
-      engineProbe.receiveMessage() match {
-        case Engine.ChangeDirectionCur(playerUpRef) => playerUpRef shouldEqual playerUpdAdapter
-        case _ => fail()
-      }
+      engineProbe.expectMessage(Engine.ChangeDirectionCur(playerUpdAdapter))
       receiveAck()
     }
 
@@ -137,9 +116,5 @@ class PlayerCommandTest extends ScalaTestWithActorTestKit with AnyWordSpecLike {
     }
   }
 
-  private def receiveAck(): Unit =
-    ackProbe.receiveMessage() match {
-      case ConnectionAck() =>
-      case _ => fail()
-    }
+  private def receiveAck(): Unit = ackProbe.expectMessageType[ConnectionAck]
 }

@@ -6,7 +6,7 @@ import it.unibo.scalapacman.common.GameCharacter
 import it.unibo.scalapacman.common.GameCharacter.PACMAN
 import it.unibo.scalapacman.lib.model.GhostType
 import it.unibo.scalapacman.lib.model.GhostType.BLINKY
-import it.unibo.scalapacman.server.config.{ConfLoader, TestSettings}
+import it.unibo.scalapacman.server.config.ConfLoader
 import it.unibo.scalapacman.server.config.TestSettings.waitTime
 import it.unibo.scalapacman.server.core.Engine.{ActorRecovery, Pause, RegisterGhost, RegisterPlayer, Resume}
 import org.scalatest.BeforeAndAfterEach
@@ -143,9 +143,5 @@ class EngineRecoveryTest extends ScalaTestWithActorTestKit(ConfLoader.config) wi
     }
   }
 
-  private def expectateUpdateMsg(act: TestProbe[Engine.UpdateCommand]): Unit =
-    act.receiveMessage(TestSettings.waitTime) match {
-      case Engine.UpdateMsg(_) =>
-      case _ => fail()
-    }
+  private def expectateUpdateMsg(act: TestProbe[Engine.UpdateCommand]): Unit = act.expectMessageType[Engine.UpdateMsg](waitTime)
 }
