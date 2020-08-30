@@ -1,14 +1,16 @@
 package it.unibo.scalapacman.client.gui
 
 import java.awt.{BorderLayout, Color, Font, GridLayout}
+import java.util.{Timer, TimerTask}
 
-import it.unibo.scalapacman.client.controller.Action.{END_GAME, START_GAME, SUBSCRIBE_TO_EVENTS}
+import it.unibo.scalapacman.client.controller.Action.{END_GAME, PAUSE_RESUME, START_GAME, SUBSCRIBE_TO_EVENTS}
 import it.unibo.scalapacman.client.controller.{Action, Controller}
-import it.unibo.scalapacman.client.event.{GamePaused, GameUpdate, NewKeyMap, PacmanEvent, PacmanSubscriber}
+import it.unibo.scalapacman.client.event.{GamePaused, GameStarted, GameUpdate, NewKeyMap, PacmanEvent, PacmanSubscriber}
 import it.unibo.scalapacman.client.input.{KeyMap, UserInput}
 import it.unibo.scalapacman.client.gui.View.MENU
 import it.unibo.scalapacman.client.map.{ElementsCode, PacmanMap}
 import it.unibo.scalapacman.client.map.PacmanMap.PacmanMap
+import it.unibo.scalapacman.common.CommandType
 import it.unibo.scalapacman.lib.model.{GameState, LevelState, Map, MapType}
 import javax.swing.{BorderFactory, JButton, JComponent, JLabel, SwingConstants}
 
@@ -96,17 +98,10 @@ class PlayView(implicit controller: Controller, viewChanger: ViewChanger) extend
 
   startGameButton addActionListener (_ => {
     askToController(START_GAME, None)
-    gameCanvas start()
-    _gameRunning = true
-    _map = None
-    _gameState = None
-    userMessage setText GOOD_LUCK_MESSAGE
-    updateGameView(PacmanMap.toPacmanMap(Map.create(MapType.CLASSIC)), GameState(0), gameCanvas, scoreCount)
   })
 
   endGameButton addActionListener (_ => {
     updateGameView(_map.getOrElse(Nil), _gameState.getOrElse(GameState(score = 0)).copy(levelState = LevelState.DEFEAT), gameCanvas, scoreCount)
-//    askToController(END_GAME, None)
   })
 
   backButton addActionListener (_ => {
@@ -157,6 +152,26 @@ class PlayView(implicit controller: Controller, viewChanger: ViewChanger) extend
     setForeground(Color.WHITE)
     setFocusable(false)
     setBackground(BACKGROUND_COLOR)
+  }
+
+  private def gameStarted(): Unit = {
+    gameCanvas start()
+    _gameRunning = true
+    _map = None
+    _gameState = None
+    userMessage setText GOOD_LUCK_MESSAGE
+    updateGameView(PacmanMap.toPacmanMap(Map.create(MapType.CLASSIC)), GameState(0), gameCanvas, scoreCount)
+    delayedResume()
+  }
+
+  private def delayedResume(): Unit = {
+    val t = new Timer
+    t.schedule(new TimerTask() {
+      override def run(): Unit = {
+        askToController(PAUSE_RESUME, Some(CommandType.RESUME))
+        t.cancel()
+      }
+    }, DELAYED_RESUME_TIME)
   }
 
   private def bindKeys(component: JComponent, keyMap: KeyMap): Unit =
@@ -219,6 +234,7 @@ class PlayView(implicit controller: Controller, viewChanger: ViewChanger) extend
       _gameState = Some(gameState)
       updateGameView(map, gameState, gameCanvas, scoreCount)
     case GamePaused(paused) => if (paused) userMessage setText PAUSED_MESSAGE else userMessage setText RESUME_MESSAGE
+    case GameStarted() => gameStarted()
     case NewKeyMap(keyMap) => bindKeys(playPanel, keyMap)
     case _ => Unit
   }

@@ -25,7 +25,6 @@ class PanelImpl extends JPanel with Panel {
 
   override def createButton(text: String): JButton = new JButton(text) {
     setFocusPainted(false)
-//    setBorderPainted(false)
     setContentAreaFilled(false)
     setForeground(DEFAULT_TEXT_COLOR)
     setFont(new Font(MAIN_FONT_NAME, Font.PLAIN, BUTTON_FONT_SIZE))

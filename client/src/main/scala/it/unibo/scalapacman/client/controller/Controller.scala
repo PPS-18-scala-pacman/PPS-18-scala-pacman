@@ -3,7 +3,7 @@ package it.unibo.scalapacman.client.controller
 import grizzled.slf4j.Logging
 import it.unibo.scalapacman.client.communication.PacmanRestClient
 import Action.{END_GAME, EXIT_APP, MOVEMENT, PAUSE_RESUME, RESET_KEY_MAP, SAVE_KEY_MAP, START_GAME, SUBSCRIBE_TO_EVENTS}
-import it.unibo.scalapacman.client.event.{GamePaused, GameUpdate, NewKeyMap, PacmanPublisher, PacmanSubscriber}
+import it.unibo.scalapacman.client.event.{GamePaused, GameStarted, GameUpdate, NewKeyMap, PacmanPublisher, PacmanSubscriber}
 import it.unibo.scalapacman.client.input.JavaKeyBinding.DefaultJavaKeyBinding
 import it.unibo.scalapacman.client.input.KeyMap
 import it.unibo.scalapacman.client.map.PacmanMap
@@ -75,10 +75,11 @@ private case class ControllerImpl(pacmanRestClient: PacmanRestClient) extends Co
     case None => pacmanRestClient.startGame onComplete {
       case Success(value) =>
         info(s"Partita creata con successo: id $value") // scalastyle:ignore multiple.string.literals
-        model = model.copy(gameId = Some(value))
+        model = model.copy(gameId = Some(value), paused = true) // Il gioco parte sempre in pausa
         _prevUserAction = None
         new Thread(_webSocketRunnable).start()
         pacmanRestClient.openWS(value, handleWebSocketMessage)
+        _publisher.notifySubscribers(GameStarted())
       case Failure(exception) => error(s"Errore nella creazione della partita: ${exception.getMessage}") // scalastyle:ignore multiple.string.literals
     }
     case Some(_) => error("Impossibile creare nuova partita quando ce n'è già una in corso")
