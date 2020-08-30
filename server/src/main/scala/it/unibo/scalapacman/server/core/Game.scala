@@ -25,11 +25,13 @@ object Game {
   private case class Model( player: ActorRef[PlayerCommand],
                             ghosts: Map[ActorRef[Engine.UpdateCommand],GhostType])
 
-  def apply(id: String): Behavior[GameCommand] =
+  def apply(id: String, visible: Boolean = true): Behavior[GameCommand] =
     Behaviors.setup { context =>
 
-      val gameServiceKey: ServiceKey[GameCommand] = ServiceKey[GameCommand](id)
-      context.system.receptionist ! Receptionist.Register(gameServiceKey, context.self)
+      if(visible) {
+        val gameServiceKey: ServiceKey[GameCommand] = ServiceKey[GameCommand](id)
+        context.system.receptionist ! Receptionist.Register(gameServiceKey, context.self)
+      }
 
       val engine = context.spawn(Engine(id, Settings.levelDifficulty), "EngineActor")
       val player = context.spawn(Player(id, engine), "PlayerActor")
@@ -85,18 +87,19 @@ private class Game(setup: Setup) {
         setup.engine ! Engine.ActorRecovery(GameCharacter.PACMAN)
         val player = context.spawn(Player(setup.id, setup.engine), "PlayerActor")
         prepareBehavior(initRoutine, model.copy(player = player))
-      case (context, ChildFailed(act:ActorRef[Engine.UpdateCommand], _)) =>
+      case (context, ChildFailed(act, _)) if act.isInstanceOf[ActorRef[Engine.UpdateCommand]] =>
         context.log.error(s"$act stopped")
-        val ghostType = model.ghosts.get(act)
+        val ghostAct = act.asInstanceOf[ActorRef[Engine.UpdateCommand]]
+        val ghostType = model.ghosts.get(ghostAct)
         if(ghostType.isDefined) {
           setup.engine ! Engine.ActorRecovery(ghostType.get)
 
           val props = MailboxSelector.fromConfig("server-app.ghost-mailbox")
-          val ghost = context.spawn(GhostAct(setup.id, setup.engine, ghostType.get), s"${ghostType.get}_Actor", props)
-          val updatedGhosts = (model.ghosts - act) + (ghost -> ghostType.get)
+          val ghost = context.spawn(GhostAct(setup.id, setup.engine, ghostType.get), s"${ghostType.get}Actor", props)
+          val updatedGhosts = (model.ghosts - ghostAct) + (ghost -> ghostType.get)
           prepareBehavior(recBe, model.copy(ghosts = updatedGhosts))
         } else {
-          context.log.error(s"$act non è un attore noto")
+          context.log.error(s"$ghostAct non è un attore noto")
           prepareBehavior(recBe, model)
         }
       case (context, Terminated(ref)) =>
