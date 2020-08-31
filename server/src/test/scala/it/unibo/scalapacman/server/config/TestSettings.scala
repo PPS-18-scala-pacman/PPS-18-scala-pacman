@@ -6,7 +6,7 @@ object TestSettings {
   // scalastyle:off magic.number
 
   val askTestDuration: FiniteDuration = Settings.askDuration * 2
-  val waitTime       : FiniteDuration = Settings.gameRefreshRate * 8
+  val waitTime       : FiniteDuration = Settings.gameRefreshRate * 4
 
   val awaitLowerBound: FiniteDuration = Settings.gameRefreshRate / 2
   val awaitUpperBound: FiniteDuration = waitTime * 4
