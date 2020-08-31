@@ -8,7 +8,7 @@ import akka.http.scaladsl.model.ws.Message
 import akka.http.scaladsl.server.Directives._ // scalastyle:ignore underscore.import
 import akka.http.scaladsl.server.Route
 import akka.stream.scaladsl.Flow
-import it.unibo.scalapacman.server.util.Settings.askTimeout
+import it.unibo.scalapacman.server.config.Settings.askTimeout
 
 import scala.concurrent.Future
 

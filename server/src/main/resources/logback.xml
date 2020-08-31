@@ -16,7 +16,7 @@
       <onMatch>ACCEPT</onMatch>
     </filter>
     <encoder>
-      <pattern>[%d{yyyy-MM-dd HH:mm:ss.SSS}] [%level] %msg%n</pattern>
+      <pattern>[%date{ISO8601}] [%level] [%logger] - %msg [MDC: {%mdc}]%n</pattern>
     </encoder>
   </appender>
 

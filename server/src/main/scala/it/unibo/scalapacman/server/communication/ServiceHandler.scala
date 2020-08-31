@@ -8,19 +8,20 @@ import akka.actor.typed.receptionist.{Receptionist, ServiceKey}
 import akka.actor.typed.scaladsl.{ActorContext, Behaviors}
 import akka.http.scaladsl.model.ws.Message
 import akka.stream.scaladsl.{Flow, Source}
+import it.unibo.scalapacman.server.communication.ConnectionProtocol.ConnectionMsg
 import it.unibo.scalapacman.server.communication.ServiceHandler.{ListingResponse, PlayerRegisterRespFailure}
 import it.unibo.scalapacman.server.communication.ServiceHandler.{PlayerRegisterRespSuccess, Setup, WrapRespCreateGame}
 import it.unibo.scalapacman.server.communication.StreamFactory.{createActorWBSink, createActorWBSource}
 import it.unibo.scalapacman.server.core.Player.{PlayerRegistration, RegistrationAccepted, RegistrationRejected}
 import it.unibo.scalapacman.server.core.{Game, Master}
-import it.unibo.scalapacman.server.util.Settings
-import it.unibo.scalapacman.server.util.Settings.askTimeout
+import it.unibo.scalapacman.server.config.Settings
+import it.unibo.scalapacman.server.config.Settings.askTimeout
 
 object ServiceHandler {
 
   private case class ListingResponse(listing: Receptionist.Listing) extends ServiceRoutes.RoutesCommand
   case class WrapRespCreateGame(response: Master.GameCreated) extends ServiceRoutes.RoutesCommand
-  case class PlayerRegisterRespSuccess(messageHandler: ActorRef[Message], source: Source[Message, NotUsed]) extends ServiceRoutes.RoutesCommand
+  case class PlayerRegisterRespSuccess(messageHandler: ActorRef[ConnectionMsg], source: Source[Message, NotUsed]) extends ServiceRoutes.RoutesCommand
   case class PlayerRegisterRespFailure(cause: String) extends ServiceRoutes.RoutesCommand
 
   private case class Setup(context: ActorContext[ServiceRoutes.RoutesCommand])
@@ -96,7 +97,6 @@ private class ServiceHandler(setup: Setup) {
 
       setup.context.log.info(s"Richiesta connessione per game ${key.id}")
 
-      //FIXME
       def safeTell[T](replyTo: ActorRef[T], msg: T): Unit = {
         if(replyTo != null) replyTo ! msg
       }
@@ -110,7 +110,7 @@ private class ServiceHandler(setup: Setup) {
       def sendRegisterRequest(gameAct: ActorRef[Game.GameCommand]): Behavior[ServiceRoutes.RoutesCommand] = {
         val (actorSourceRef, source) = createActorWBSource().preMaterialize()
         source.run()
-        setup.context.ask[Game.GameCommand, PlayerRegistration](gameAct, rep => Game.RegisterPlayer(rep, actorSourceRef)) {
+        setup.context.ask[Game.GameCommand, PlayerRegistration](gameAct, Game.RegisterPlayer(_, actorSourceRef)) {
           case Success(RegistrationAccepted(messageHandler)) => PlayerRegisterRespSuccess(messageHandler, source)
           case Success(RegistrationRejected(errMsg)) => PlayerRegisterRespFailure(errMsg)
           case Failure(errMsg) => PlayerRegisterRespFailure(errMsg.getMessage)
@@ -126,7 +126,7 @@ private class ServiceHandler(setup: Setup) {
         case ListingResponse(key.Listing(listings)) =>
           sendRegisterRequest(listings.head)
         case PlayerRegisterRespSuccess(messageHandler, source) =>
-          val flow = Flow.fromSinkAndSource(createActorWBSink(messageHandler), source)
+          val flow = Flow.fromSinkAndSourceCoupled(createActorWBSink(messageHandler), source)
           safeTell(replyTo, ServiceRoutes.SuccessConG(flow))
           buffer.unstashAll(mainRoutine())
         case PlayerRegisterRespFailure(errMsg) =>
