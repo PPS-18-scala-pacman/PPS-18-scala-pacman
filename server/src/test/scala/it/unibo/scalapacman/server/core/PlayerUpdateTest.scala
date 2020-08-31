@@ -3,9 +3,10 @@ package it.unibo.scalapacman.server.core
 import akka.actor.testkit.typed.scaladsl.ScalaTestWithActorTestKit
 import akka.http.scaladsl.model.ws.{Message, TextMessage}
 import it.unibo.scalapacman.common.{DirectionHolder, DotHolder, FruitHolder, GameCharacter, GameCharacterHolder}
-import it.unibo.scalapacman.common.{GameEntityDTO, FruitDTO, DotDTO, UpdateModelDTO}
+import it.unibo.scalapacman.common.{DotDTO, FruitDTO, GameEntityDTO, UpdateModelDTO}
 import it.unibo.scalapacman.lib.math.Point2D
 import it.unibo.scalapacman.lib.model.{Direction, Dot, Fruit, GameState}
+import it.unibo.scalapacman.server.communication.ConnectionProtocol.{Ack, ConnectionAck, ConnectionInit}
 import org.scalatest.wordspec.AnyWordSpecLike
 
 class PlayerUpdateTest extends ScalaTestWithActorTestKit with AnyWordSpecLike {
@@ -48,21 +49,24 @@ class PlayerUpdateTest extends ScalaTestWithActorTestKit with AnyWordSpecLike {
     "handle updateModel message" in {
       val engineProbe = createTestProbe[Engine.EngineCommand]()
       val playerActor = spawn(Player(fakeGameId, engineProbe.ref))
-      val fooReqSender = createTestProbe[Player.PlayerRegistration]()
+      val regReqSender = createTestProbe[Player.PlayerRegistration]()
       val clientProbe = createTestProbe[Message]()
+      val ackProbe = createTestProbe[Ack]()
 
-      playerActor ! Player.RegisterUser(fooReqSender.ref, clientProbe.ref)
-      fooReqSender.receiveMessage()
+      playerActor ! Player.RegisterUser(regReqSender.ref, clientProbe.ref)
+      regReqSender.receiveMessage() match {
+        case Player.RegistrationAccepted(ref) =>
+          ref! ConnectionInit(ackProbe.ref)
+          ackProbe.expectMessageType[ConnectionAck]
+        case _ => fail()
+      }
 
       engineProbe.receiveMessage() match {
         case Engine.RegisterPlayer(updateRef) => updateRef ! Engine.UpdateMsg(testModel)
         case _ => fail()
       }
 
-      clientProbe.receiveMessage() match {
-        case TextMessage.Strict(msg) => msg shouldEqual testModelJSON
-        case _ => fail()
-      }
+      clientProbe.expectMessage(TextMessage.Strict(testModelJSON))
     }
   }
 }

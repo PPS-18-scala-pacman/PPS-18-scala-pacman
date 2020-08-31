@@ -1,48 +1,14 @@
 package it.unibo.scalapacman.server.model
 
 import akka.actor.typed.ActorRef
+import it.unibo.scalapacman.common.GameCharacter.GameCharacter
 import it.unibo.scalapacman.common.{DirectionHolder, GameCharacter, GameCharacterHolder, GameEntityDTO}
 import it.unibo.scalapacman.lib.model.Character.{Ghost, Pacman}
-import it.unibo.scalapacman.lib.model.Direction.{Direction, EAST, NORTH, NORTHEAST, NORTHWEST, SOUTH, SOUTHEAST, SOUTHWEST, WEST}
-import it.unibo.scalapacman.lib.model.{Character, GameState, GameTimedEvent, GhostType, Map}
+import it.unibo.scalapacman.lib.model.GhostType.{BLINKY, CLYDE, INKY, PINKY}
+import it.unibo.scalapacman.lib.model.Direction.Direction
+import it.unibo.scalapacman.lib.model.{Character, GameState, GameTimedEvent, Map}
 import it.unibo.scalapacman.server.core.Engine.UpdateCommand
 
-import scala.collection.immutable
-
-
-object MoveDirection extends Enumeration {
-  type MoveDirection = Value
-  val UP, DOWN, RIGHT, LEFT = Value
-
-  implicit def moveDirectionToDirection(move: MoveDirection): Direction = move match {
-    case UP     => NORTH
-    case DOWN   => SOUTH
-    case LEFT   => WEST
-    case RIGHT  => EAST
-  }
-
-  implicit def directionToMoveDirection(dir: Direction): MoveDirection = dir match {
-    case NORTH | NORTHEAST | NORTHWEST  => UP
-    case SOUTH | SOUTHEAST | SOUTHWEST  => DOWN
-    case EAST                           => RIGHT
-    case WEST                           => LEFT
-  }
-}
-
-case class RegisteredParticipant(actor: ActorRef[UpdateCommand])
-
-case class RegistrationModel(
-                         blinky : Option[RegisteredParticipant] = None,
-                         pinky  : Option[RegisteredParticipant] = None,
-                         inky   : Option[RegisteredParticipant] = None,
-                         clyde  : Option[RegisteredParticipant] = None,
-                         pacman : Option[RegisteredParticipant] = None
-                       ) {
-  def toSeq: immutable.Seq[RegisteredParticipant] =
-    (blinky :: pinky :: inky :: clyde :: pacman :: Nil) filter (_.isDefined) map (_.get)
-
-  def isFull: Boolean = toSeq.size == 5
-}
 
 case class GameParticipant(
                             character: Character,
@@ -69,6 +35,14 @@ case class Players(
                     pacman: GameParticipant
                   ) {
   def toSet: Set[GameParticipant] = Set(blinky, pinky, inky, clyde, pacman)
+
+  def get(charType: GameCharacter): GameParticipant = charType match {
+    case GameCharacter.PACMAN => pacman
+    case GameCharacter.BLINKY => blinky
+    case GameCharacter.INKY   => inky
+    case GameCharacter.PINKY  => pinky
+    case GameCharacter.CLYDE  => clyde
+  }
 }
 
 object Players {
@@ -78,11 +52,11 @@ object Players {
 
   implicit def updatePlayers(characters: List[Character])(implicit pl: Players): Players =
     characters.foldRight(pl) {
-      case (c@Pacman(_, _, _, _), pl)                   => pl.copy(pacman  = pl.pacman.copy(c))
-      case (c@Ghost(GhostType.BLINKY, _, _, _, _), pl)  => pl.copy(blinky  = pl.blinky.copy(c))
-      case (c@Ghost(GhostType.CLYDE, _, _, _, _), pl)   => pl.copy(clyde   = pl.clyde.copy(c))
-      case (c@Ghost(GhostType.INKY, _, _, _, _), pl)    => pl.copy(inky    = pl.inky.copy(c))
-      case (c@Ghost(GhostType.PINKY, _, _, _, _), pl)   => pl.copy(pinky   = pl.pinky.copy(c))
+      case (c@Pacman(_, _, _, _), pl)         => pl.copy(pacman  = pl.pacman.copy(c))
+      case (c@Ghost(BLINKY, _, _, _, _), pl)  => pl.copy(blinky  = pl.blinky.copy(c))
+      case (c@Ghost(CLYDE, _, _, _, _), pl)   => pl.copy(clyde   = pl.clyde.copy(c))
+      case (c@Ghost(INKY, _, _, _, _), pl)    => pl.copy(inky    = pl.inky.copy(c))
+      case (c@Ghost(PINKY, _, _, _, _), pl)   => pl.copy(pinky   = pl.pinky.copy(c))
       case _ => throw new IllegalArgumentException("Unknown character type")
     }
 }
