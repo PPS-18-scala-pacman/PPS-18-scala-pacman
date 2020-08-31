@@ -16,7 +16,7 @@ package object gui {
   val DEFAULT_TEXT_COLOR: Color = Color.WHITE
   val MAIN_TITLE_TEXT_COLOR: Color = Color.YELLOW
 
-  val DELAYED_RESUME_TIME: Int = 3000
+  val DELAYED_RESUME_TIME: Int = 5000
 
   def loadFont(fontPath: String): Font = Font.createFont(Font.TRUETYPE_FONT, getClass.getClassLoader.getResourceAsStream(fontPath))
 }

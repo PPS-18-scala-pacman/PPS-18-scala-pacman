@@ -230,10 +230,16 @@ class PlayView(implicit controller: Controller, viewChanger: ViewChanger) extend
   // scalastyle:on cyclomatic.complexity
 
   private def handlePacmanEvent(pe: PacmanEvent): Unit = pe match {
-    case GameUpdate(map, gameState) if _gameRunning && !controller.model.paused =>
+    case GameUpdate(map, gameState) if _gameRunning =>
       _gameState = Some(gameState)
       updateGameView(map, gameState, gameCanvas, scoreCount)
-    case GamePaused(paused) => if (paused) userMessage setText PAUSED_MESSAGE else userMessage setText RESUME_MESSAGE
+    case GamePaused(paused) => if (paused) {
+      userMessage setText PAUSED_MESSAGE
+      _gameRunning = false
+    } else {
+      userMessage setText RESUME_MESSAGE
+      _gameRunning = true
+    }
     case GameStarted() => gameStarted()
     case NewKeyMap(keyMap) => bindKeys(playPanel, keyMap)
     case _ => Unit
