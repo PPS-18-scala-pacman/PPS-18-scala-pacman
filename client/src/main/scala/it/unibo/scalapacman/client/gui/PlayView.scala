@@ -233,13 +233,12 @@ class PlayView(implicit controller: Controller, viewChanger: ViewChanger) extend
     case GameUpdate(map, gameState) if _gameRunning =>
       _gameState = Some(gameState)
       updateGameView(map, gameState, gameCanvas, scoreCount)
-    case GamePaused(paused) => if (paused) {
+    case GamePaused(true) =>
       userMessage setText PAUSED_MESSAGE
       _gameRunning = false
-    } else {
+    case GamePaused(false) =>
       userMessage setText RESUME_MESSAGE
       _gameRunning = true
-    }
     case GameStarted() => gameStarted()
     case NewKeyMap(keyMap) => bindKeys(playPanel, keyMap)
     case _ => Unit

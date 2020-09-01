@@ -140,7 +140,7 @@ private case class ControllerImpl(pacmanRestClient: PacmanRestClient) extends Co
     JSONConverter.toJSON(
       Command(
         CommandTypeHolder(commandType),
-        if (moveCommandType.isDefined) Some(JSONConverter.toJSON(MoveCommandTypeHolder(moveCommandType.get))) else None
+        moveCommandType.map(moveCommand => JSONConverter.toJSON(MoveCommandTypeHolder(moveCommand)))
       )
     )
   )
