@@ -10,5 +10,10 @@ object MoveCommandType extends Enumeration {
   val UP, DOWN, RIGHT, LEFT, NONE = Value
 }
 
+/**
+ * Classe rappresentante l'azione dell'utente che il Client invia al Server
+ *
+ * @param id    la tipologia di azione
+ * @param data  ulteriori informazioni sull'azione
+ */
 case class Command(id: CommandTypeHolder, data: Option[String])
-

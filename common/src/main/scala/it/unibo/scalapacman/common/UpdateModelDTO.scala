@@ -43,4 +43,4 @@ case class UpdateModelDTO(
                            state: GameStateDTO,
                            dots: Set[DotDTO],
                            fruit: Option[FruitDTO]
-                      )
+                         )
