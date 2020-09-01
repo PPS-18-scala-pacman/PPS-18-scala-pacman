@@ -2,7 +2,7 @@ package it.unibo.scalapacman.client.input
 
 import it.unibo.scalapacman.client.controller.Controller
 import it.unibo.scalapacman.client.input.KeyStrokeIdentifier.{DOWN_PRESSED, DOWN_RELEASED, LEFT_PRESSED, LEFT_RELEASED,
-  RIGHT_PRESSED, RIGHT_RELEASED, UP_PRESSED, UP_RELEASED}
+  RIGHT_PRESSED, RIGHT_RELEASED, UP_PRESSED, UP_RELEASED, PAUSE_RESUME}
 import it.unibo.scalapacman.common.MoveCommandType
 import javax.swing.{ActionMap, InputMap, KeyStroke}
 
@@ -27,19 +27,21 @@ object UserInput {
       (KeyStroke.getKeyStroke(keyMap.right, 0, true), RIGHT_RELEASED) ::
       (KeyStroke.getKeyStroke(keyMap.left, 0, false), LEFT_PRESSED) ::
       (KeyStroke.getKeyStroke(keyMap.left, 0, true), LEFT_RELEASED) ::
+      (KeyStroke.getKeyStroke(keyMap.pause, 0, true), PAUSE_RESUME) ::
       Nil
 
     inputMapElementsList foreach { imel => addToInputMap(im, imel) }
 
     val actionMapElementsList: List[(KeyStrokeIdentifier, GameAction)] =
-      (UP_PRESSED, GameAction(MoveCommandType.UP)) ::
-      (UP_RELEASED, GameAction(MoveCommandType.NONE)) ::
-      (DOWN_PRESSED, GameAction(MoveCommandType.DOWN)) ::
-      (DOWN_RELEASED, GameAction(MoveCommandType.NONE)) ::
-      (RIGHT_PRESSED, GameAction(MoveCommandType.RIGHT)) ::
-      (RIGHT_RELEASED, GameAction(MoveCommandType.NONE)) ::
-      (LEFT_PRESSED, GameAction(MoveCommandType.LEFT)) ::
-      (LEFT_RELEASED, GameAction(MoveCommandType.NONE)) ::
+      (UP_PRESSED, GameMovement(MoveCommandType.UP)) ::
+      (UP_RELEASED, GameMovement(MoveCommandType.NONE)) ::
+      (DOWN_PRESSED, GameMovement(MoveCommandType.DOWN)) ::
+      (DOWN_RELEASED, GameMovement(MoveCommandType.NONE)) ::
+      (RIGHT_PRESSED, GameMovement(MoveCommandType.RIGHT)) ::
+      (RIGHT_RELEASED, GameMovement(MoveCommandType.NONE)) ::
+      (LEFT_PRESSED, GameMovement(MoveCommandType.LEFT)) ::
+      (LEFT_RELEASED, GameMovement(MoveCommandType.NONE)) ::
+      (PAUSE_RESUME, GamePause()) ::
       Nil
 
     actionMapElementsList foreach { amel => addToActionMap(am, amel) }

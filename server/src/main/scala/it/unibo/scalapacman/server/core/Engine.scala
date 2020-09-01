@@ -1,5 +1,6 @@
 package it.unibo.scalapacman.server.core
 
+import akka.actor.typed.scaladsl.TimerScheduler
 import akka.actor.typed.{ActorRef, Behavior}
 import akka.actor.typed.scaladsl.{ActorContext, Behaviors}
 import it.unibo.scalapacman.common.DotDTO.rawToDotDTO
@@ -38,11 +39,11 @@ object Engine {
   sealed trait UpdateCommand
   case class UpdateMsg(model: UpdateModelDTO) extends UpdateCommand
 
-  private case class Setup(gameId: String, context: ActorContext[EngineCommand], gameRefreshRate: FiniteDuration, level: Int)
+  private case class Setup(gameId: String, context: ActorContext[EngineCommand], gameRefreshRate: FiniteDuration, pauseRefreshRate: FiniteDuration, level: Int)
 
   def apply(gameId: String, level: Int): Behavior[EngineCommand] =
     Behaviors.setup { context =>
-      new Engine(Setup(gameId, context, Settings.gameRefreshRate, level)).idleRoutine(RegistrationModel())
+      new Engine(Setup(gameId, context, Settings.gameRefreshRate, Settings.pauseRefreshRate, level)).idleRoutine(RegistrationModel())
     }
 }
 
@@ -51,13 +52,9 @@ private class Engine(setup: Setup) {
   private def idleRoutine(model: RegistrationModel): Behavior[EngineCommand] =
     Behaviors.receiveMessage {
 
-      case RegisterGhost(actor, ghostType) =>
-        val upModel = RegistrationHelper.registerPartecipant(model, ghostType, actor)
-        if(upModel.isFull) mainRoutine( initEngineModel(upModel)) else idleRoutine(upModel)
+      case RegisterGhost(actor, ghostType) => handleRegistration(model, ghostType, actor)
 
-      case RegisterPlayer(actor) =>
-        val upModel = RegistrationHelper.registerPartecipant(model, PACMAN, actor)
-        if(upModel.isFull) mainRoutine( initEngineModel(upModel)) else idleRoutine(upModel)
+      case RegisterPlayer(actor) => handleRegistration(model, PACMAN, actor)
 
       case ActorRecovery(charType) =>
         val upModel = RegistrationHelper.unRegisterPartecipant(model, charType)
@@ -83,17 +80,26 @@ private class Engine(setup: Setup) {
       case _ => unhandledMsg()
     }
 
-  private def pauseRoutine(model: EngineModel): Behavior[EngineCommand] =
-    Behaviors.receiveMessage {
-      case Resume() =>
-        setup.context.log.info("Resume id: " + setup.gameId)
-        mainRoutine(model)
-      case Pause() => Behaviors.same
-      case ActorRecovery(charType) =>
-        val recovModel = RecoveryHelper.createRecoveryModel(charType, model)
-        recoveryRoutine(recovModel, model)
-      case _ => unhandledMsg()
+  private def pauseRoutine(model: EngineModel): Behavior[EngineCommand] = {
+    Behaviors.withTimers { timers =>
+      timers.startTimerWithFixedDelay(WakeUp(), WakeUp(), setup.pauseRefreshRate)
+
+      Behaviors.receiveMessage {
+        case WakeUp() =>
+          updateWatcher(model)
+          Behaviors.same
+        case Resume() =>
+          setup.context.log.info("Resume id: " + setup.gameId)
+          timers.cancel(WakeUp())
+          mainRoutine(model)
+        case Pause() => Behaviors.same
+        case ChangeDirectionCur(actRef) => clearDesiredDir(model, actRef, pauseRoutine)
+        case ChangeDirectionReq(actRef, dir) => changeDesiredDir(model, actRef, dir, pauseRoutine)
+        case ActorRecovery(charType) => prepareRecovery(model, charType, timers)
+        case _ => unhandledMsg()
+      }
     }
+  }
 
   private def mainRoutine(model: EngineModel): Behavior[EngineCommand] =
     Behaviors.withTimers { timers =>
@@ -106,15 +112,32 @@ private class Engine(setup: Setup) {
           setup.context.log.info("Pause id: " + setup.gameId)
           timers.cancel(WakeUp())
           pauseRoutine(model)
-        case ChangeDirectionCur(actRef) => clearDesiredDir(model, actRef)
-        case ChangeDirectionReq(actRef, dir) => changeDesiredDir(model, actRef, dir)
-        case ActorRecovery(charType) =>
-          val recovModel = RecoveryHelper.createRecoveryModel(charType, model)
-          timers.cancel(WakeUp())
-          recoveryRoutine(recovModel, model)
+        case ChangeDirectionCur(actRef) => clearDesiredDir(model, actRef, mainRoutine)
+        case ChangeDirectionReq(actRef, dir) => changeDesiredDir(model, actRef, dir, mainRoutine)
+        case ActorRecovery(charType) => prepareRecovery(model, charType, timers)
         case _ => unhandledMsg()
       }
     }
+
+  private def handleRegistration(registrationModel: RegistrationModel,
+                                 charType: GameCharacter,
+                                 actor: ActorRef[UpdateCommand]): Behavior[EngineCommand] = {
+    val upModel = RegistrationHelper.registerPartecipant(registrationModel, charType, actor)
+    if(upModel.isFull) {
+      val engModel = initEngineModel(upModel)
+      updateWatcher(engModel)
+      pauseRoutine(engModel)
+    } else {
+      idleRoutine(upModel)
+    }
+  }
+
+  private def prepareRecovery(engineModel: EngineModel,
+                              charType: GameCharacter,
+                              timers: TimerScheduler[EngineCommand]): Behavior[EngineCommand] = {
+    timers.cancel(WakeUp())
+    recoveryRoutine(RecoveryHelper.createRecoveryModel(charType, engineModel), engineModel)
+  }
 
   private def elaborateUpdateModel(model: EngineModel): UpdateModelDTO = {
 
@@ -185,7 +208,10 @@ private class Engine(setup: Setup) {
     participant.copy(character = newChar)
   }
 
-  private def updateDesDir(model:EngineModel, actRef:ActorRef[UpdateCommand], dir:Option[Direction]): Behavior[EngineCommand] = {
+  private def updateDesDir(model:EngineModel,
+                           actRef:ActorRef[UpdateCommand],
+                           dir:Option[Direction],
+                           routine: EngineModel => Behavior[EngineCommand]): Behavior[EngineCommand] = {
     val players = model.players
     val updatePl:Players = actRef match {
       case players.pacman.actRef  => players.copy(pacman  = players.pacman.copy(desiredDir = dir))
@@ -194,14 +220,19 @@ private class Engine(setup: Setup) {
       case players.inky.actRef    => players.copy(inky    = players.inky.copy(desiredDir = dir))
       case players.clyde.actRef   => players.copy(clyde   = players.clyde.copy(desiredDir = dir))
     }
-    mainRoutine(model.copy(players = updatePl))
+    routine(model.copy(players = updatePl))
   }
 
-  private def clearDesiredDir(model:EngineModel, actRef:ActorRef[UpdateCommand]): Behavior[EngineCommand] =
-    updateDesDir(model, actRef, None)
+  private def clearDesiredDir(model:EngineModel,
+                              actRef:ActorRef[UpdateCommand],
+                              routine: EngineModel => Behavior[EngineCommand]): Behavior[EngineCommand] =
+    updateDesDir(model, actRef, None, routine)
 
-  private def changeDesiredDir(model:EngineModel, actRef:ActorRef[UpdateCommand], move:MoveDirection): Behavior[EngineCommand] =
-    updateDesDir(model, actRef, Some(move))
+  private def changeDesiredDir(model:EngineModel,
+                               actRef:ActorRef[UpdateCommand],
+                               move:MoveDirection,
+                               routine: EngineModel => Behavior[EngineCommand]): Behavior[EngineCommand] =
+    updateDesDir(model, actRef, Some(move), routine)
 
   private def unhandledMsg(): Behavior[EngineCommand] = {
     setup.context.log.warn("Ricevuto messaggio non gestito")

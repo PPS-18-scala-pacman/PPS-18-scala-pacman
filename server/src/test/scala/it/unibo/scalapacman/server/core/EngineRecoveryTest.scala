@@ -30,6 +30,8 @@ class EngineRecoveryTest extends ScalaTestWithActorTestKit(ConfLoader.config) wi
     GhostType.values.filter(_ != BLINKY).foreach(engineActor ! Engine.RegisterGhost(fooWatcherProbe.ref, _))
 
     engineActor ! Engine.RegisterGhost(watcherBlinkyProbe.ref, BLINKY)
+
+    engineActor ! Engine.Resume()
   }
 
   "An Engine actor" must {
@@ -48,7 +50,7 @@ class EngineRecoveryTest extends ScalaTestWithActorTestKit(ConfLoader.config) wi
       val newWatcherProbe = createTestProbe[Engine.UpdateCommand]()
       engineActor ! RegisterPlayer(newWatcherProbe.ref)
 
-      newWatcherProbe.expectNoMessage(waitTime)
+      expectateUpdateMsg(newWatcherProbe)
       watcherPlayerProbe.expectNoMessage(waitTime)
 
       engineActor ! Resume()
@@ -71,7 +73,7 @@ class EngineRecoveryTest extends ScalaTestWithActorTestKit(ConfLoader.config) wi
       val newWatcherProbe = createTestProbe[Engine.UpdateCommand]()
       engineActor ! RegisterGhost(newWatcherProbe.ref, BLINKY)
 
-      newWatcherProbe.expectNoMessage(waitTime)
+      expectateUpdateMsg(newWatcherProbe)
       watcherBlinkyProbe.expectNoMessage(waitTime)
 
       engineActor ! Resume()
@@ -133,7 +135,7 @@ class EngineRecoveryTest extends ScalaTestWithActorTestKit(ConfLoader.config) wi
       val newWatcherProbe = createTestProbe[Engine.UpdateCommand]()
       engineActor ! RegisterPlayer(newWatcherProbe.ref)
 
-      newWatcherProbe.expectNoMessage(waitTime)
+      expectateUpdateMsg(newWatcherProbe)
       watcherPlayerProbe.expectNoMessage(waitTime)
 
       engineActor ! Resume()
@@ -143,5 +145,5 @@ class EngineRecoveryTest extends ScalaTestWithActorTestKit(ConfLoader.config) wi
     }
   }
 
-  private def expectateUpdateMsg(act: TestProbe[Engine.UpdateCommand]): Unit = act.expectMessageType[Engine.UpdateMsg](waitTime)
+  private def expectateUpdateMsg(act: TestProbe[Engine.UpdateCommand]): Unit = act.expectMessageType[Engine.UpdateMsg]
 }

@@ -22,7 +22,8 @@ class OptionsView()(implicit controller: Controller, viewChanger: ViewChanger) e
   private val DOWN_LABEL: String = "Giù"
   private val RIGHT_LABEL: String = "Destra"
   private val LEFT_LABEL: String = "Sinistra"
-  private val KBL_ROWS: Int = 4
+  private val PAUSE_LABEL: String = "Pausa"
+  private val KBL_ROWS: Int = 5
   private val KBL_COLS: Int = 2
   private val KBL_H_GAP: Int = 10
   private val KBL_V_GAP: Int = 30
@@ -38,16 +39,19 @@ class OptionsView()(implicit controller: Controller, viewChanger: ViewChanger) e
   private val downLabel: JLabel = createLabel(DOWN_LABEL)
   private val rightLabel: JLabel = createLabel(RIGHT_LABEL)
   private val leftLabel: JLabel = createLabel(LEFT_LABEL)
+  private val pauseLabel: JLabel = createLabel(PAUSE_LABEL)
 
   private val upTextField: JTextField = createTextField()
   private val downTextField: JTextField = createTextField()
   private val rightTextField: JTextField = createTextField()
   private val leftTextField: JTextField = createTextField()
+  private val pauseTextField: JTextField = createTextField()
 
   private val upIdentifier: String = "UP"
   private val downIdentifier: String = "DOWN"
   private val rightIdentifier: String = "RIGHT"
   private val leftIdentifier: String = "LEFT"
+  private val pauseIdentifier: String = "PAUSE"
 
   private var keyMapMap: Map[String, Int] = createKeyMapMap(controller.model.keyMap)
 
@@ -56,13 +60,14 @@ class OptionsView()(implicit controller: Controller, viewChanger: ViewChanger) e
   backButton addActionListener (_ => goBack())
   resetButton addActionListener (_ => resetKeyMap())
   saveButton addActionListener (_ =>
-    saveKeyMap(KeyMap(keyMapMap(upIdentifier), keyMapMap(downIdentifier), keyMapMap(rightIdentifier), keyMapMap(leftIdentifier)))
+    saveKeyMap(KeyMap(keyMapMap(upIdentifier), keyMapMap(downIdentifier), keyMapMap(rightIdentifier), keyMapMap(leftIdentifier), keyMapMap(pauseIdentifier)))
   )
 
   upLabel setLabelFor upTextField
   downLabel setLabelFor downTextField
-  leftLabel setLabelFor rightTextField
+  rightLabel setLabelFor rightTextField
   leftLabel setLabelFor leftTextField
+  pauseLabel setLabelFor pauseTextField
 
   resetTextFields()
 
@@ -70,6 +75,7 @@ class OptionsView()(implicit controller: Controller, viewChanger: ViewChanger) e
   downTextField addKeyListener setKeyTextFieldKeyListener(updateTextField(downTextField), updateKeyMapMap(downIdentifier))
   rightTextField addKeyListener setKeyTextFieldKeyListener(updateTextField(rightTextField), updateKeyMapMap(rightIdentifier))
   leftTextField addKeyListener setKeyTextFieldKeyListener(updateTextField(leftTextField), updateKeyMapMap(leftIdentifier))
+  pauseTextField addKeyListener setKeyTextFieldKeyListener(updateTextField(pauseTextField), updateKeyMapMap(pauseIdentifier))
 
   private val titlePanel: PanelImpl = PanelImpl()
   private val buttonsPanel: PanelImpl = PanelImpl()
@@ -90,6 +96,8 @@ class OptionsView()(implicit controller: Controller, viewChanger: ViewChanger) e
   keyBindingPanel add rightTextField
   keyBindingPanel add leftLabel
   keyBindingPanel add leftTextField
+  keyBindingPanel add pauseLabel
+  keyBindingPanel add pauseTextField
 
   keyBindingPanel setBorder BorderFactory.createEmptyBorder(KBL_EMPTY_BORDER_Y_AXIS, KBL_EMPTY_BORDER_X_AXIS, KBL_EMPTY_BORDER_Y_AXIS, KBL_EMPTY_BORDER_X_AXIS)
 
@@ -114,6 +122,7 @@ class OptionsView()(implicit controller: Controller, viewChanger: ViewChanger) e
     updateTextField(downTextField)(keyMap.down)
     updateTextField(rightTextField)(keyMap.right)
     updateTextField(leftTextField)(keyMap.left)
+    updateTextField(pauseTextField)(keyMap.pause)
   }
 
   private def updateTextField(keyTextField: JTextField)(keyCode: Int): Unit = keyTextField setText KeyEvent.getKeyText(keyCode)
@@ -130,6 +139,7 @@ class OptionsView()(implicit controller: Controller, viewChanger: ViewChanger) e
     downIdentifier -> keyMap.down,
     rightIdentifier -> keyMap.right,
     leftIdentifier -> keyMap.left,
+    pauseIdentifier -> keyMap.pause,
   )
 
   private def goBack(): Unit = {

@@ -65,7 +65,7 @@ class GameCanvas extends JPanel with Runnable with Logging {
   def run(): Unit = {
     pleaseRender.tryAcquire()
     while (running) {
-      debug("Ask repaint " + text.size)
+//      debug("Ask repaint " + text.size)
       val that = this
       SwingUtilities.invokeAndWait(() => that.repaint())
       pleaseRender.acquire()
@@ -77,7 +77,7 @@ class GameCanvas extends JPanel with Runnable with Logging {
 
     val graphics = g.create()
     val textToPaint = text
-    debug("painting " + textToPaint.size)
+//    debug("painting " + textToPaint.size)
 
     // Qui è dove inizia il rendering
     val metrics = graphics.getFontMetrics()

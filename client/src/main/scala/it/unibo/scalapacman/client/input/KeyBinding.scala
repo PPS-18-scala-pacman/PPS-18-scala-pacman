@@ -5,4 +5,5 @@ trait KeyBinding[A] {
   var DOWN: A
   var RIGHT: A
   var LEFT: A
+  var PAUSE: A
 }

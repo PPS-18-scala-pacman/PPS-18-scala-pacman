@@ -2,7 +2,7 @@ package it.unibo.scalapacman.server.core
 
 import akka.actor.testkit.typed.scaladsl.{ScalaTestWithActorTestKit, TestProbe}
 import akka.actor.typed.ActorRef
-import it.unibo.scalapacman.common.GameCharacter
+import it.unibo.scalapacman.common.{GameCharacter, UpdateModelDTO}
 import it.unibo.scalapacman.common.GameCharacter.{CLYDE, GameCharacter, INKY, PACMAN}
 import it.unibo.scalapacman.lib.model.Direction.Direction
 import it.unibo.scalapacman.lib.model.GhostType
@@ -29,15 +29,26 @@ class EngineCommandTest extends ScalaTestWithActorTestKit with AnyWordSpecLike {
       GameCharacter.ghostTypeToGameCharacter(gt) -> curProbe
     }).toMap
 
+    engineActor ! Engine.Resume()
+
     watcherMap = ghostMap + (PACMAN -> watcherPlayerProbe)
   }
 
   "An Engine actor" must {
-    "stops after pause command" in {
+    "stops updating after pause command" in {
+      var firstPausedModel: Option[UpdateModelDTO] = None
 
       engineActor ! Engine.Pause()
 
-      watcherPlayerProbe.expectNoMessage(waitTime)
+      watcherPlayerProbe.receiveMessage() match {
+        case Engine.UpdateMsg(model) => firstPausedModel = Some(model)
+        case _ => fail()
+      }
+
+      watcherPlayerProbe.receiveMessage() match {
+        case Engine.UpdateMsg(model) => Some(model) shouldEqual firstPausedModel
+        case _ => fail()
+      }
     }
 
     "resume game after resume command" in {

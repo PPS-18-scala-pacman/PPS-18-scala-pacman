@@ -10,5 +10,6 @@ object JavaKeyBinding {
     var DOWN: Int = KeyEvent.VK_DOWN
     var RIGHT: Int = KeyEvent.VK_RIGHT
     var LEFT: Int = KeyEvent.VK_LEFT
+    var PAUSE: Int = KeyEvent.VK_P
   }
 }
