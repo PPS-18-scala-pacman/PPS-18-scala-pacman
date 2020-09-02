@@ -3,7 +3,7 @@
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | 1 | Configurazione ambiente di progetto | | 10 |0|0|0|0|0|
 | 2 | Analisi dei requisiti | | 10 |0|0|0|0|0|
-| 3 | Design architetturale | | 20 |8|8|8|8|8|
+| 3 | Design architetturale | | 20 |8|8|8|8|3|
 | 4 | Come utente devo poter avviare una partita | | 30 |35|10|0|0|0|
 | 5 | Come utente devo poter muovere Pacman | | 30 |34|16|10|5|0|
 | 6 | Interazione di Pacman con la mappa | | 20 |20|10|0|0|0|
