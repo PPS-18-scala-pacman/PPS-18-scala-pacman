@@ -16,15 +16,12 @@ class GUIImpl(implicit val controller: Controller) extends ViewChanger {
 
   private val frame: JFrame = new JFrame
 
-  private val HEIGHT: Int = 960
-  private val WIDTH: Int = 720
-
   private val mainLayout: CardLayout = new CardLayout
   private val mainPanel = new JPanel(mainLayout)
 
   private val menuView: MenuView = MenuView()
   private val playView: PlayView = PlayView()
-  private val optionsView: OptionsView = OptionsView(playView)
+  private val optionsView: OptionsView = OptionsView()
   private val statsView: StatsView = StatsView()
 
   mainPanel add(menuView, MENU.name)
@@ -43,5 +40,8 @@ class GUIImpl(implicit val controller: Controller) extends ViewChanger {
   frame setLocationRelativeTo null // scalastyle:ignore null
   frame setVisible true
 
-  def changeView(view: View): Unit = mainLayout show (mainPanel, view.name)
+  def changeView(view: View): Unit = {
+    if (view == PLAY) playView.setupView()
+    mainLayout show(mainPanel, view.name)
+  }
 }

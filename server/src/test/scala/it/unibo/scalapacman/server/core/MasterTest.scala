@@ -1,16 +1,14 @@
 package it.unibo.scalapacman.server.core
 
-import java.util.concurrent.TimeUnit
-
 import akka.actor.testkit.typed.scaladsl.{ScalaTestWithActorTestKit, TestProbe}
 import akka.actor.typed.ActorRef
 import akka.actor.typed.receptionist.{Receptionist, ServiceKey}
+import it.unibo.scalapacman.server.config.ConfLoader
+import it.unibo.scalapacman.server.config.TestSettings.{awaitLowerBound, awaitUpperBound}
 import org.scalatest.wordspec.AnyWordSpecLike
-
-import scala.concurrent.duration.FiniteDuration
 import scala.reflect.ClassTag
 
-class MasterTest extends ScalaTestWithActorTestKit with AnyWordSpecLike {
+class MasterTest extends ScalaTestWithActorTestKit(ConfLoader.config) with AnyWordSpecLike {
 
   private var gameCreatedProbe: TestProbe[Master.GameCreated] = _
   private var masterActor: ActorRef[Master.MasterCommand] = _
@@ -33,7 +31,7 @@ class MasterTest extends ScalaTestWithActorTestKit with AnyWordSpecLike {
       actors = gameProbe.receiveMessage().serviceInstances(key)
       actors should not be null // scalastyle:ignore null
       actors.size should be > 0
-    }, FiniteDuration(5, TimeUnit.SECONDS), FiniteDuration(250, TimeUnit.MILLISECONDS)) // scalastyle:ignore magic.number
+    }, awaitUpperBound, awaitLowerBound)
     actors
   }
 

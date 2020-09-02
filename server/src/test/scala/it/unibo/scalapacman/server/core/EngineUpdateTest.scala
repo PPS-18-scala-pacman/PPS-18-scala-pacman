@@ -1,9 +1,9 @@
-package it.unibo.scalapacman.server.core;
+package it.unibo.scalapacman.server.core
 
 import akka.actor.testkit.typed.scaladsl.{ScalaTestWithActorTestKit, TestProbe}
 import akka.actor.typed.ActorRef
 import it.unibo.scalapacman.lib.model.GhostType
-import it.unibo.scalapacman.server.util.Settings
+import it.unibo.scalapacman.server.config.TestSettings.waitTime
 import org.scalatest.wordspec.AnyWordSpecLike
 
 class EngineUpdateTest extends ScalaTestWithActorTestKit with AnyWordSpecLike {
@@ -14,7 +14,7 @@ class EngineUpdateTest extends ScalaTestWithActorTestKit with AnyWordSpecLike {
   private var watcherPlayerProbe: TestProbe[Engine.UpdateCommand] = _
 
   override def beforeAll(): Unit = {
-    engineActor = spawn(Engine(fakeGameId))
+    engineActor = spawn(Engine(fakeGameId, 1))
     watcherPlayerProbe = createTestProbe[Engine.UpdateCommand]()
     val watcherFooProbe = createTestProbe[Engine.UpdateCommand]()
     GhostType.values.foreach(engineActor ! Engine.RegisterGhost(watcherFooProbe.ref, _))
@@ -24,10 +24,9 @@ class EngineUpdateTest extends ScalaTestWithActorTestKit with AnyWordSpecLike {
     "update watcher after registration" in {
       engineActor ! Engine.RegisterPlayer(watcherPlayerProbe.ref)
 
-      watcherPlayerProbe.receiveMessage(Settings.gameRefreshRate * 2) match {
-        case Engine.UpdateMsg(_) =>
-        case _ => fail()
-      }
+      engineActor ! Engine.Resume()
+
+      watcherPlayerProbe.expectMessageType[Engine.UpdateMsg](waitTime)
     }
   }
 }

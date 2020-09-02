@@ -1,5 +1,6 @@
 package it.unibo.scalapacman.lib
 
+import it.unibo.scalapacman.lib.model.Direction
 import org.scalatest.wordspec.AnyWordSpec
 
 class UtilityTest extends AnyWordSpec {

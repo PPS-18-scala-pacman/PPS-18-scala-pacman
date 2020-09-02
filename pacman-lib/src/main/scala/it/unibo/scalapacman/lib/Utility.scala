@@ -2,6 +2,11 @@ package it.unibo.scalapacman.lib
 
 import java.net.URL
 
+import it.unibo.scalapacman.lib.engine.GameHelpers.{CharacterHelper, MapHelper}
+import it.unibo.scalapacman.lib.model.{Character, Direction, Map}
+import it.unibo.scalapacman.lib.model.Direction.Direction
+import it.unibo.scalapacman.lib.model.Map.MapIndexes
+
 import scala.collection.mutable
 import scala.io.Source
 import scala.language.reflectiveCalls

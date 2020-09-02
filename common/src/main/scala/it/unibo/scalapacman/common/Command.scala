@@ -10,5 +10,5 @@ object MoveCommandType extends Enumeration {
   val UP, DOWN, RIGHT, LEFT, NONE = Value
 }
 
-case class Command(id: CommandTypeHolder, data:Option[String])
+case class Command(id: CommandTypeHolder, data: Option[String])
 

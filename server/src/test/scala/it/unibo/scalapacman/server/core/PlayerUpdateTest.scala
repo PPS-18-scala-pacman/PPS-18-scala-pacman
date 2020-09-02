@@ -3,45 +3,45 @@ package it.unibo.scalapacman.server.core
 import akka.actor.testkit.typed.scaladsl.ScalaTestWithActorTestKit
 import akka.http.scaladsl.model.ws.{Message, TextMessage}
 import it.unibo.scalapacman.common.{DirectionHolder, DotHolder, FruitHolder, GameCharacter, GameCharacterHolder}
-import it.unibo.scalapacman.common.{GameEntity, Item, Pellet, UpdateModel}
+import it.unibo.scalapacman.common.{DotDTO, FruitDTO, GameEntityDTO, UpdateModelDTO}
 import it.unibo.scalapacman.lib.math.Point2D
 import it.unibo.scalapacman.lib.model.{Direction, Dot, Fruit, GameState}
+import it.unibo.scalapacman.server.communication.ConnectionProtocol.{Ack, ConnectionAck, ConnectionInit}
 import org.scalatest.wordspec.AnyWordSpecLike
 
 class PlayerUpdateTest extends ScalaTestWithActorTestKit with AnyWordSpecLike {
 
-  val fakeGameId = "fakeCreateGameId"
+  private val fakeGameId = "fakeCreateGameId"
 
-  var testModel: UpdateModel = _
+  var testModel: UpdateModelDTO = _
   var testModelJSON: String = _
 
   override def beforeAll(): Unit = {
     // scalastyle:off magic.number
-    val gameEntities:Set[GameEntity] = Set(
-      GameEntity(GameCharacterHolder(GameCharacter.PACMAN), Point2D(1,2), 1, isDead=false, DirectionHolder(Direction.NORTH)),
-        GameEntity(GameCharacterHolder(GameCharacter.PACMAN), Point2D(3,4), 1, isDead=false, DirectionHolder(Direction.NORTH)),
-        GameEntity(GameCharacterHolder(GameCharacter.PACMAN), Point2D(5,6), 1, isDead=false, DirectionHolder(Direction.NORTH)))
+    val gameEntities:Set[GameEntityDTO] = Set(
+      GameEntityDTO(GameCharacterHolder(GameCharacter.PACMAN), Point2D(1,2), 1, isDead=false, DirectionHolder(Direction.NORTH)),
+      GameEntityDTO(GameCharacterHolder(GameCharacter.BLINKY), Point2D(3,4), 1, isDead=false, DirectionHolder(Direction.NORTH)),
+      GameEntityDTO(GameCharacterHolder(GameCharacter.CLYDE),  Point2D(5,6), 1, isDead=false, DirectionHolder(Direction.NORTH)))
 
-    val pellets: Set[Pellet] = Set(
-      Pellet(DotHolder(Dot.SMALL_DOT), Point2D(5,6)),
-        Pellet(DotHolder(Dot.SMALL_DOT), Point2D(6,6)),
-        Pellet(DotHolder(Dot.SMALL_DOT), Point2D(7,6)),
-        Pellet(DotHolder(Dot.SMALL_DOT), Point2D(8,6)))
+    val dots: Set[DotDTO] = Set(
+      DotDTO(DotHolder(Dot.SMALL_DOT), (5, 6)),
+      DotDTO(DotHolder(Dot.SMALL_DOT), (6, 6)),
+      DotDTO(DotHolder(Dot.SMALL_DOT), (7, 6)),
+      DotDTO(DotHolder(Dot.SMALL_DOT), (8, 6)))
 
-    val fruit = Some(Item(FruitHolder(Fruit.APPLE), Point2D(9,9)))
+    val fruit = Some(FruitDTO(FruitHolder(Fruit.APPLE), (9, 9)))
     // scalastyle:on magic.number
 
-    testModel = UpdateModel(gameEntities, GameState(score = 2), pellets, fruit)
+    testModel = UpdateModelDTO(gameEntities, GameState(score = 2), dots, fruit)
 
-    testModelJSON = "{\"gameEntities\":[{\"id\":{\"gameChar\":\"PACMAN\"},\"position\":{\"x\":1.0,\"y\":2.0},\"speed" +
-      "\":1.0,\"isDead\":false,\"dir\":{\"direction\":\"NORTH\"}},{\"id\":{\"gameChar\":\"PACMAN\"},\"position\":{" +
-      "\"x\":3.0,\"y\":4.0},\"speed\":1.0,\"isDead\":false,\"dir\":{\"direction\":\"NORTH\"}},{\"id\":{\"gameChar\"" +
-      ":\"PACMAN\"},\"position\":{\"x\":5.0,\"y\":6.0},\"speed\":1.0,\"isDead\":false,\"dir\":{\"direction\":\"NORTH" +
-      "\"}}],\"state\":{\"score\":2,\"ghostInFear\":false,\"pacmanEmpowered\":false},\"pellets\":[{\"pelletType\":{" +
-      "\"dot\":\"SMALL_DOT\"},\"pos\":{\"x\":5.0,\"y\":6.0}},{\"pelletType\":{\"dot\":\"SMALL_DOT\"},\"pos\":{\"x\":" +
-      "6.0,\"y\":6.0}},{\"pelletType\":{\"dot\":\"SMALL_DOT\"},\"pos\":{\"x\":7.0,\"y\":6.0}},{\"pelletType\":{\"dot" +
-      "\":\"SMALL_DOT\"},\"pos\":{\"x\":8.0,\"y\":6.0}}],\"fruit\":{\"id\":{\"fruit\":\"APPLE\"},\"pos\":{\"x\":9.0," +
-      "\"y\":9.0}}}"
+    testModelJSON = "{\"gameEntities\":[{\"gameCharacterHolder\":{\"gameChar\":\"PACMAN\"},\"position\":{\"x\":1.0,\"y\"" +
+      ":2.0},\"speed\":1.0,\"isDead\":false,\"dir\":{\"direction\":\"NORTH\"}},{\"gameCharacterHolder\":{\"gameChar\":\"" +
+      "BLINKY\"},\"position\":{\"x\":3.0,\"y\":4.0},\"speed\":1.0,\"isDead\":false,\"dir\":{\"direction\":\"NORTH\"}},{\"" +
+      "gameCharacterHolder\":{\"gameChar\":\"CLYDE\"},\"position\":{\"x\":5.0,\"y\":6.0},\"speed\":1.0,\"isDead\":false,\"" +
+      "dir\":{\"direction\":\"NORTH\"}}],\"state\":{\"score\":2,\"ghostInFear\":false,\"pacmanEmpowered\":false,\"" +
+      "levelStateHolder\":{\"levelState\":\"ONGOING\"}},\"dots\":[{\"dotHolder\":{\"dot\":\"SMALL_DOT\"},\"pos\":[5,6]},{\"" +
+      "dotHolder\":{\"dot\":\"SMALL_DOT\"},\"pos\":[6,6]},{\"dotHolder\":{\"dot\":\"SMALL_DOT\"},\"pos\":[7,6]},{\"" +
+      "dotHolder\":{\"dot\":\"SMALL_DOT\"},\"pos\":[8,6]}],\"fruit\":{\"fruitHolder\":{\"fruit\":\"APPLE\"},\"pos\":[9,9]}}"
   }
 
   "A Player actor" must {
@@ -49,21 +49,24 @@ class PlayerUpdateTest extends ScalaTestWithActorTestKit with AnyWordSpecLike {
     "handle updateModel message" in {
       val engineProbe = createTestProbe[Engine.EngineCommand]()
       val playerActor = spawn(Player(fakeGameId, engineProbe.ref))
-      val fooReqSender = createTestProbe[Player.PlayerRegistration]()
+      val regReqSender = createTestProbe[Player.PlayerRegistration]()
       val clientProbe = createTestProbe[Message]()
+      val ackProbe = createTestProbe[Ack]()
 
-      playerActor ! Player.RegisterUser(fooReqSender.ref, clientProbe.ref)
-      fooReqSender.receiveMessage()
+      playerActor ! Player.RegisterUser(regReqSender.ref, clientProbe.ref)
+      regReqSender.receiveMessage() match {
+        case Player.RegistrationAccepted(ref) =>
+          ref! ConnectionInit(ackProbe.ref)
+          ackProbe.expectMessageType[ConnectionAck]
+        case _ => fail()
+      }
 
       engineProbe.receiveMessage() match {
         case Engine.RegisterPlayer(updateRef) => updateRef ! Engine.UpdateMsg(testModel)
         case _ => fail()
       }
 
-      clientProbe.receiveMessage() match {
-        case TextMessage.Strict(msg) => msg shouldEqual testModelJSON
-        case _ => fail()
-      }
+      clientProbe.expectMessage(TextMessage.Strict(testModelJSON))
     }
   }
 }

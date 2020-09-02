@@ -1,12 +1,10 @@
 package it.unibo.scalapacman.client.input
 
-import java.awt.event.ActionEvent
-
-import it.unibo.scalapacman.client.controller.{Controller, UserAction}
+import it.unibo.scalapacman.client.controller.Controller
 import it.unibo.scalapacman.client.input.KeyStrokeIdentifier.{DOWN_PRESSED, DOWN_RELEASED, LEFT_PRESSED, LEFT_RELEASED,
-  RIGHT_PRESSED, RIGHT_RELEASED, UP_PRESSED, UP_RELEASED}
-import it.unibo.scalapacman.client.controller.Action.{MOVEMENT, MOVE_DEFAULT, MOVE_DOWN, MOVE_LEFT, MOVE_RIGHT, MOVE_UP}
-import javax.swing.{AbstractAction, ActionMap, InputMap, KeyStroke}
+  RIGHT_PRESSED, RIGHT_RELEASED, UP_PRESSED, UP_RELEASED, PAUSE_RESUME}
+import it.unibo.scalapacman.common.MoveCommandType
+import javax.swing.{ActionMap, InputMap, KeyStroke}
 
 object UserInput {
   /**
@@ -29,19 +27,21 @@ object UserInput {
       (KeyStroke.getKeyStroke(keyMap.right, 0, true), RIGHT_RELEASED) ::
       (KeyStroke.getKeyStroke(keyMap.left, 0, false), LEFT_PRESSED) ::
       (KeyStroke.getKeyStroke(keyMap.left, 0, true), LEFT_RELEASED) ::
+      (KeyStroke.getKeyStroke(keyMap.pause, 0, true), PAUSE_RESUME) ::
       Nil
 
     inputMapElementsList foreach { imel => addToInputMap(im, imel) }
 
     val actionMapElementsList: List[(KeyStrokeIdentifier, GameAction)] =
-      (UP_PRESSED, GameAction(MOVE_UP)) ::
-      (UP_RELEASED, GameAction(MOVE_DEFAULT)) ::
-      (DOWN_PRESSED, GameAction(MOVE_DOWN)) ::
-      (DOWN_RELEASED, GameAction(MOVE_DEFAULT)) ::
-      (RIGHT_PRESSED, GameAction(MOVE_RIGHT)) ::
-      (RIGHT_RELEASED, GameAction(MOVE_DEFAULT)) ::
-      (LEFT_PRESSED, GameAction(MOVE_LEFT)) ::
-      (LEFT_RELEASED, GameAction(MOVE_DEFAULT)) ::
+      (UP_PRESSED, GameMovement(MoveCommandType.UP)) ::
+      (UP_RELEASED, GameMovement(MoveCommandType.NONE)) ::
+      (DOWN_PRESSED, GameMovement(MoveCommandType.DOWN)) ::
+      (DOWN_RELEASED, GameMovement(MoveCommandType.NONE)) ::
+      (RIGHT_PRESSED, GameMovement(MoveCommandType.RIGHT)) ::
+      (RIGHT_RELEASED, GameMovement(MoveCommandType.NONE)) ::
+      (LEFT_PRESSED, GameMovement(MoveCommandType.LEFT)) ::
+      (LEFT_RELEASED, GameMovement(MoveCommandType.NONE)) ::
+      (PAUSE_RESUME, GamePause()) ::
       Nil
 
     actionMapElementsList foreach { amel => addToActionMap(am, amel) }
@@ -50,8 +50,4 @@ object UserInput {
   private def addToInputMap(im: InputMap, imel: (KeyStroke, KeyStrokeIdentifier)): Unit = im put (imel._1, imel._2)
 
   private def addToActionMap(am: ActionMap, amel: (KeyStrokeIdentifier, GameAction)): Unit = am put (amel._1, amel._2)
-
-  private case class GameAction(userAction: UserAction)(implicit controller: Controller) extends AbstractAction {
-    override def actionPerformed(actionEvent: ActionEvent): Unit = controller.handleAction(MOVEMENT, Some(userAction))
-  }
 }

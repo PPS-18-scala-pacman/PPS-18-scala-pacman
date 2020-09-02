@@ -14,7 +14,8 @@ dependencies {
   implementation(project(":pacman-lib"))
   implementation(project(":common"))
 
-  testImplementation(group = "org.scalamock", name = "scalamock-scalatest-support_$scalaVersion", version = "3.6.0")
+//  testImplementation(group = "org.scalamock", name = "scalamock-scalatest-support_$scalaVersion", version = "3.6.0")
+  testImplementation(group = "org.scalamock", name = "scalamock_$scalaVersion", version = "4.4.0")
 }
 
 application {
@@ -23,9 +24,14 @@ application {
 
 tasks.shadowJar {
   archiveClassifier.set("fat")
+
+  // Akka reference.conf resource file
+  val newTransformer = com.github.jengelman.gradle.plugins.shadow.transformers.AppendingTransformer()
+  newTransformer.resource = "reference.conf"
+  transformers.add(newTransformer)
 }
 
 scoverage {
   excludedPackages.set(listOf("it.unibo.scalapacman.client.gui"))
-  minimumRate.set(BigDecimal("0.3"))
+  minimumRate.set(BigDecimal("0.6"))
 }

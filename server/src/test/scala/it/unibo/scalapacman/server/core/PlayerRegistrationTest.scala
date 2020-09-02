@@ -22,10 +22,7 @@ class PlayerRegistrationTest extends ScalaTestWithActorTestKit with AnyWordSpecL
       val clientProbe = createTestProbe[Message]()
 
       playerActor ! Player.RegisterUser(regReqSender.ref, clientProbe.ref)
-      regReqSender.receiveMessage() match {
-        case Player.RegistrationAccepted(_) =>
-        case _ => fail()
-      }
+      regReqSender.expectMessageType[Player.RegistrationAccepted]
     }
 
     "reject a second registration user request" in {
@@ -37,10 +34,7 @@ class PlayerRegistrationTest extends ScalaTestWithActorTestKit with AnyWordSpecL
       regReqSenderFst.receiveMessage()
 
       playerActor ! Player.RegisterUser(regReqSenderSnd.ref, clientProbe.ref)
-      regReqSenderSnd.receiveMessage() match {
-        case Player.RegistrationRejected(_) =>
-        case _ => fail()
-      }
+      regReqSenderSnd.expectMessageType[Player.RegistrationRejected]
     }
   }
 }

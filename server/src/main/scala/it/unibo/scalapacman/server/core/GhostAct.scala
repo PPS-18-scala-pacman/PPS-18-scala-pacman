@@ -2,9 +2,15 @@ package it.unibo.scalapacman.server.core
 
 import akka.actor.typed.{ActorRef, Behavior}
 import akka.actor.typed.scaladsl.{ActorContext, Behaviors}
-import it.unibo.scalapacman.common.UpdateModel
+import it.unibo.scalapacman.common.{GameCharacter, UpdateModelDTO}
+import it.unibo.scalapacman.lib.ai.GhostAI
+import it.unibo.scalapacman.lib.model.Direction.Direction
 import it.unibo.scalapacman.lib.model.GhostType.GhostType
-import it.unibo.scalapacman.server.core.GhostAct.Setup
+import it.unibo.scalapacman.lib.model.{GameState, LevelState}
+import it.unibo.scalapacman.server.core.Engine.{ChangeDirectionCur, ChangeDirectionReq}
+import it.unibo.scalapacman.server.core.GhostAct.{Model, Setup}
+import it.unibo.scalapacman.server.model.MoveDirection.directionToMoveDirection
+import it.unibo.scalapacman.server.model.MoveDirection.MoveDirection
 
 object GhostAct {
 
@@ -13,26 +19,57 @@ object GhostAct {
                            engine: ActorRef[Engine.EngineCommand],
                            ghostType: GhostType)
 
+  private case class Model(state: GameState, desMove: Option[MoveDirection])
+
   def apply(id: String, engine: ActorRef[Engine.EngineCommand], ghostType: GhostType): Behavior[Engine.UpdateCommand] =
     Behaviors.setup { context =>
-      new GhostAct(Setup(id, context, engine, ghostType)).coreRoutine()
+      new GhostAct(Setup(id, context, engine, ghostType)).coreRoutine(Model(GameState(0), None))
     }
 }
 
-
 private class GhostAct(setup: Setup) {
 
+  setup.context.log.info(s"GhostAct avviato, fantasma: ${setup.ghostType}")
   setup.engine ! Engine.RegisterGhost(setup.context.self, setup.ghostType)
 
-  private def coreRoutine(): Behaviors.Receive[Engine.UpdateCommand] =
+  private def coreRoutine(model: Model): Behaviors.Receive[Engine.UpdateCommand] =
     Behaviors.receiveMessage {
-      case Engine.UpdateMsg(newModel) => handleEngineUpdate(newModel)
+      case Engine.UpdateMsg(newModel) => handleEngineUpdate(newModel, model)
       case _ => Behaviors.same
     }
 
-  private def handleEngineUpdate(model: UpdateModel): Behavior[Engine.UpdateCommand] ={
-    setup.context.log.info("Ricevuto update: " + model)
-    Behaviors.same
+  private def handleEngineUpdate(model: UpdateModelDTO, myModel: Model): Behavior[Engine.UpdateCommand] ={
+    setup.context.log.debug("Ricevuto update: " + model)
+    val gameState: GameState = model.state
+    val selfDTO = model.gameEntities.find(_.gameCharacterHolder.gameChar == GameCharacter.ghostTypeToGameCharacter(setup.ghostType))
+    val pacmanDTO = model.gameEntities.find(_.gameCharacterHolder.gameChar == GameCharacter.PACMAN)
+
+    if(gameState.levelState != LevelState.ONGOING) {
+      setup.context.log.info("Partita terminata spegnimento")
+      Behaviors.stopped
+    } else if(selfDTO.exists(_.isDead)) {
+      setup.context.log.debug("Sono morto non posso muovermi")
+      if (myModel.desMove.isDefined) setup.engine ! ChangeDirectionCur(setup.context.self)
+      coreRoutine(Model(gameState, None))
+    } else if (selfDTO.isDefined && pacmanDTO.isDefined) {
+      setup.context.log.debug("Inizio calcolo percorso")
+
+      val pacman = pacmanDTO.get.toPacman.get
+      val direction: Option[Direction] = GhostAI.calculateDirectionClassic(selfDTO.get.toGhost.get, pacman)
+      //val direction = GhostAI.desiredDirection(selfDTO.get.toGhost.get, pacmanDTO.get.toPacman.get)(prologEngine, updatedMap)
+
+      if (direction.isDefined) {
+        if (!myModel.desMove.contains(direction.get)) setup.engine ! ChangeDirectionReq(setup.context.self, direction.get)
+        coreRoutine(Model(gameState, Some(direction.get)))
+      } else {
+        setup.context.log.debug("Cambio di direzione non necessario")
+        Behaviors.same
+      }
+
+    } else {
+      setup.context.log.warn("Ricevuto update model non valido")
+      Behaviors.same
+    }
   }
 }
 
