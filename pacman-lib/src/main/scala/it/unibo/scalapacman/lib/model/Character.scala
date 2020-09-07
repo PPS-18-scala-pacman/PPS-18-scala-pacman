@@ -32,6 +32,15 @@ object Character {
     val POINTS = 200
   }
 
+  /**
+   * Applica la giusta funzione di copy in base all'istanza dell'oggetto character passato in input.
+   * @param character Oggetto da copiare
+   * @param position Nuova posizione. Opzionale.
+   * @param speed Nuova velocità. Opzionale.
+   * @param direction Nuova direzione. Opzionale.
+   * @param isDead Nuovo stato isDead. Opzionale.
+   * @return Una copia aggiornata dell'oggetto character in input
+   */
   def copy(character: Character)(
     position: Point2D = character.position,
     speed: Double = character.speed,

@@ -109,8 +109,8 @@ case object Map {
   }
 
   /**
-   *
-   * @return The classic map of Pacman (1980)
+   * Crea un'implementazione del tipo di mappa richiesto.
+   * @return La mappa richiesta
    */
   def create(mapType: MapType.MapType = MapType.CUSTOM): Map = Map(
     tiles = mapType match { case MapType.CLASSIC => Classic.tiles },
