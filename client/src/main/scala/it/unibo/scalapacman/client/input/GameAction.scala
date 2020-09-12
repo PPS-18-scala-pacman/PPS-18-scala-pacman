@@ -9,24 +9,12 @@ import it.unibo.scalapacman.common.CommandType.CommandType
 import it.unibo.scalapacman.common.MoveCommandType.MoveCommandType
 import javax.swing.AbstractAction
 
-/**
- * Rappresenta un'azione dell'utente quando preme uno dei comandi da tastiera
- */
 trait GameAction extends AbstractAction
 
-/**
- * Implementa l'azione da eseguire quando l'utente esegue un comando di movimento
- * @param moveCommand tipologia di movimento
- * @param controller istanza del controller a cui notificare l'azione
- */
 case class GameMovement(moveCommand: MoveCommandType)(implicit controller: Controller) extends GameAction {
   override def actionPerformed(actionEvent: ActionEvent): Unit = controller.handleAction(MOVEMENT, Some(moveCommand))
 }
 
-/**
- * Implementa l'azione da eseguire quando l'utente esegue il comando di pausa / ripresa gioco
- * @param controller istanza del controller a cui notificare l'azione
- */
 case class GamePause()(implicit controller: Controller) extends GameAction {
   override def actionPerformed(e: ActionEvent): Unit = controller.handleAction(PAUSE_RESUME, pauseOrResume())
 

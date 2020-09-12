@@ -7,10 +7,6 @@ import it.unibo.scalapacman.client.gui.GUI
 
 import scala.concurrent.ExecutionContextExecutor
 
-/**
- * Effettua il bootstrapping del client, istanziando il gestore della comunicazione col server, il controller
- * e il gestore dell'interfaccia grafica
- */
 object GameMaster {
   def init(): Unit = {
     val pacmanRestClient: PacmanRestClient with ClientHandler = new PacmanRestClient() with ClientHandler {

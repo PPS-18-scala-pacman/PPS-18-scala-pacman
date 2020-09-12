@@ -18,13 +18,6 @@ object PlayView {
   def apply()(implicit controller: Controller, viewChanger: ViewChanger): PlayView = new PlayView()
 }
 
-/**
- * Schermata di gioco, qui l'utente può giocare al gioco di Pacman utilizzando la configurazione tasti di default
- * o quella che ha personalizzato dalla relativa schermata.
- *
- * @param controller il riferimento al componente Controller
- * @param viewChanger il riferimento al componente che gestisce il cambio schermata
- */
 class PlayView(implicit controller: Controller, viewChanger: ViewChanger) extends PanelImpl {
   private val SCORE_LABEL: String = "Punteggio"
   private val LIVES_LABEL: String = "Vite"
@@ -149,18 +142,11 @@ class PlayView(implicit controller: Controller, viewChanger: ViewChanger) extend
   // Sottoscrivo ad eventi che pubblicherà il controller
   askToController(SUBSCRIBE_TO_EVENTS, Some(PacmanSubscriber(handlePacmanEvent)))
 
-  /**
-   * Prepara il messaggio di benvenuto all'utente ed azzera il punteggio visualizzato
-   */
   def setupView(): Unit = {
     userMessage setText START_MESSAGE
     updateScore(0, scoreCount)
   }
 
-  /**
-   * Istanza il componente su cui viene disegnato il gioco e che è incaricato di aggiornare il disegno
-   * @return il GameCanvas
-   */
   private def initGameCanvas(): GameCanvas = new GameCanvas() {
     setFont(UNIFONT.deriveFont(Font.PLAIN, PLAY_FONT_SIZE))
     setForeground(Color.WHITE)
@@ -168,9 +154,6 @@ class PlayView(implicit controller: Controller, viewChanger: ViewChanger) extend
     setBackground(BACKGROUND_COLOR)
   }
 
-  /**
-   * Esegue le operazioni preliminari quando l'utente inizia una nuova partita
-   */
   private def gameStarted(): Unit = {
     gameCanvas start()
     _gameRunning = true
@@ -181,9 +164,6 @@ class PlayView(implicit controller: Controller, viewChanger: ViewChanger) extend
     delayedResume()
   }
 
-  /**
-   * Effettua l'invio temporizzato del comando di riprisa del gioco ad inizio partita
-   */
   private def delayedResume(): Unit = {
     val t = new Timer
     t.schedule(new TimerTask() {
@@ -194,22 +174,9 @@ class PlayView(implicit controller: Controller, viewChanger: ViewChanger) extend
     }, DELAYED_RESUME_TIME)
   }
 
-  /**
-   * Imposta il comportamento del componente rispetto ad una configurazione dei tasti
-   * @param component il componente da configurare
-   * @param keyMap la configurazione dei tasti
-   */
   private def bindKeys(component: JComponent, keyMap: KeyMap): Unit =
     UserInput.setupUserInput(component.getInputMap(IFW), component.getActionMap, keyMap)
 
-  /**
-   * Effettua le operazioni per aggiornare l'interfaccia utente
-   *
-   * @param map la nuova mappa da disegnare
-   * @param gameState il nuovo stato della partita
-   * @param gameCanvas il componente su cui disegnare la mappa
-   * @param scoreCount la JLabel che mostra il punteggio
-   */
   private def updateGameView(map: PacmanMap, gameState: GameState, gameCanvas: GameCanvas, scoreCount: JLabel): Unit = {
     updateScore(gameState.score, scoreCount)
     printMap(map, gameState, gameCanvas)
@@ -221,25 +188,11 @@ class PlayView(implicit controller: Controller, viewChanger: ViewChanger) extend
 
   private def updateScore(score: Int, scoreCount: JLabel): Unit = scoreCount.setText(score.toString)
 
-  /**
-   * Se la mappa è diversa rispetto allo stato precedente, invoca il ridisegno della mappa
-   *
-   * @param map la nuova mappa da disegnare
-   * @param gameState il nuovo stato della partita
-   * @param gameCanvas il componente su cui disegnare la mappa
-   */
   private def printMap(map: PacmanMap, gameState: GameState, gameCanvas: GameCanvas): Unit = if (!_map.contains(map)) {
     _map = Some(map)
     doPrint(map, gameState, gameCanvas)
   }
 
-  /**
-   * Disegna la mappa sul GameCanvas
-   *
-   * @param map la nuova mappa da disegnare
-   * @param gameState il nuovo stato della partita
-   * @param gameCanvas il componente su cui disegnare la mappa
-   */
   private def doPrint(map: PacmanMap, gameState: GameState, gameCanvas: GameCanvas): Unit = {
     def styleGetter(name: String): Option[ElementStyle] = if (gameState.ghostInFear) {
       energizerElementStyles.find(style => style.styleName == name)
@@ -255,23 +208,12 @@ class PlayView(implicit controller: Controller, viewChanger: ViewChanger) extend
       )
   }
 
-  /**
-   * Esegue le operazioni nel qual caso la partita sia terminata per vittoria o sconfitta dell'utente
-   *
-   * @param gameState lo stato della partita
-   */
   private def handleEndGame(gameState: GameState): Unit = {
     _gameRunning = false
     userMessage setText getEndMessage(gameState)
     askToController(END_GAME, None)
   }
 
-  /**
-   * Genera il messaggio di fine partita da mostrare all'utente
-   *
-   * @param gameState lo stato della partita
-   * @return il messaggio generato
-   */
   private def getEndMessage(gameState: GameState): String = gameState.levelState match {
     case LevelState.VICTORY => s"$VICTORY_MESSAGE $SCORE_MESSAGE: ${gameState.score}"
     case LevelState.DEFEAT => s"$GAME_OVER_MESSAGE $SCORE_MESSAGE: ${gameState.score}"
@@ -287,11 +229,6 @@ class PlayView(implicit controller: Controller, viewChanger: ViewChanger) extend
   }
   // scalastyle:on cyclomatic.complexity
 
-  /**
-   * Gestisce gli eventi PacmanEvent pubblicati dal Controller
-   *
-   * @param pe il PacmanEvent ricevuto
-   */
   private def handlePacmanEvent(pe: PacmanEvent): Unit = pe match {
     case GameUpdate(map, gameState) if _gameRunning =>
       _gameState = Some(gameState)
@@ -307,13 +244,6 @@ class PlayView(implicit controller: Controller, viewChanger: ViewChanger) extend
     case _ => Unit
   }
 
-  /**
-   * Informa il controller di un'azione dell'utente
-   * Effettuata all'interno di un Thread per non bloccare l'interfaccia
-   *
-   * @param action
-   * @param param
-   */
   private def askToController(action: Action, param: Option[Any]): Unit =
     new Thread() {
       override def run(): Unit = controller.handleAction(action, param)

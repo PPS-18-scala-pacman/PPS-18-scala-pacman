@@ -10,12 +10,6 @@ object GUI {
   def apply(implicit controller: Controller): GUIImpl = new GUIImpl()
 }
 
-/**
- * Entry point della View.
- * Istanzia le schermate che compongono l'applicazione ed implementa il metodo per gestire il cambio schermata.
- *
- * @param controller il riferimento al componente Controller
- */
 class GUIImpl(implicit val controller: Controller) extends ViewChanger {
 
   implicit val viewChanger: ViewChanger = this

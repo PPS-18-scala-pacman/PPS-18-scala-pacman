@@ -11,13 +11,6 @@ object MenuView {
   def apply()(implicit controller: Controller, viewChanger: ViewChanger): MenuView = new MenuView()
 }
 
-/**
- * Menù dell'applicazione, da qui l'utente può navigare l'applicazione spostandosi
- * nelle varie schermate (Gioco, Configurazione Tasti etc..).
- *
- * @param controller il riferimento al componente Controller
- * @param viewChanger il riferimento al componente che gestisce il cambio schermata
- */
 class MenuView(implicit controller: Controller, viewChanger: ViewChanger) extends PanelImpl {
   private val MAIN_TITLE_LABEL: String = "<html><div style='text-align: center'>Scala<br>Pacman<div></html>"
   private val PLAY_VIEW_BUTTON_LABEL: String = "Gioca"
@@ -75,12 +68,5 @@ class MenuView(implicit controller: Controller, viewChanger: ViewChanger) extend
   setLayout(new BorderLayout)
   add(splitPane)
 
-  /**
-   * Crea un componente vuoto, usato per distanziare altri componenti nella view
-   *
-   * @param horizontalArea larghezza del componente
-   * @param verticalArea altezza del componente
-   * @return il componente vuoto
-   */
   private def createRigidArea(horizontalArea: Int, verticalArea: Int): Component = Box.createRigidArea(new Dimension(horizontalArea, verticalArea))
 }

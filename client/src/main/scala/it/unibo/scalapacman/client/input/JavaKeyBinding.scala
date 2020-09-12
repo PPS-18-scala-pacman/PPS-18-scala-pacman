@@ -5,9 +5,6 @@ import java.awt.event.KeyEvent
 sealed trait JavaKeyBinding extends KeyBinding[Int]
 
 object JavaKeyBinding {
-  /**
-   * Configurazione di defautl della tastiera
-   */
   case object DefaultJavaKeyBinding extends JavaKeyBinding {
     var UP: Int = KeyEvent.VK_UP
     var DOWN: Int = KeyEvent.VK_DOWN

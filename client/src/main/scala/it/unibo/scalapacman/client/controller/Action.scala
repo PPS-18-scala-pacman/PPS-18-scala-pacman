@@ -2,9 +2,6 @@ package it.unibo.scalapacman.client.controller
 
 sealed trait Action
 
-/**
- * Azioni che rappresentano la volontà dell'utente
- */
 object Action {
   case object START_GAME extends Action
   case object END_GAME extends Action

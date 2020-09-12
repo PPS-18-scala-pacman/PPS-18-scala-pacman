@@ -42,15 +42,13 @@ object Controller {
   def apply(pacmanRestClient: PacmanRestClient): Controller = ControllerImpl(pacmanRestClient)
 }
 
-/**
- * Implementazione del Controller dell'applicazione
- * @param pacmanRestClient il servizio per la comunicazione col Server
- */
 private case class ControllerImpl(pacmanRestClient: PacmanRestClient) extends Controller with Logging {
   implicit val ec: ExecutionContextExecutor = ExecutionContext.global
   val UNKNOWN_ACTION = "Azione non riconosciuta"
   /**
-   * Configurazione dei tasti iniziale, prende i valori di default di DefaultJavaKeyBinding.
+   * Mappatura dei tasti iniziale, prende i valori di default di DefaultJavaKeyBinding.
+   * Viene utilizzata in PlayView per applicare la mappatura iniziale della board di gioco.
+   * Viene utilizzata in OptionsView per inizializzare i campi di testo.
    */
   val _defaultKeyMap: KeyMap = KeyMap(DefaultJavaKeyBinding.UP, DefaultJavaKeyBinding.DOWN, DefaultJavaKeyBinding.RIGHT,
     DefaultJavaKeyBinding.LEFT, DefaultJavaKeyBinding.PAUSE)
@@ -73,16 +71,6 @@ private case class ControllerImpl(pacmanRestClient: PacmanRestClient) extends Co
 
   def userAction: Option[MoveCommandType] = _prevUserAction
 
-  /**
-   * Se non c'è nessuna partita in corso, effettua la chiamata al Server per creare una nuova partita.
-   * Se la chiamata ha successo:
-   * - re-inizializza il Model
-   * - istanzia un nuovo thread per la gestione dei messaggi WebSocket
-   * - la chiamata al Server per aprire il canale WebSocket
-   * - pubblica l'evento di gioco iniziato tramite il Publisher
-   *
-   * @param gameId il valore attuale di gameId ottenuto dal Model
-   */
   private def evalStartGame(gameId: Option[String]): Unit = gameId match {
     case None => pacmanRestClient.startGame onComplete {
       case Success(value) =>
@@ -97,14 +85,6 @@ private case class ControllerImpl(pacmanRestClient: PacmanRestClient) extends Co
     case Some(_) => error("Impossibile creare nuova partita quando ce n'è già una in corso")
   }
 
-  /**
-   * Termina il gestore dei messaggi WebSocket e chiude il canale WebSocket.
-   * Se c'è una partita in corso, effettua la chiamata al Server per terminare la partita, dopodiché pulisce il Model.
-   * Le operazioni sul gestore dei messaggi e sulla chiusura del canale WebSocket vengono eseguite ogni volta per
-   * garantire che le risorse non restino allocate.
-   *
-   * @param gameId il
-   */
   private def evalEndGame(gameId: Option[String]): Unit = {
     _webSocketRunnable.terminate()
     pacmanRestClient.closeWebSocket()
@@ -121,24 +101,11 @@ private case class ControllerImpl(pacmanRestClient: PacmanRestClient) extends Co
     }
   }
 
-  /**
-   * Effettua la sottoscrizione di un Subscriber al Publisher
-   *
-   * @param maybeSubscriber il subscriber che vuole sottoscriversi
-   */
   private def evalSubscribeToGameUpdates(maybeSubscriber: Option[PacmanSubscriber]): Unit = maybeSubscriber match {
     case None => error("Subscriber mancante, impossibile registrarsi")
     case Some(subscriber) => _publisher.subscribe(subscriber)
   }
 
-  /**
-   * Gestisce l'intento dell'utente di muoversi nella mappa.
-   * L'informazione sul movimento viene salvata ed inviata al Server solo se c'è una partita in corso.
-   *
-   * @param newUserAction il nuovo movimento
-   * @param prevUserAction il movimento precedente
-   * @param gameId identificativo della partita in corso
-   */
   private def evalMovement(newUserAction: Option[MoveCommandType], prevUserAction: Option[MoveCommandType], gameId: Option[String]): Unit =
     if (gameId.isDefined) {
       (newUserAction, prevUserAction) match {
@@ -154,14 +121,6 @@ private case class ControllerImpl(pacmanRestClient: PacmanRestClient) extends Co
 
   private def sendMovement(moveCommandType: Option[MoveCommandType]): Unit = sendOverWebsocket(CommandType.MOVE, moveCommandType)
 
-  /**
-   * Gestisce l'intento dell'utente di mettere in pausa / riprendere il gioco.
-   * L'informazione sullo stato di pausa/ripristino viene salvata ed inviata al Server solo se c'è una partita in corso.
-   *
-   * @param newPauseResume nuovo stato della partita (Pausa o Ripresa)
-   * @param gamePaused stato precedente della partita
-   * @param gameId identificativo della partita in corso
-   */
   private def evalPauseResume(newPauseResume: Option[CommandType], gamePaused: Boolean, gameId: Option[String]): Unit =
     if (gameId.isDefined) {
       newPauseResume match {
@@ -177,12 +136,6 @@ private case class ControllerImpl(pacmanRestClient: PacmanRestClient) extends Co
 
   private def sendPauseResume(commandType: CommandType): Unit = sendOverWebsocket(commandType, None)
 
-  /**
-   * Invia un messaggio al Server tramite la WebSocket
-   *
-   * @param commandType tipologia di comando dell'utente (Movimento, Pausa o Ripresa)
-   * @param moveCommandType informazioni aggiuntive sul comando (solo se Movimento)
-   */
   private def sendOverWebsocket(commandType: CommandType, moveCommandType: Option[MoveCommandType]): Unit = pacmanRestClient.sendOverWebSocket(
     JSONConverter.toJSON(
       Command(
@@ -192,12 +145,6 @@ private case class ControllerImpl(pacmanRestClient: PacmanRestClient) extends Co
     )
   )
 
-  /**
-   * Gestisce l'intento dell'utente di salvare una nuova configurazione dei tasti.
-   * Pubblica l'evento di nuova configurazione tasti tramite il Publisher
-   *
-   * @param maybeKeyMap la nuova configurazione di tasti
-   */
   private def evalSaveKeyMap(maybeKeyMap: Option[KeyMap]): Unit = maybeKeyMap match {
     case None => error("Configurazione tasti non valida")
     case Some(keyMap) =>
@@ -206,35 +153,18 @@ private case class ControllerImpl(pacmanRestClient: PacmanRestClient) extends Co
       info(s"Nuova configurazione dei tasti salvata $keyMap") // scalastyle:ignore multiple.string.literals
   }
 
-  /**
-   * Gestisce l'intento dell'utente di uscire dall'applicazione.
-   * Esegue le operazioni di termine partita per assicurarsi che non rimangano partite pendenti lato server
-   */
   private def evalExitApp(): Unit = {
     evalEndGame(model.gameId)
     info("Chiusura dell'applicazione")
     System.exit(0)
   }
 
-  /**
-   * Pulisce il Model, riportandolo alla situazione iniziale (mantenendo invariato però la configurazione dei tasti)
-   */
   private def clearModel(): Unit = model = model.copy(gameId = None, paused = false, map = Map.create(MapType.CLASSIC))
 
-  /**
-   * Aggiorna il Model con le informazioni ricevuta dal Server sulla partita in corso e pubblica l'evento
-   * del nuovo aggiornamento tramite il Publisher
-   *
-   * @param updateModelDTO l'aggiornamento della partita
-   */
   private def updateFromServer(updateModelDTO: UpdateModelDTO): Unit = {
     model = model.copy(map = MapUpdater.update(model.map, updateModelDTO.dots, updateModelDTO.fruit))
     _publisher.notifySubscribers(GameUpdate(PacmanMap.createWithCharacters(model.map, updateModelDTO.gameEntities), updateModelDTO.state))
   }
 
-  /**
-   * Recupera i messaggi ricevuti dalla WebSocket e li passa al gestore di tali messaggi
-   * @param message il messaggio ricevuto sulla WebSocket
-   */
   private def handleWebSocketMessage(message: String): Unit = _webSocketRunnable.addMessage(message)
 }
