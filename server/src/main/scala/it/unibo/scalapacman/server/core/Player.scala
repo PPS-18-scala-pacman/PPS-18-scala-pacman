@@ -107,9 +107,10 @@ class Player(setup: Setup) {
 
   /**
    * Parsing Comando del client
+   *
    * @param clientCommand comando da parsare
-   * @param actRef self
-   * @return EngineCommand corrispondente
+   * @param actRef        self
+   * @return              EngineCommand corrispondente
    */
   private def parseClientCommand(clientCommand: Command, actRef: ActorRef[Engine.UpdateCommand]): Option[Engine.EngineCommand] = clientCommand match {
     case Command(CommandTypeHolder(CommandType.PAUSE), None) => Some(Engine.Pause())
@@ -121,9 +122,10 @@ class Player(setup: Setup) {
 
   /**
    * Paseing di un Comando di movimento
+   *
    * @param clientMoveCommand comando di movimento da parsare
-   * @param actRef self
-   * @return EngineCommand corrispondente
+   * @param actRef            self
+   * @return                  EngineCommand corrispondente
    */
   private def parseClientMoveCommand(clientMoveCommand: MoveCommandTypeHolder, actRef: ActorRef[UpdateCommand]): Option[Engine.EngineCommand] =
     clientMoveCommand match {

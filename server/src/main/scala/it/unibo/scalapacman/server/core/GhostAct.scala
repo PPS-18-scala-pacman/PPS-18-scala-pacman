@@ -47,9 +47,10 @@ private class GhostAct(setup: Setup) {
 
   /**
    * Elabora lo stato corrente della partita per definire le future mosse del fantasma
-   * @param model modello di gioco attuale
-   * @param myModel modello dell'attore
-   * @return Behavior futuro
+   *
+   * @param model    modello di gioco attuale
+   * @param myModel  modello dell'attore
+   * @return         Behavior futuro
    */
   private def handleEngineUpdate(model: UpdateModelDTO, myModel: Model): Behavior[Engine.UpdateCommand] ={
     setup.context.log.debug("Ricevuto update: " + model)

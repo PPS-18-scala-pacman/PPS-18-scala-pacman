@@ -93,9 +93,10 @@ private class Game(setup: Setup) {
   /**
    * funzione di utility per aggiungere la configurazione di gestione segnali di errore degli attori figli al
    * Behavior futuro
+   *
    * @param recBe receiveBehavior
    * @param model modello del Game
-   * @return Behavior futuro
+   * @return      Behavior futuro
    */
   private def prepareBehavior(recBe: Model => Behaviors.Receive[Game.GameCommand],
                               model: Model): Behavior[Game.GameCommand] =

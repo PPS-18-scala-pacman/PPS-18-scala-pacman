@@ -165,8 +165,9 @@ private class Engine(setup: Setup) {
 
   /**
    * Crea il dto contentente lo stato della partita a partire dal modello di gioco
-   * @param model modello contenente lo stato corrente del gioco
-   * @return dto per aggiornamento osservatori
+   *
+   * @param model  modello contenente lo stato corrente del gioco
+   * @return       dto per aggiornamento osservatori
    */
   private def elaborateUpdateModel(model: EngineModel): UpdateModelDTO = {
 
@@ -242,11 +243,12 @@ private class Engine(setup: Setup) {
 
   /**
    * Gestione aggiornamento direzione
-   * @param model modello corrente
-   * @param actRef attore coinvolto
-   * @param dir nuova direzione
+   *
+   * @param model   modello corrente
+   * @param actRef  attore coinvolto
+   * @param dir     nuova direzione
    * @param routine meotdo per creazione prossimo Behavior
-   * @return Behavior futuro
+   * @return        Behavior futuro
    */
   private def updateDesDir(model:EngineModel,
                            actRef:ActorRef[UpdateCommand],
