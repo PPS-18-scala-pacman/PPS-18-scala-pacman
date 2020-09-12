@@ -1,7 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ScalaCompilerConfiguration">
-    <profile name="Gradle 2" modules="scalapacman.client.main,scalapacman.client.test,scalapacman.common.main,scalapacman.common.test,scalapacman.main,scalapacman.pacman-lib.main,scalapacman.pacman-lib.test,scalapacman.server.main,scalapacman.server.test,scalapacman.test">
+    <profile name="Gradle 1" modules="scalapacman.client.main,scalapacman.client.test,scalapacman.common.main,scalapacman.common.test,scalapacman.main,scalapacman.pacman-lib.main,scalapacman.pacman-lib.test,scalapacman.server.main,scalapacman.server.test,scalapacman.test">
+      <option name="postfixOps" value="true" />
+      <option name="implicitConversions" value="true" />
+      <option name="postfixOps" value="true" />
       <option name="deprecationWarnings" value="true" />
       <option name="uncheckedWarnings" value="true" />
       <parameters>
