@@ -9,9 +9,19 @@ import it.unibo.scalapacman.lib.model.Dot.{ENERGIZER_DOT, SMALL_DOT}
 import it.unibo.scalapacman.lib.model.GhostType.GhostType
 import it.unibo.scalapacman.lib.model.Tile.{GhostSpawn, Track, TrackSafe, Wall}
 
+/**
+ * Contiene funzioni di utility per la rappresentazione dell'oggetto Map di Pacman-lib
+ * nel formato che viene utilizzato dalla view per mostrarla a video
+ */
 object PacmanMap {
   type PacmanMap = List[List[String]]
 
+  /**
+   * Ritorna la mappa nella versione che sarà utilizzata poi dalla view, compresa la presenza dei personaggi
+   * @param map la mappa attuale
+   * @param gameEntities le informazioni della posizione e dello stato dei personaggi
+   * @return la mappa convertita arricchita dei personaggi
+   */
   def createWithCharacters(map: Map, gameEntities: Set[GameEntityDTO]): PacmanMap = {
     var pacmanMap: PacmanMap = toPacmanMap(map)
     implicit val mapRef: Map = map
@@ -28,6 +38,11 @@ object PacmanMap {
     pacmanMap
   }
 
+  /**
+   * Trasforma la mappa della Pacman-lib da una matrice di Tile ad una matrice di String
+   * @param map la mappa da convertire
+   * @return la mappa convertita
+   */
   def toPacmanMap(map: Map): PacmanMap = map.tiles map (row => row map {
     case Wall() => ElementsCode.WALL_CODE
     case GhostSpawn() | TrackSafe(None) | Track(None) => ElementsCode.EMPTY_SPACE_CODE
