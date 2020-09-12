@@ -8,11 +8,12 @@ import javax.swing.{ActionMap, InputMap, KeyStroke}
 
 object UserInput {
   /**
-   * Imposta
+   * Associa ad ogni tasto della configurazione attuale il relativo comportamento, eseguendo
+   * l'accoppiamento sulla InputMap e l'ActionMap del componente da configurare
    *
-   * @param im  input map del componente da configurare
-   * @param am  action map del componente da configurare
-   * @param keyMap  binding map da utilizzare per configurare la input map e la action map
+   * @param im input map del componente da configurare
+   * @param am action map del componente da configurare
+   * @param keyMap configurazione tasti da utilizzare per configurare la input map e la action map
    */
   def setupUserInput(im: InputMap, am: ActionMap, keyMap: KeyMap)(implicit controller: Controller): Unit = {
     im.clear()

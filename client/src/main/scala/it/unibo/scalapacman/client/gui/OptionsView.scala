@@ -13,6 +13,13 @@ object OptionsView {
   def apply()(implicit controller: Controller, viewChanger: ViewChanger): OptionsView = new OptionsView()
 }
 
+/**
+ * Schermata di configurazione dei comandi di gioco, da qui l'utente può modificare i tasti utilizzati
+ * per controllare Pacman durante il gioco e il tasto per richiedere la pausa/ripresa del gioco.
+ *
+ * @param controller il riferimento al componente Controller
+ * @param viewChanger il riferimento al componente che gestisce il cambio schermata
+ */
 class OptionsView()(implicit controller: Controller, viewChanger: ViewChanger) extends PanelImpl {
   private val TITLE_LABEL: String = "Imposta tasti"
   private val SAVE_BUTTON_LABEL: String = "Salva"
@@ -106,6 +113,13 @@ class OptionsView()(implicit controller: Controller, viewChanger: ViewChanger) e
   add(keyBindingPanel, BorderLayout.CENTER)
   add(buttonsPanel, BorderLayout.PAGE_END)
 
+  /**
+   * Definisce il comportamento delle JTextField quando un tasto viene premuto dentro ad esse
+   *
+   * @param updateTextField funzione per aggiornare la JTextField con la rappresentazione testuale del tasto
+   * @param updateKeyCode funzione per aggiornare la mappa delle modifiche della configurazione dei tasti
+   * @return
+   */
   private def setKeyTextFieldKeyListener(updateTextField: Int => Unit, updateKeyCode: Int => Unit): KeyListener = new KeyListener {
     override def keyTyped(keyEvent: KeyEvent): Unit = Unit
 
@@ -117,6 +131,11 @@ class OptionsView()(implicit controller: Controller, viewChanger: ViewChanger) e
     }
   }
 
+  /**
+   * Aggiorna le JTextField con l'attuale configurazione dei tasti
+   *
+   * @param keyMap l'attuale configurazione dei tasti
+   */
   private def updateTextFields(keyMap: KeyMap): Unit = {
     updateTextField(upTextField)(keyMap.up)
     updateTextField(downTextField)(keyMap.down)
@@ -125,15 +144,38 @@ class OptionsView()(implicit controller: Controller, viewChanger: ViewChanger) e
     updateTextField(pauseTextField)(keyMap.pause)
   }
 
+  /**
+   * Aggiorna il testo della JTextField con la rappresentazione testuale del tasto
+   *
+   * @param keyTextField la JTextField da aggiornare
+   * @param keyCode codice del nuovo tasto impostato
+   */
   private def updateTextField(keyTextField: JTextField)(keyCode: Int): Unit = keyTextField setText KeyEvent.getKeyText(keyCode)
 
+  /**
+   * Aggiorna la mappa di configurazione dei comandi
+   *
+   * @param keyIdentifier il comando da aggiornare
+   * @param keyCode codice del nuovo tasto impostato
+   */
   private def updateKeyMapMap(keyIdentifier: String)(keyCode: Int): Unit = keyMapMap = keyMapMap + (keyIdentifier -> keyCode)
 
+  /**
+   * Informa il controller dell'intenzione dell'utente di voler salvare una nuova configurazione dei tasti
+   *
+   * @param keyMap la nuova configurazione dei tasti
+   */
   private def saveKeyMap(keyMap: KeyMap): Unit = {
     controller.handleAction(SAVE_KEY_MAP, Some(keyMap))
     resetTextFields()
   }
 
+  /**
+   * Genera la mappa locale usata per tracciare le modifiche della configurazione dei tasti
+   *
+   * @param keyMap l'attuale configurazione dei tasti
+   * @return la mappa generata
+   */
   private def createKeyMapMap(keyMap: KeyMap): Map[String, Int] = Map(
     upIdentifier -> keyMap.up,
     downIdentifier -> keyMap.down,
@@ -142,15 +184,23 @@ class OptionsView()(implicit controller: Controller, viewChanger: ViewChanger) e
     pauseIdentifier -> keyMap.pause,
   )
 
+  /** Torna al menù */
   private def goBack(): Unit = {
     resetTextFields()
     viewChanger.changeView(MENU)
   }
 
+  /**
+   * Informa il controller dell'intenzione dell'utente di voler riportare
+   * la configurazione dei tasti al valore di default
+   */
   private def resetKeyMap(): Unit = {
     controller.handleAction(RESET_KEY_MAP, None)
     resetTextFields()
   }
 
+  /**
+   * Reimposta le JTextField con il valore di default della configurazione dei tasti
+   */
   private def resetTextFields(): Unit = updateTextFields(controller.model.keyMap)
 }

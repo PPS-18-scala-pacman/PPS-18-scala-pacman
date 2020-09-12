@@ -10,6 +10,12 @@ object StatsView {
   def apply()(implicit controller: Controller, viewChanger: ViewChanger): StatsView = new StatsView()
 }
 
+/**
+ * Schermata di visualizzazione statistiche
+ *
+ * @param controller il riferimento al componente Controller
+ * @param viewChanger il riferimento al componente che gestisce il cambio schermata
+ */
 class StatsView(implicit controller: Controller, viewChanger: ViewChanger) extends PanelImpl {
   private val TITLE_LABEL: String = "Stats View"
   private val BACK_BUTTON_LABEL: String = "Indietro"

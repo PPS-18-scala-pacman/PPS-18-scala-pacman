@@ -14,6 +14,11 @@ import grizzled.slf4j.Logging
 
 import scala.concurrent.{ExecutionContextExecutor, Future}
 
+/**
+ * Interfaccia per la gestione della comunicazione con il server
+ * Implementa le chiamate per inizio/fine partita
+ * e gestione canale di comunicazione per aggiornamenti di gioco
+ */
 trait PacmanRestClient extends Logging { this: HttpClient =>
   implicit def classicActorSystem: ActorSystem
   implicit def executionContext: ExecutionContextExecutor
@@ -22,6 +27,10 @@ trait PacmanRestClient extends Logging { this: HttpClient =>
 
   var _webSocketSpeaker: Option[ActorRef] = None
 
+  /**
+   * Invia richiesta nuova partita
+   * @return l'id della nuova partita
+   */
   def startGame: Future[String] = {
     val request = Post(PacmanRestClient.GAMES_URL)
     sendRequest(request) flatMap { response =>
@@ -35,6 +44,11 @@ trait PacmanRestClient extends Logging { this: HttpClient =>
     }
   }
 
+  /**
+   * Invia richiesta termine partita
+   * @param gameId id della partita da terminare
+   * @return la risposta del server
+   */
   def endGame(gameId: String): Future[String] = {
     val request = Delete(s"${PacmanRestClient.GAMES_URL}/$gameId") // scalastyle:ignore multiple.string.literals
     sendRequest(request) flatMap { response =>
@@ -45,6 +59,13 @@ trait PacmanRestClient extends Logging { this: HttpClient =>
     }
   }
 
+  /**
+   * Apre il canale di comunicazione WebSocket per ricezione aggiornamenti di gioco.
+   * Salva il riferimento dell'attore che gestisce il Source per poter inviare informazioni al server
+   * tramite la WebSocket
+   * @param gameId id della partita
+   * @param serverMessageHandler funzione a cui vengono passati i messaggi del server
+   */
   // Source: https://stackoverflow.com/questions/40345697/how-to-use-akka-http-client-websocket-send-message
   def openWS(gameId: String, serverMessageHandler: String => Unit): Unit = {
     val request = WebSocketRequest(s"${PacmanRestClient.GAMES_WS_URL}/$gameId")
@@ -90,9 +111,16 @@ trait PacmanRestClient extends Logging { this: HttpClient =>
     closed.foreach(thing => debug(s"WebSocket chiusa: $thing"))
   }
 
+  /**
+   * Invia un messaggio al server tramite la WebSocket
+   * @param message il messaggio da inviare al server
+   */
   def sendOverWebSocket(message: String): Unit =
     if(_webSocketSpeaker.isDefined) _webSocketSpeaker.get ! TextMessage.Strict(message)
 
+  /**
+   * Chiude la WebSocket e cancella il riferimento all'attore
+   */
   def closeWebSocket(): Unit =
     if(_webSocketSpeaker.isDefined) _webSocketSpeaker.get ! Done; _webSocketSpeaker = None
 
@@ -102,6 +130,12 @@ trait PacmanRestClient extends Logging { this: HttpClient =>
 }
 
 case object PacmanRestClient {
+  /**
+   * Indirizzo per creazione/termine partita
+   */
   val GAMES_URL = "http://localhost:8080/games"
+  /**
+   * Indirizzo per canale WebSocket
+   */
   val GAMES_WS_URL = "ws://localhost:8080/connection-management/games"
 }
