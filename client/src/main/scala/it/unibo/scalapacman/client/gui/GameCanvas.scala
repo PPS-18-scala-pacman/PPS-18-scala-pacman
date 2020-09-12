@@ -11,6 +11,11 @@ object GameCanvas {
   type CompositeMessage = Map[(Int, Int), (String, Option[ElementStyle])]
 }
 
+/**
+ * Oggetto sul quale viene disegnata la mappa del gioco, utilizzato in PlayView.
+ * Implementato come thread separato per non pesare sull'esecuzione del thread principale
+ * con il rischio di limitare l'esperienza dell'utente durante l'uso dell'interfaccia
+ */
 class GameCanvas extends JPanel with Runnable with Logging {
 
   private var text: Map[(Int, Int), (String, Option[ElementStyle])] = Map.empty
@@ -21,8 +26,24 @@ class GameCanvas extends JPanel with Runnable with Logging {
   setPreferredSize(new Dimension(WIDTH, HEIGHT))
   setIgnoreRepaint(true)
 
+  /**
+   * Imposta un messaggio da mostrare sul canvas
+   *
+   * @param message il messaggio da mostrare
+   */
   def setText(message: String): Unit = setText(Map((0, 0) -> (message, None)))
 
+  /**
+   * Imposta il testo da disegnare sul canvas.
+   * Le informazioni all'interno dell'oggetto messages fanno riferimento
+   * alla posizione dove disegnare ogni singolo carattere accompagnate
+   * dall'eventuale stile da assegnarli.
+   *
+   * Se il thread attuale non è in funzione (running è a false), allora il messaggio
+   * viene stampato immediatamente, altrimenti viene rispettata l'attesa del semaforo
+   *
+   * @param messages il messaggio da mostrare
+   */
   def setText(messages: CompositeMessage): Unit = {
     text = messages
     if (!running) repaint()
@@ -30,7 +51,9 @@ class GameCanvas extends JPanel with Runnable with Logging {
     if (pleaseRender.availablePermits() == 0) pleaseRender.release()
   }
 
-  // Inizia il thread
+  /**
+   * Attiva l'esecuzione del thread per disegnare sul canvas
+   */
   def start(): Unit =
     if (!running) {
       running = true
@@ -39,7 +62,9 @@ class GameCanvas extends JPanel with Runnable with Logging {
       debug("Game thread partito")
     }
 
-  // Termina il thread
+  /**
+   * Termina il thread per diegnare sul canvas
+   */
   def stop(): Unit = {
     if (running) {
       running = false
@@ -65,7 +90,6 @@ class GameCanvas extends JPanel with Runnable with Logging {
   def run(): Unit = {
     pleaseRender.tryAcquire()
     while (running) {
-//      debug("Ask repaint " + text.size)
       val that = this
       SwingUtilities.invokeAndWait(() => that.repaint())
       pleaseRender.acquire()
@@ -77,9 +101,8 @@ class GameCanvas extends JPanel with Runnable with Logging {
 
     val graphics = g.create()
     val textToPaint = text
-//    debug("painting " + textToPaint.size)
 
-    // Qui è dove inizia il rendering
+    // Rendering del valore attuale di text sul canvas
     val metrics = graphics.getFontMetrics()
     for ((indexes, v) <- textToPaint) {
       graphics.setColor(v._2.map(_.foregroundColor).getOrElse(Color.white))
