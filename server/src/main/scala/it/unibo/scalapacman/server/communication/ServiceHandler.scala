@@ -17,6 +17,9 @@ import it.unibo.scalapacman.server.core.{Game, Master}
 import it.unibo.scalapacman.server.config.Settings
 import it.unibo.scalapacman.server.config.Settings.askTimeout
 
+/**
+ * Attore incaricato di gestire le richieste in arrivo dal Client
+ */
 object ServiceHandler {
 
   private case class ListingResponse(listing: Receptionist.Listing) extends ServiceRoutes.RoutesCommand
@@ -38,6 +41,9 @@ private class ServiceHandler(setup: Setup) {
   val receptionistAdapter: ActorRef[Receptionist.Listing] = setup.context.messageAdapter[Receptionist.Listing](ListingResponse)
   val respondCreateGameAdapter: ActorRef[Master.GameCreated] = setup.context.messageAdapter(WrapRespCreateGame)
 
+  /**
+   * Behaviour principale
+   */
   def mainRoutine(): Behavior[ServiceRoutes.RoutesCommand] =
     Behaviors.receiveMessage {
       case ServiceRoutes.DeleteGame(gameId) =>
@@ -53,6 +59,9 @@ private class ServiceHandler(setup: Setup) {
         craeteGameConnectionEx(replyTo, key)
     }
 
+  /**
+   * Behaviour dedicato alla gestione della richiesta di cancellazione di una partita
+   */
   def deleteGameEx(key: ServiceKey[Game.GameCommand]): Behavior[ServiceRoutes.RoutesCommand] =
     Behaviors.withStash(Settings.stashSize) { buffer =>
       Behaviors.receiveMessage {
@@ -70,6 +79,9 @@ private class ServiceHandler(setup: Setup) {
       }
     }
 
+  /**
+   * Behaviour dedicato alla gestione della richiesta di creazione di una partita
+   */
   def createGameEx(replyTo: ActorRef[ServiceRoutes.ResponseCreateGame],
                    key: ServiceKey[Master.MasterCommand]): Behavior[ServiceRoutes.RoutesCommand] =
     Behaviors.withStash(Settings.stashSize) { buffer =>
@@ -91,6 +103,9 @@ private class ServiceHandler(setup: Setup) {
       }
     }
 
+  /**
+   * Behaviour dedicato alla gestione della richiesta di creazione di una connessione ad una partita avviata
+   */
   def craeteGameConnectionEx(replyTo: ActorRef[ServiceRoutes.ResponseConnGame],
                              key: ServiceKey[Game.GameCommand]): Behavior[ServiceRoutes.RoutesCommand] =
     Behaviors.withStash(Settings.stashSize) { buffer =>

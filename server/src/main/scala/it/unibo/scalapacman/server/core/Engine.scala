@@ -22,8 +22,17 @@ import it.unibo.scalapacman.server.util.{RecoveryHelper, RegistrationHelper}
 
 import scala.concurrent.duration.FiniteDuration
 
+/**
+ * Attore che si occupa, per ogni partita, di effettuare l’elaborazione dello stato di avanzamento del gioco.
+ * Dopo una fase preliminare di registrazione degli attori Player e GhostAct effettua periodicamente le dovute
+ * elaborazioni e in seguito provvede a comunicare lo stato aggiornato agli attori coinvolti.
+ * Oltre a questo è provvisto di una logica di recupero in caso di guasto ed oltre ad essere in grado di
+ * ricevere le richieste, da parte degli attori partecipanti, di modifica della propria direzione, è anche
+ * dotato della capacità di sospendere temporaneamente la sessione di gioco e di riprenderla successivamente.
+ */
 object Engine {
 
+  // Messaggi gestiti dall'attore
   sealed trait EngineCommand
 
   case class WakeUp() extends EngineCommand
@@ -36,6 +45,7 @@ object Engine {
   case class RegisterGhost(actor: ActorRef[UpdateCommand], ghostType: GhostType) extends EngineCommand
   case class RegisterPlayer(actor: ActorRef[UpdateCommand]) extends EngineCommand
 
+  // Messaggi inviati agli osservatori
   sealed trait UpdateCommand
   case class UpdateMsg(model: UpdateModelDTO) extends UpdateCommand
 
@@ -49,6 +59,9 @@ object Engine {
 
 private class Engine(setup: Setup) {
 
+  /**
+   * Behavior iniziale, gestisce la prima registrazione da parte degli attori partecipanti alla partita
+   */
   private def idleRoutine(model: RegistrationModel): Behavior[EngineCommand] =
     Behaviors.receiveMessage {
 
@@ -63,6 +76,9 @@ private class Engine(setup: Setup) {
       case _ => unhandledMsg()
     }
 
+  /**
+   * Behavior predisposto alla gestione di eventuali guasti da parte degli attori che partecipano alla partita
+   */
   private def recoveryRoutine(regModel: RegistrationModel, engModel:EngineModel): Behavior[EngineCommand] =
     Behaviors.receiveMessage {
       case RegisterGhost(actor, ghostType) =>
@@ -80,6 +96,10 @@ private class Engine(setup: Setup) {
       case _ => unhandledMsg()
     }
 
+  /**
+   * Behavior utilizzato nel caso in cui il gioco venga messo in pausa, esegue l'invio di aggiornamenti
+   * senza procedere all'aggiornamento dello stato della partita
+   */
   private def pauseRoutine(model: EngineModel): Behavior[EngineCommand] = {
     Behaviors.withTimers { timers =>
       timers.startTimerWithFixedDelay(WakeUp(), WakeUp(), setup.pauseRefreshRate)
@@ -101,6 +121,10 @@ private class Engine(setup: Setup) {
     }
   }
 
+  /**
+   * Behavior utilizzato durante il corso della partita, effettua il ricalcolo periodico dello stato della
+   * partita e si occupa di aggiornare gli osservatori, gestisce le richieste di pausa e cambio direzione
+   */
   private def mainRoutine(model: EngineModel): Behavior[EngineCommand] =
     Behaviors.withTimers { timers =>
       timers.startTimerWithFixedDelay(WakeUp(), WakeUp(), setup.gameRefreshRate)
@@ -139,6 +163,11 @@ private class Engine(setup: Setup) {
     recoveryRoutine(RecoveryHelper.createRecoveryModel(charType, engineModel), engineModel)
   }
 
+  /**
+   * Crea il dto contentente lo stato della partita a partire dal modello di gioco
+   * @param model modello contenente lo stato corrente del gioco
+   * @return dto per aggiornamento osservatori
+   */
   private def elaborateUpdateModel(model: EngineModel): UpdateModelDTO = {
 
     val gameEntities: Set[GameEntityDTO] = model.players.toSet.map(gameParticipantToGameEntity)
@@ -165,6 +194,9 @@ private class Engine(setup: Setup) {
   private def updateWatcher(model: EngineModel): Unit =
     model.players.toSet.foreach( _.actRef ! UpdateMsg(elaborateUpdateModel(model)) )
 
+  /**
+   * Calcolo del nuovo stato di gioco a partire dal precedente
+   */
   private def updateGame(oldModel: EngineModel) : Behavior[EngineCommand] = {
     setup.context.log.debug("updateGame id: " + setup.gameId)
     implicit val map: Map = oldModel.map
@@ -208,6 +240,14 @@ private class Engine(setup: Setup) {
     participant.copy(character = newChar)
   }
 
+  /**
+   * Gestione aggiornamento direzione
+   * @param model modello corrente
+   * @param actRef attore coinvolto
+   * @param dir nuova direzione
+   * @param routine meotdo per creazione prossimo Behavior
+   * @return Behavior futuro
+   */
   private def updateDesDir(model:EngineModel,
                            actRef:ActorRef[UpdateCommand],
                            dir:Option[Direction],
@@ -234,6 +274,9 @@ private class Engine(setup: Setup) {
                                routine: EngineModel => Behavior[EngineCommand]): Behavior[EngineCommand] =
     updateDesDir(model, actRef, Some(move), routine)
 
+  /**
+   * Procedura per messaggi non gestiti nel Behaviour corrente
+   */
   private def unhandledMsg(): Behavior[EngineCommand] = {
     setup.context.log.warn("Ricevuto messaggio non gestito")
     Behaviors.same

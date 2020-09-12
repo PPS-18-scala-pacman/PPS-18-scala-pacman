@@ -12,8 +12,15 @@ import it.unibo.scalapacman.server.core.Game.{CloseCommand, GameCommand, Model, 
 import it.unibo.scalapacman.server.core.Player.{PlayerCommand, PlayerRegistration, RegistrationRejected}
 import it.unibo.scalapacman.server.config.Settings
 
+/**
+ * Attore che si occupa di predisporre le risorse necessarie al regolare svolgersi di una sessione di gioco,
+ * si occupa di generare un attore Engine, Player e GhostAct, per ogni fantasma esistente.
+ * Inoltre svolge un ruolo di primaria importanza nel garantire un elevato livello di fault-tolerance, svolge
+ * un'attività di monitoraggio dei propri attori figli grazie al quale è in grado rilevare eventuali anomalie.
+ */
 object Game {
 
+  // Messaggi gestiti dall'attore
   sealed trait GameCommand
   case class CloseCommand() extends GameCommand
   case class RegisterPlayer(replyTo: ActorRef[PlayerRegistration], source: ActorRef[Message]) extends GameCommand
@@ -33,6 +40,7 @@ object Game {
         context.system.receptionist ! Receptionist.Register(gameServiceKey, context.self)
       }
 
+      // inizializzazione attori partecipanti
       val engine = context.spawn(Engine(id, Settings.levelDifficulty), "EngineActor")
       val player = context.spawn(Player(id, engine), "PlayerActor")
 
@@ -50,6 +58,9 @@ object Game {
 
 private class Game(setup: Setup) {
 
+  /**
+   * Behavior iniziale di attesa giocatore pacman
+   */
   private def initRoutine(model: Model): Behaviors.Receive[Game.GameCommand] =
     Behaviors.receiveMessage {
       case CloseCommand() => close()
@@ -59,6 +70,9 @@ private class Game(setup: Setup) {
         prepareBehavior(coreRoutine, model)
     }
 
+  /**
+   * Behavior principale
+   */
   private def coreRoutine(model: Model): Behaviors.Receive[Game.GameCommand] =
     Behaviors.receiveMessage {
       case CloseCommand() => close()
@@ -76,6 +90,13 @@ private class Game(setup: Setup) {
     prepareBehavior(initRoutine, model)
   }
 
+  /**
+   * funzione di utility per aggiungere la configurazione di gestione segnali di errore degli attori figli al
+   * Behavior futuro
+   * @param recBe receiveBehavior
+   * @param model modello del Game
+   * @return Behavior futuro
+   */
   private def prepareBehavior(recBe: Model => Behaviors.Receive[Game.GameCommand],
                               model: Model): Behavior[Game.GameCommand] =
     recBe(model).receiveSignal {

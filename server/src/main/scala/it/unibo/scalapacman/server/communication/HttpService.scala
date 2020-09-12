@@ -11,6 +11,9 @@ import it.unibo.scalapacman.server.communication.HttpService.{Message, Setup, St
 import scala.concurrent.Future
 import scala.util.{Failure, Success}
 
+/**
+ * Attore incaricato di avviare un nuovo server HTTP sull'endpoint richiesto per gestire le richieste in arrivo
+ */
 object HttpService {
 
   sealed trait Message
@@ -47,7 +50,9 @@ object HttpService {
 }
 
 private class HttpService(setup: Setup) {
-
+  /**
+   * Behavior principale
+   */
   def running(binding: ServerBinding): Behavior[Message] =
     Behaviors.receiveMessagePartial[Message] {
       case Stop() =>
@@ -62,6 +67,9 @@ private class HttpService(setup: Setup) {
         Behaviors.same
     }
 
+  /**
+   * Behavior di avvio
+   */
   def starting(wasStopped: Boolean): Behaviors.Receive[Message] =
     Behaviors.receiveMessage[Message] {
       case StartFailed(cause) =>

@@ -12,17 +12,24 @@ import it.unibo.scalapacman.server.config.Settings.askTimeout
 
 import scala.concurrent.Future
 
+/**
+ * Elemento core del server HTTP definisce l'insieme dei servizi esposti inoltre si occupa smistare le
+ * richieste in arrivo all'handler
+ */
 object ServiceRoutes {
 
+  // Messaggi di gestione richieste ricevute
   trait RoutesCommand
   case class DeleteGame(gameId: String) extends RoutesCommand
   case class CreateGame(replyTo: ActorRef[ResponseCreateGame]) extends RoutesCommand
   case class CreateConnectionGame(replyTo: ActorRef[ResponseConnGame], gameId: String) extends RoutesCommand
 
+  // Messaggi di risposta per creazione nuova partita
   sealed trait ResponseCreateGame
   case class SuccessCrG(gameId: String) extends ResponseCreateGame
   case class FailureCrG(reason: String) extends ResponseCreateGame
 
+  // Messaggi di risposta per richiesta nuova connessione
   sealed trait ResponseConnGame
   case class SuccessConG(flow: Flow[Message, Message, Any]) extends ResponseConnGame
   case class FailureConG(reason: String) extends ResponseConnGame
