@@ -12,6 +12,10 @@ import it.unibo.scalapacman.server.core.GhostAct.{Model, Setup}
 import it.unibo.scalapacman.server.model.MoveDirection.directionToMoveDirection
 import it.unibo.scalapacman.server.model.MoveDirection.MoveDirection
 
+/**
+ * Attore che rappresenta un fantasma durante il corso della partita è predisposto per ricevere le informazioni
+ * sull’andamento del gioco e provvede, in base ad esse, all’elaborazione dei movimenti del fantasma che impersona
+ */
 object GhostAct {
 
   private case class Setup(gameId: String,
@@ -32,12 +36,22 @@ private class GhostAct(setup: Setup) {
   setup.context.log.info(s"GhostAct avviato, fantasma: ${setup.ghostType}")
   setup.engine ! Engine.RegisterGhost(setup.context.self, setup.ghostType)
 
+  /**
+   * Behavior principale
+   */
   private def coreRoutine(model: Model): Behaviors.Receive[Engine.UpdateCommand] =
     Behaviors.receiveMessage {
       case Engine.UpdateMsg(newModel) => handleEngineUpdate(newModel, model)
       case _ => Behaviors.same
     }
 
+  /**
+   * Elabora lo stato corrente della partita per definire le future mosse del fantasma
+   *
+   * @param model    modello di gioco attuale
+   * @param myModel  modello dell'attore
+   * @return         Behavior futuro
+   */
   private def handleEngineUpdate(model: UpdateModelDTO, myModel: Model): Behavior[Engine.UpdateCommand] ={
     setup.context.log.debug("Ricevuto update: " + model)
     val gameState: GameState = model.state

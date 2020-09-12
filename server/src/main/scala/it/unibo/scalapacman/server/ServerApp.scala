@@ -6,6 +6,9 @@ import it.unibo.scalapacman.server.communication.HttpService
 import it.unibo.scalapacman.server.core.Master
 import it.unibo.scalapacman.server.config.{ConfLoader, Settings}
 
+/**
+ * Entità per avvio del server
+ */
 object Bootstrap {
   def apply(): Behavior[String] = Behaviors.setup { context =>
     context.spawn(HttpService(Settings.hostAddr, Settings.port), "HttpService")

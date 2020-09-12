@@ -10,14 +10,20 @@ import it.unibo.scalapacman.server.core.Engine.UpdateCommand
 import it.unibo.scalapacman.server.core.Player.{PlayerCommand, RegisterUser, RegistrationAccepted, RegistrationRejected, Setup, WrapRespMessage, WrapRespUpdate}
 import it.unibo.scalapacman.server.model.MoveDirection
 
+/**
+ * Attore che rappresenta un giocatore, scambia informazioni col Client, in modo tale da comunicare al sistema
+ * i comandi ricevuti durante la sessione di gioco e di inviare lo stato aggiornato della partita
+ */
 object Player {
 
+  // Messaggi gestiti dall'attore
   sealed trait PlayerCommand
   case class RegisterUser(replyTo: ActorRef[PlayerRegistration], sourceAct: ActorRef[Message]) extends PlayerCommand
 
   case class WrapRespMessage(response: ConnectionMsg) extends PlayerCommand
   case class WrapRespUpdate(response: Engine.UpdateCommand) extends PlayerCommand
 
+  // Messaggi di notifica registrazione
   sealed trait PlayerRegistration
   case class RegistrationAccepted(messageHandler: ActorRef[ConnectionMsg]) extends PlayerRegistration
   case class RegistrationRejected(cause: String) extends PlayerRegistration
@@ -37,6 +43,9 @@ class Player(setup: Setup) {
   val clientMsgAdapter: ActorRef[ConnectionMsg] = setup.context.messageAdapter(WrapRespMessage)
   val updateMsgAdapter: ActorRef[Engine.UpdateCommand] = setup.context.messageAdapter(WrapRespUpdate)
 
+  /**
+   * Behavior iniziale di attesa richiesta connessione
+   */
   private def initRoutine(): Behavior[PlayerCommand] =
     Behaviors.receiveMessage {
       case RegisterUser(replyTo, sourceAct) =>
@@ -48,6 +57,9 @@ class Player(setup: Setup) {
         Behaviors.same
     }
 
+  /**
+   * Behavior di attesa instauramento connessione
+   */
   private def setUpConnectionRoutine(sourceAct: ActorRef[Message]): Behavior[PlayerCommand] =
     Behaviors.receiveMessage {
       case RegisterUser(replyTo, _) =>
@@ -62,6 +74,9 @@ class Player(setup: Setup) {
         Behaviors.same
     }
 
+  /**
+   * Behavior principale usato durante il corso della sessione di gioco
+   */
   private def mainRoutine(sourceAct: ActorRef[Message]): Behavior[PlayerCommand] =
     Behaviors.receiveMessage {
       case RegisterUser(replyTo, _) =>
@@ -90,6 +105,13 @@ class Player(setup: Setup) {
         Behaviors.same
     }
 
+  /**
+   * Parsing Comando del client
+   *
+   * @param clientCommand comando da parsare
+   * @param actRef        self
+   * @return              EngineCommand corrispondente
+   */
   private def parseClientCommand(clientCommand: Command, actRef: ActorRef[Engine.UpdateCommand]): Option[Engine.EngineCommand] = clientCommand match {
     case Command(CommandTypeHolder(CommandType.PAUSE), None) => Some(Engine.Pause())
     case Command(CommandTypeHolder(CommandType.RESUME), None) => Some(Engine.Resume())
@@ -98,6 +120,13 @@ class Player(setup: Setup) {
     case _ => None
   }
 
+  /**
+   * Paseing di un Comando di movimento
+   *
+   * @param clientMoveCommand comando di movimento da parsare
+   * @param actRef            self
+   * @return                  EngineCommand corrispondente
+   */
   private def parseClientMoveCommand(clientMoveCommand: MoveCommandTypeHolder, actRef: ActorRef[UpdateCommand]): Option[Engine.EngineCommand] =
     clientMoveCommand match {
       case MoveCommandTypeHolder(MoveCommandType.UP) =>

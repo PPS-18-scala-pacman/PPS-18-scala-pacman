@@ -4,11 +4,17 @@ import akka.actor.typed.receptionist.{Receptionist, ServiceKey}
 import akka.actor.typed.scaladsl.{ActorContext, Behaviors}
 import akka.actor.typed.{ActorRef, Behavior}
 
+/**
+ * Attore il cui suo scopo è di elaborare le richieste di avvio di nuove partite provvedendo a creare per
+ * ognuna di esse un nuovo attore Game.
+ */
 object Master {
 
+  // Messaggi gestiti dall'attore
   sealed trait MasterCommand
   case class CreateGame(replyTo: ActorRef[GameCreated]) extends MasterCommand
 
+  // Messaggio di notifica gioco creato
   case class GameCreated(gameId: String)
 
   private case class Setup(context: ActorContext[MasterCommand])
