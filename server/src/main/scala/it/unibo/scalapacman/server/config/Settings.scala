@@ -13,9 +13,6 @@ object Settings {
   val askDuration: FiniteDuration = 3.seconds
   implicit val askTimeout: Timeout = askDuration
 
-  val hostAddr = "0.0.0.0"
-  val port = 8080
-
   val gameRefreshRate: FiniteDuration = FiniteDuration(64, TimeUnit.MILLISECONDS)
   val pauseRefreshRate: FiniteDuration = FiniteDuration(500, TimeUnit.MILLISECONDS)
 

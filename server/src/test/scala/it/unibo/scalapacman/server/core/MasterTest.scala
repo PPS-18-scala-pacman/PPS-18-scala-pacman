@@ -8,7 +8,7 @@ import it.unibo.scalapacman.server.config.TestSettings.{awaitLowerBound, awaitUp
 import org.scalatest.wordspec.AnyWordSpecLike
 import scala.reflect.ClassTag
 
-class MasterTest extends ScalaTestWithActorTestKit(ConfLoader.config) with AnyWordSpecLike {
+class MasterTest extends ScalaTestWithActorTestKit(ConfLoader.akkaConf) with AnyWordSpecLike {
 
   private var gameCreatedProbe: TestProbe[Master.GameCreated] = _
   private var masterActor: ActorRef[Master.MasterCommand] = _
