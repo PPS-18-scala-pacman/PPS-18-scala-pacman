@@ -12,6 +12,7 @@ import akka.stream.{CompletionStrategy, OverflowStrategy}
 import akka.stream.scaladsl.{Keep, Sink, Source}
 import grizzled.slf4j.Logging
 
+import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContextExecutor, Future}
 
 /**
@@ -24,6 +25,7 @@ trait PacmanRestClient extends Logging { this: HttpClient =>
   implicit def executionContext: ExecutionContextExecutor
 
   val WS_BUFFER_SIZE: Int = 1
+  val TEXT_MESSAGE_TO_STRICT: Int = 100
 
   var _webSocketSpeaker: Option[ActorRef] = None
 
@@ -82,9 +84,10 @@ trait PacmanRestClient extends Logging { this: HttpClient =>
         OverflowStrategy.dropHead
       )
 
-    val messageSink: Sink[Message, Future[Done]] = Sink.foreach[Message] {
-      case tms: TextMessage.Strict => serverMessageHandler(tms.text)
-      case _ => Unit
+    val messageSink: Sink[Message, Future[Done]] = Sink.foreachAsync(1) {
+      case tm: TextMessage => tm.toStrict(FiniteDuration(TEXT_MESSAGE_TO_STRICT, "ms")) map { tms =>
+        serverMessageHandler(tms.text)
+      }
     }
 
     val webSocketFlow = establishWebSocket(request)

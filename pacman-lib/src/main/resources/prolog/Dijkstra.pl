@@ -45,8 +45,7 @@ neighbourhood(Graph, V, NB):-
 %
 % prune_neighboors(+ListOfVertices, +Closed, -ListOfNonClosedVertices)
 prune_neighboors([], _, []).
-prune_neighboors([H|T], Closed, NewT):-
-   H = V-_,
+prune_neighboors([V-_|T], Closed, NewT):-
    member(V-_-_, Closed), !,
    prune_neighboors(T, Closed, NewT).
 prune_neighboors([H|T], Closed, [H|NewT]):- prune_neighboors(T, Closed, NewT).
