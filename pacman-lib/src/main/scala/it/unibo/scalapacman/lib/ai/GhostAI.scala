@@ -108,4 +108,8 @@ object GhostAI {
       self.directionForTurn
     }
   }
+
+  def choosePacmanToFollow(ghost: Ghost, pacmanList: Iterable[Pacman]): Pacman = {
+    pacmanList.minBy(_.position distance ghost.position)
+  }
 }

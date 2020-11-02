@@ -56,7 +56,9 @@ private class GhostAct(setup: Setup) {
     setup.context.log.debug("Ricevuto update: " + model)
     val gameState: GameState = model.state
     val selfDTO = model.gameEntities.find(_.gameCharacterHolder.gameChar == GameCharacter.ghostTypeToGameCharacter(setup.ghostType))
-    val pacmanDTO = model.gameEntities.find(_.gameCharacterHolder.gameChar == GameCharacter.PACMAN)
+    val pacmanList = model.gameEntities
+      .filter(_.gameCharacterHolder.gameChar == GameCharacter.PACMAN)
+      .map(_.toPacman.get)
 
     if(gameState.levelState != LevelState.ONGOING) {
       setup.context.log.info("Partita terminata spegnimento")
@@ -65,11 +67,12 @@ private class GhostAct(setup: Setup) {
       setup.context.log.debug("Sono morto non posso muovermi")
       if (myModel.desMove.isDefined) setup.engine ! ChangeDirectionCur(setup.context.self)
       coreRoutine(Model(gameState, None))
-    } else if (selfDTO.isDefined && pacmanDTO.isDefined) {
+    } else if (selfDTO.isDefined && pacmanList.nonEmpty) {
       setup.context.log.debug("Inizio calcolo percorso")
 
-      val pacman = pacmanDTO.get.toPacman.get
-      val direction: Option[Direction] = GhostAI.calculateDirectionClassic(selfDTO.get.toGhost.get, pacman)
+      val self = selfDTO.get.toGhost.get
+      val pacman = GhostAI.choosePacmanToFollow(self, pacmanList)
+      val direction: Option[Direction] = GhostAI.calculateDirectionClassic(self, pacman)
       //val direction = GhostAI.desiredDirection(selfDTO.get.toGhost.get, pacmanDTO.get.toPacman.get)(prologEngine, updatedMap)
 
       if (direction.isDefined) {
