@@ -11,6 +11,7 @@ import akka.http.scaladsl.unmarshalling.Unmarshal
 import akka.stream.{CompletionStrategy, OverflowStrategy}
 import akka.stream.scaladsl.{Keep, Sink, Source}
 import grizzled.slf4j.Logging
+import it.unibo.scalapacman.client.config.ConfLoader.appConf
 
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContextExecutor, Future}
@@ -133,12 +134,15 @@ trait PacmanRestClient extends Logging { this: HttpClient =>
 }
 
 case object PacmanRestClient {
+
+  val serverURL: String = appConf.getString("server.address") + ":" +  appConf.getInt("server.port")
+
   /**
    * Indirizzo per creazione/termine partita
    */
-  val GAMES_URL = "http://localhost:8080/games"
+  val GAMES_URL = s"http://$serverURL/games"
   /**
    * Indirizzo per canale WebSocket
    */
-  val GAMES_WS_URL = "ws://localhost:8080/connection-management/games"
+  val GAMES_WS_URL = s"ws://$serverURL/connection-management/games"
 }

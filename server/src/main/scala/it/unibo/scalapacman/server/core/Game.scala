@@ -44,7 +44,7 @@ object Game {
       val engine = context.spawn(Engine(id, Settings.levelDifficulty), "EngineActor")
       val player = context.spawn(Player(id, engine), "PlayerActor")
 
-      val props  = MailboxSelector.fromConfig("server-app.ghost-mailbox")
+      val props  = MailboxSelector.fromConfig("ghost-mailbox")
       val ghosts = GhostType.values.map( gt =>
         context.spawn(GhostAct(id, engine, gt), s"${gt}Actor", props) -> gt
       ).toMap
@@ -116,7 +116,7 @@ private class Game(setup: Setup) {
         if(ghostType.isDefined) {
           setup.engine ! Engine.ActorRecovery(ghostType.get)
 
-          val props = MailboxSelector.fromConfig("server-app.ghost-mailbox")
+          val props = MailboxSelector.fromConfig("ghost-mailbox")
           val ghost = context.spawn(GhostAct(setup.id, setup.engine, ghostType.get), s"${ghostType.get}Actor", props)
           val updatedGhosts = (model.ghosts - ghostAct) + (ghost -> ghostType.get)
           prepareBehavior(recBe, model.copy(ghosts = updatedGhosts))
