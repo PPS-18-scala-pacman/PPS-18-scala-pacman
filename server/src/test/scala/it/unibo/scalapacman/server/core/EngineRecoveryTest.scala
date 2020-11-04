@@ -12,7 +12,7 @@ import it.unibo.scalapacman.server.core.Engine.{ActorRecovery, Pause, RegisterGh
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.wordspec.AnyWordSpecLike
 
-class EngineRecoveryTest extends ScalaTestWithActorTestKit(ConfLoader.config) with AnyWordSpecLike with BeforeAndAfterEach {
+class EngineRecoveryTest extends ScalaTestWithActorTestKit(ConfLoader.akkaConf) with AnyWordSpecLike with BeforeAndAfterEach {
 
   val fakeGameId = "fakeCreateGameId"
 

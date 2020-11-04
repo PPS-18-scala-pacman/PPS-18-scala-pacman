@@ -9,7 +9,7 @@ import it.unibo.scalapacman.server.config.ConfLoader
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.wordspec.AnyWordSpecLike
 
-class GhostActUpdateTest  extends ScalaTestWithActorTestKit(ConfLoader.config) with AnyWordSpecLike with BeforeAndAfterEach {
+class GhostActUpdateTest extends ScalaTestWithActorTestKit(ConfLoader.akkaConf) with AnyWordSpecLike with BeforeAndAfterEach {
 
   val fakeGameId = "fakeCreateGameId"
 
@@ -42,7 +42,7 @@ class GhostActUpdateTest  extends ScalaTestWithActorTestKit(ConfLoader.config) w
   override def beforeEach(): Unit = {
     engineProbe = createTestProbe[Engine.EngineCommand]()
 
-    val props = MailboxSelector.fromConfig("server-app.ghost-mailbox")
+    val props = MailboxSelector.fromConfig("ghost-mailbox")
     ghostActor = spawn(GhostAct(fakeGameId, engineProbe.ref, ghostTestType), props)
     engineProbe.receiveMessage()
   }

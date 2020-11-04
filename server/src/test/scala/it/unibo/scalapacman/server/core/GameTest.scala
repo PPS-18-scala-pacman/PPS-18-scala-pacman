@@ -15,7 +15,7 @@ import it.unibo.scalapacman.server.config.{ConfLoader, TestSettings}
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.wordspec.AnyWordSpecLike
 
-class GameTest extends ScalaTestWithActorTestKit(ConfLoader.config) with AnyWordSpecLike with BeforeAndAfterEach {
+class GameTest extends ScalaTestWithActorTestKit(ConfLoader.akkaConf) with AnyWordSpecLike with BeforeAndAfterEach {
 
   val fakeGameId = "TestActorGame"
 
