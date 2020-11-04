@@ -21,7 +21,7 @@ object ServiceRoutes {
   // Messaggi di gestione richieste ricevute
   trait RoutesCommand
   case class DeleteGame(gameId: String) extends RoutesCommand
-  case class CreateGame(replyTo: ActorRef[ResponseCreateGame]) extends RoutesCommand
+  case class CreateGame(replyTo: ActorRef[ResponseCreateGame], playerNumber: Int) extends RoutesCommand
   case class CreateConnectionGame(replyTo: ActorRef[ResponseConnGame], gameId: String) extends RoutesCommand
 
   // Messaggi di risposta per creazione nuova partita
@@ -42,10 +42,17 @@ object ServiceRoutes {
         concat (
           pathEnd {
             post {
-              val operationPerformed: Future[ResponseCreateGame] = handler.ask(CreateGame)
-              onSuccess(operationPerformed) {
-                case ServiceRoutes.SuccessCrG(gameId) => complete(StatusCodes.Created, gameId)
-                case ServiceRoutes.FailureCrG(reason) => complete(StatusCodes.InternalServerError -> reason)
+              parameters('playerNumber.as[Int].?) { playerNumber =>
+                val playerNumberVal = playerNumber.getOrElse(1)
+                if(playerNumberVal < 0 || playerNumberVal > 4) {
+                  complete(StatusCodes.UnprocessableEntity -> "Numero di giocatori non valido")
+                } else {
+                  val operationPerformed: Future[ResponseCreateGame] = handler.ask(CreateGame(_, playerNumberVal))
+                  onSuccess(operationPerformed) {
+                    case ServiceRoutes.SuccessCrG(gameId) => complete(StatusCodes.Created, gameId)
+                    case ServiceRoutes.FailureCrG(reason) => complete(StatusCodes.InternalServerError -> reason)
+                  }
+                }
               }
             }
           },

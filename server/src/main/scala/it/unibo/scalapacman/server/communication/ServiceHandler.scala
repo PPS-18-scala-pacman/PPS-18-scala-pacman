@@ -50,7 +50,7 @@ private class ServiceHandler(setup: Setup) {
         val key = ServiceKey[Game.GameCommand](gameId)
         setup.context.system.receptionist ! Receptionist.Find(key, receptionistAdapter)
         deleteGameEx(key)
-      case ServiceRoutes.CreateGame(replyTo) =>
+      case ServiceRoutes.CreateGame(replyTo, playerNumber) =>
         setup.context.system.receptionist ! Receptionist.Find(Master.masterServiceKey, receptionistAdapter)
         createGameEx(replyTo, Master.masterServiceKey)
       case ServiceRoutes.CreateConnectionGame(replyTo, gameId) =>
