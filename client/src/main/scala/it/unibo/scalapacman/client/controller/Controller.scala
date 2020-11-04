@@ -62,7 +62,7 @@ private case class ControllerImpl(pacmanRestClient: PacmanRestClient) extends Co
   // scalastyle:off cyclomatic.complexity
   def handleAction(action: Action, param: Option[Any]): Unit = action match {
     case START_GAME => evalStartGame(model.gameId)
-    case START_GAME_MULTI => evalStartGameMulti(model.gameId, param.asInstanceOf[Option[String]])
+    case START_GAME_MULTI => evalStartGameMulti(model.gameId, param.asInstanceOf[Option[Int]])
     case END_GAME => evalEndGame(model.gameId)
     case SUBSCRIBE_TO_EVENTS => evalSubscribeToGameUpdates(param.asInstanceOf[Option[PacmanSubscriber]])
     case MOVEMENT => evalMovement(param.asInstanceOf[Option[MoveCommandType]], _prevUserAction, model.gameId)
@@ -100,7 +100,7 @@ private case class ControllerImpl(pacmanRestClient: PacmanRestClient) extends Co
     case Some(_) => error("Impossibile creare nuova partita quando ce n'è già una in corso")
   }
 
-  private def evalStartGameMulti(gameId: Option[String], numPlayers: Option[String]): Unit = gameId match {
+  private def evalStartGameMulti(gameId: Option[String], numPlayers: Option[Int]): Unit = gameId match {
     case _ => debug(s"Multigiocatore non ancora implementato - ${numPlayers.getOrElse(0)}")
   }
 

@@ -2,7 +2,7 @@ package it.unibo.scalapacman.client.gui
 
 import java.awt.{Cursor, Font}
 
-import javax.swing.{JButton, JLabel, JPanel, JTextField}
+import javax.swing.{JButton, JLabel, JPanel, JSpinner, JTextField, SpinnerModel, SpinnerNumberModel}
 
 sealed trait Panel {
   def createLabel(text: String): JLabel
@@ -14,6 +14,9 @@ sealed trait Panel {
   def createButton(text: String, width: Int, height: Int): JButton
 
   def createTextField(): JTextField
+
+  def createJSpinner(model: SpinnerModel): JSpinner
+  def createNumericJSpinner(value: Int, min: Int, max: Int): JSpinner
 }
 
 object PanelImpl {
@@ -101,4 +104,20 @@ class PanelImpl extends JPanel with Panel {
    * @return la JTextField
    */
   override def createTextField(): JTextField = new JTextField()
+
+  /**
+   * Crea uno spinner generico
+   * @param model il modello da utilizzare
+   * @return  lo spinner
+   */
+  override def createJSpinner(model: SpinnerModel): JSpinner = new JSpinner(model)
+
+  /**
+   * Crea uno spinner numerico
+   * @param value il valore di default
+   * @param min il valore minimo
+   * @param max il valore massimo
+   * @return  lo spinner numerico
+   */
+  override def createNumericJSpinner(value: Int, min: Int, max: Int): JSpinner = createJSpinner(new SpinnerNumberModel(value, min, max, 1))
 }
