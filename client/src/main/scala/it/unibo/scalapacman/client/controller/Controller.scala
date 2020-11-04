@@ -61,8 +61,8 @@ private case class ControllerImpl(pacmanRestClient: PacmanRestClient) extends Co
 
   // scalastyle:off cyclomatic.complexity
   def handleAction(action: Action, param: Option[Any]): Unit = action match {
-    case START_GAME => evalStartGame(model.gameId)
-    case START_GAME_MULTI => evalStartGameMulti(model.gameId, param.asInstanceOf[Option[Int]])
+    case START_GAME => evalStartGame(model.gameId, "1")
+    case START_GAME_MULTI => evalStartGameMulti(model.gameId, param.asInstanceOf[Option[String]])
     case JOIN_GAME_MULTI => evalJoinGameMulti(model.gameId, param.asInstanceOf[Option[String]])
     case END_GAME => evalEndGame(model.gameId)
     case SUBSCRIBE_TO_EVENTS => evalSubscribeToGameUpdates(param.asInstanceOf[Option[PacmanSubscriber]])
@@ -87,8 +87,8 @@ private case class ControllerImpl(pacmanRestClient: PacmanRestClient) extends Co
    *
    * @param gameId il valore attuale di gameId ottenuto dal Model
    */
-  private def evalStartGame(gameId: Option[String]): Unit = gameId match {
-    case None => pacmanRestClient.startGame onComplete {
+  private def evalStartGame(gameId: Option[String], players: String): Unit = gameId match {
+    case None => pacmanRestClient.startGame(players) onComplete {
       case Success(value) =>
         info(s"Partita creata con successo: id $value") // scalastyle:ignore multiple.string.literals
         model = model.copy(gameId = Some(value), paused = true) // Il gioco parte sempre in pausa
@@ -101,10 +101,18 @@ private case class ControllerImpl(pacmanRestClient: PacmanRestClient) extends Co
     case Some(_) => error("Impossibile creare nuova partita quando ce n'è già una in corso")
   }
 
-  private def evalStartGameMulti(gameId: Option[String], numPlayers: Option[Int]): Unit = gameId match {
-    case _ => debug(s"Start Game Multi non ancora implementato - ${numPlayers.getOrElse(0)}")
-  }
+  /**
+   *
+   * @param gameId
+   * @param numPlayers
+   */
+  private def evalStartGameMulti(gameId: Option[String], numPlayers: Option[String]): Unit = evalStartGame(gameId, numPlayers.getOrElse("2"))
 
+  /**
+   *
+   * @param gameId
+   * @param joinGameId
+   */
   private def evalJoinGameMulti(gameId: Option[String], joinGameId: Option[String]): Unit = gameId match {
     case _ => debug(s"Join Game Multi non ancora implementato - ${joinGameId.getOrElse(0)}")
   }

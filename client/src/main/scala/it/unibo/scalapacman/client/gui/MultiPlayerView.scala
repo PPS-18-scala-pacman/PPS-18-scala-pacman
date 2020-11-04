@@ -64,7 +64,8 @@ class MultiPlayerView(implicit controller: Controller, viewChanger: ViewChanger)
   add(settingsPanel, BorderLayout.CENTER)
   add(buttonsPanel, BorderLayout.PAGE_END)
 
-  private def handleCreateGameButton(): Unit = controller.handleAction(START_GAME_MULTI, Some(numPlayersSpinner.getValue))
+  // TODO: dovrebbe redirezionare alla schermata di gioco
+  private def handleCreateGameButton(): Unit = controller.handleAction(START_GAME_MULTI, Some(numPlayersSpinner.getValue.toString))
 
   private def handleJoinGameButton(): Unit = controller.handleAction(JOIN_GAME_MULTI, Some(gameIdTextField.getText))
 
