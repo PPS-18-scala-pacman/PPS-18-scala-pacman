@@ -7,7 +7,7 @@ package object gui {
   val HEIGHT: Int = 1000
   val WIDTH: Int = 720
 
-  val BUTTON_FONT_SIZE = 32
+  val BUTTON_FONT_SIZE = 24
   val MAIN_TITLE_LABELS_FONT_SIZE = 86
   val TITLE_LABELS_FONT_SIZE = 56
   val MAIN_FONT_NAME = "Arial"

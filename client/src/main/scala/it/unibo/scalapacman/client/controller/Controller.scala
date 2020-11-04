@@ -2,7 +2,7 @@ package it.unibo.scalapacman.client.controller
 
 import grizzled.slf4j.Logging
 import it.unibo.scalapacman.client.communication.PacmanRestClient
-import Action.{END_GAME, EXIT_APP, MOVEMENT, PAUSE_RESUME, RESET_KEY_MAP, SAVE_KEY_MAP, START_GAME, START_GAME_MULTI, SUBSCRIBE_TO_EVENTS}
+import Action.{END_GAME, EXIT_APP, JOIN_GAME_MULTI, MOVEMENT, PAUSE_RESUME, RESET_KEY_MAP, SAVE_KEY_MAP, START_GAME, START_GAME_MULTI, SUBSCRIBE_TO_EVENTS}
 import it.unibo.scalapacman.client.event.{GamePaused, GameStarted, GameUpdate, NewKeyMap, PacmanPublisher, PacmanSubscriber}
 import it.unibo.scalapacman.client.input.JavaKeyBinding.DefaultJavaKeyBinding
 import it.unibo.scalapacman.client.input.KeyMap
@@ -63,6 +63,7 @@ private case class ControllerImpl(pacmanRestClient: PacmanRestClient) extends Co
   def handleAction(action: Action, param: Option[Any]): Unit = action match {
     case START_GAME => evalStartGame(model.gameId)
     case START_GAME_MULTI => evalStartGameMulti(model.gameId, param.asInstanceOf[Option[Int]])
+    case JOIN_GAME_MULTI => evalJoinGameMulti(model.gameId, param.asInstanceOf[Option[String]])
     case END_GAME => evalEndGame(model.gameId)
     case SUBSCRIBE_TO_EVENTS => evalSubscribeToGameUpdates(param.asInstanceOf[Option[PacmanSubscriber]])
     case MOVEMENT => evalMovement(param.asInstanceOf[Option[MoveCommandType]], _prevUserAction, model.gameId)
@@ -101,7 +102,11 @@ private case class ControllerImpl(pacmanRestClient: PacmanRestClient) extends Co
   }
 
   private def evalStartGameMulti(gameId: Option[String], numPlayers: Option[Int]): Unit = gameId match {
-    case _ => debug(s"Multigiocatore non ancora implementato - ${numPlayers.getOrElse(0)}")
+    case _ => debug(s"Start Game Multi non ancora implementato - ${numPlayers.getOrElse(0)}")
+  }
+
+  private def evalJoinGameMulti(gameId: Option[String], joinGameId: Option[String]): Unit = gameId match {
+    case _ => debug(s"Join Game Multi non ancora implementato - ${joinGameId.getOrElse(0)}")
   }
 
   /**
