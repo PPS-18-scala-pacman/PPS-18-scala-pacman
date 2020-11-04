@@ -1,6 +1,6 @@
 package it.unibo.scalapacman.client.gui
 
-import java.awt.{BorderLayout, Component}
+import java.awt.BorderLayout
 
 import it.unibo.scalapacman.client.controller.Controller
 import it.unibo.scalapacman.client.gui.View.MENU

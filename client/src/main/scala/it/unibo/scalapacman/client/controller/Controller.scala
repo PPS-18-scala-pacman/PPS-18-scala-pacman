@@ -2,7 +2,7 @@ package it.unibo.scalapacman.client.controller
 
 import grizzled.slf4j.Logging
 import it.unibo.scalapacman.client.communication.PacmanRestClient
-import Action.{END_GAME, EXIT_APP, MOVEMENT, PAUSE_RESUME, RESET_KEY_MAP, SAVE_KEY_MAP, START_GAME, SUBSCRIBE_TO_EVENTS}
+import Action.{END_GAME, EXIT_APP, MOVEMENT, PAUSE_RESUME, RESET_KEY_MAP, SAVE_KEY_MAP, START_GAME, START_GAME_MULTI, SUBSCRIBE_TO_EVENTS}
 import it.unibo.scalapacman.client.event.{GamePaused, GameStarted, GameUpdate, NewKeyMap, PacmanPublisher, PacmanSubscriber}
 import it.unibo.scalapacman.client.input.JavaKeyBinding.DefaultJavaKeyBinding
 import it.unibo.scalapacman.client.input.KeyMap
@@ -59,8 +59,10 @@ private case class ControllerImpl(pacmanRestClient: PacmanRestClient) extends Co
   val _webSocketRunnable = new WebSocketConsumer(updateFromServer)
   var model: GameModel = GameModel(keyMap = _defaultKeyMap, map = Map.create(MapType.CLASSIC))
 
+  // scalastyle:off cyclomatic.complexity
   def handleAction(action: Action, param: Option[Any]): Unit = action match {
     case START_GAME => evalStartGame(model.gameId)
+    case START_GAME_MULTI => evalStartGameMulti(model.gameId, param.asInstanceOf[Option[String]])
     case END_GAME => evalEndGame(model.gameId)
     case SUBSCRIBE_TO_EVENTS => evalSubscribeToGameUpdates(param.asInstanceOf[Option[PacmanSubscriber]])
     case MOVEMENT => evalMovement(param.asInstanceOf[Option[MoveCommandType]], _prevUserAction, model.gameId)
@@ -70,6 +72,7 @@ private case class ControllerImpl(pacmanRestClient: PacmanRestClient) extends Co
     case EXIT_APP => evalExitApp()
     case _ => error(UNKNOWN_ACTION)
   }
+  // scalastyle:oon cyclomatic.complexity
 
   def userAction: Option[MoveCommandType] = _prevUserAction
 
@@ -95,6 +98,10 @@ private case class ControllerImpl(pacmanRestClient: PacmanRestClient) extends Co
       case Failure(exception) => error(s"Errore nella creazione della partita: ${exception.getMessage}") // scalastyle:ignore multiple.string.literals
     }
     case Some(_) => error("Impossibile creare nuova partita quando ce n'è già una in corso")
+  }
+
+  private def evalStartGameMulti(gameId: Option[String], numPlayers: Option[String]): Unit = gameId match {
+    case _ => debug(s"Multigiocatore non ancora implementato - ${numPlayers.getOrElse(0)}")
   }
 
   /**

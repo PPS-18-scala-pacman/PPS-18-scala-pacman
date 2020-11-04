@@ -4,7 +4,7 @@ import java.awt.{BorderLayout, Component, Dimension}
 
 import it.unibo.scalapacman.client.controller.Action.EXIT_APP
 import it.unibo.scalapacman.client.controller.Controller
-import it.unibo.scalapacman.client.gui.View.{OPTIONS, PLAY, STATS}
+import it.unibo.scalapacman.client.gui.View.{MULTI, OPTIONS, PLAY, STATS}
 import javax.swing.{Box, BoxLayout, JButton, JLabel, JSplitPane, SwingConstants}
 
 object MenuView {
@@ -21,6 +21,7 @@ object MenuView {
 class MenuView(implicit controller: Controller, viewChanger: ViewChanger) extends PanelImpl {
   private val MAIN_TITLE_LABEL: String = "<html><div style='text-align: center'>Scala<br>Pacman<div></html>"
   private val PLAY_VIEW_BUTTON_LABEL: String = "Gioca"
+  private val MULTI_VIEW_BUTTON_LABEL: String = "Multigiocatore"
   private val OPTIONS_VIEW_BUTTON_LABEL: String = "Opzioni"
   private val STATS_VIEW_BUTTON_LABEL: String = "Statistiche"
   private val EXIT_BUTTON_LABEL: String = "Esci"
@@ -30,6 +31,7 @@ class MenuView(implicit controller: Controller, viewChanger: ViewChanger) extend
 
   private val titleLabel: JLabel = createMainTitleLabel(MAIN_TITLE_LABEL)
   private val playButton: JButton = createButton(PLAY_VIEW_BUTTON_LABEL)
+  private val multiButton: JButton = createButton(MULTI_VIEW_BUTTON_LABEL)
   private val optionsButton: JButton = createButton(OPTIONS_VIEW_BUTTON_LABEL)
   private val statsButton: JButton = createButton(STATS_VIEW_BUTTON_LABEL)
   private val exitButton: JButton = createButton(EXIT_BUTTON_LABEL)
@@ -38,11 +40,13 @@ class MenuView(implicit controller: Controller, viewChanger: ViewChanger) extend
   titleLabel setHorizontalAlignment SwingConstants.CENTER
 
   playButton setAlignmentX Component.CENTER_ALIGNMENT
+  multiButton setAlignmentX Component.CENTER_ALIGNMENT
   optionsButton setAlignmentX Component.CENTER_ALIGNMENT
   statsButton setAlignmentX Component.CENTER_ALIGNMENT
   exitButton setAlignmentX Component.CENTER_ALIGNMENT
 
   playButton addActionListener (_ => viewChanger.changeView(PLAY))
+  multiButton addActionListener (_ => viewChanger.changeView(MULTI))
   optionsButton addActionListener (_ => viewChanger.changeView(OPTIONS))
   statsButton addActionListener (_ => viewChanger.changeView(STATS))
   exitButton addActionListener (_ => controller.handleAction(EXIT_APP, None))
@@ -63,6 +67,8 @@ class MenuView(implicit controller: Controller, viewChanger: ViewChanger) extend
 
   buttonsPanel add createRigidArea(BUTTONS_HORIZONTAL_SPACE, BUTTONS_TOP_SPACE)
   buttonsPanel add playButton
+  buttonsPanel add createRigidArea(BUTTONS_HORIZONTAL_SPACE, BUTTONS_TOP_SPACE)
+  buttonsPanel add multiButton
   buttonsPanel add createRigidArea(BUTTONS_HORIZONTAL_SPACE, BUTTONS_VERTICAL_SPACE)
   buttonsPanel add optionsButton
   buttonsPanel add createRigidArea(BUTTONS_HORIZONTAL_SPACE, BUTTONS_VERTICAL_SPACE)

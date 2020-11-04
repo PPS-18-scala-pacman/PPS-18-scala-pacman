@@ -134,5 +134,14 @@ class GhostAITest extends AnyWordSpec {
         }
       }
     }
+    "find the nearest Pacman" in {
+      val ghost = Ghost(GhostType.BLINKY, ORIGIN, 1.0, Direction.EAST)
+      val nearestPacman = Pacman(ORIGIN + Point2D(TileGeography.SIZE, TileGeography.SIZE), 1.0, Direction.EAST)
+      val pacmanList = Pacman(ORIGIN + Point2D(TileGeography.SIZE * 3, 0), 1.0, Direction.EAST) ::
+        Pacman(ORIGIN + Point2D(TileGeography.SIZE, TileGeography.SIZE * 3), 1.0, Direction.EAST) ::
+        nearestPacman ::
+        Nil
+      assert(nearestPacman == GhostAI.choosePacmanToFollow(ghost, pacmanList))
+    }
   }
 }
