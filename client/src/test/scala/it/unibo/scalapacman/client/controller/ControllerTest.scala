@@ -86,10 +86,11 @@ class ControllerTest
 
     "handling user action" must {
       "be able to start a new game" in {
+        val numPlayers: String = "1"
         _controller.model.gameId shouldEqual None
 
         _pacmanRestClientWithMockClientHandler.mockHttp
-          .expects(HttpRequest(method = HttpMethods.POST, uri = PacmanRestClient.GAMES_URL))
+          .expects(HttpRequest(method = HttpMethods.POST, uri = PacmanRestClient.GAMES_URL, entity = HttpEntity(numPlayers)))
           .returning(Future.successful(HttpResponse(status = StatusCodes.Created, entity = HttpEntity(ByteString(GAME_ID)))))
 
         _controller.handleAction(START_GAME, None)
@@ -103,11 +104,12 @@ class ControllerTest
 
       "be able to handle failure when starting a new game" in {
         val FAILURE_MESSAGE: String = "failure"
+        val numPlayers: String = "1"
 
         _controller.model.gameId shouldEqual None
 
         _pacmanRestClientWithMockClientHandler.mockHttp
-          .expects(HttpRequest(method = HttpMethods.POST, uri = PacmanRestClient.GAMES_URL))
+          .expects(HttpRequest(method = HttpMethods.POST, uri = PacmanRestClient.GAMES_URL, entity = HttpEntity(numPlayers)))
           .returning(Future.successful(HttpResponse(status = StatusCodes.InternalServerError, entity = HttpEntity(ByteString(FAILURE_MESSAGE)))))
 
         _controller.handleAction(START_GAME, None)
