@@ -21,7 +21,7 @@ object GameParticipant {
   implicit def gameParticipantToGameEntity(participant: GameParticipant): GameEntityDTO = participant match {
     case GameParticipant(Ghost(gType, pos, speed, dir, isDead), _, _) =>
       GameEntityDTO(GameCharacterHolder(gType), pos, speed,  isDead, DirectionHolder(dir))
-    case GameParticipant(Pacman(pos, speed, dir, isDead), _, _) =>
+    case GameParticipant(Pacman(pos, speed, dir, isDead, _), _, _) =>
       GameEntityDTO(GameCharacterHolder(GameCharacter.PACMAN), pos, speed,  isDead, DirectionHolder(dir))
     case _ => throw new IllegalArgumentException("Unknown character type")
   }
@@ -52,7 +52,7 @@ object Players {
 
   implicit def updatePlayers(characters: List[Character])(implicit pl: Players): Players =
     characters.foldRight(pl) {
-      case (c@Pacman(_, _, _, _), pl)         => pl.copy(pacman  = pl.pacman.copy(c))
+      case (c@Pacman(_, _, _, _, _), pl)         => pl.copy(pacman  = pl.pacman.copy(c))
       case (c@Ghost(BLINKY, _, _, _, _), pl)  => pl.copy(blinky  = pl.blinky.copy(c))
       case (c@Ghost(CLYDE, _, _, _, _), pl)   => pl.copy(clyde   = pl.clyde.copy(c))
       case (c@Ghost(INKY, _, _, _, _), pl)    => pl.copy(inky    = pl.inky.copy(c))

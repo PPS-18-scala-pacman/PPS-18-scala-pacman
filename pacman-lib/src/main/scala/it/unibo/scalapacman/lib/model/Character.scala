@@ -3,6 +3,7 @@ package it.unibo.scalapacman.lib.model
 import it.unibo.scalapacman.lib.math.Point2D
 import it.unibo.scalapacman.lib.model.Direction.Direction
 import it.unibo.scalapacman.lib.model.GhostType.GhostType
+import it.unibo.scalapacman.lib.model.PlayerType.PlayerType
 
 trait Character extends GameObject {
   val position: Point2D
@@ -17,7 +18,8 @@ object Character {
                      override val position: Point2D,
                      override val speed: Double,
                      override val direction: Direction,
-                     override val isDead: Boolean = false
+                     override val isDead: Boolean = false,
+                     playerType: PlayerType = PlayerType.PLAYER_ONE
                    ) extends Character
 
   case class Ghost(
