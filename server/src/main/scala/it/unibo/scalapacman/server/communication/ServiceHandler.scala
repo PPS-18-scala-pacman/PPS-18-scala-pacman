@@ -50,10 +50,10 @@ private class ServiceHandler(setup: Setup) {
         val key = ServiceKey[Game.GameCommand](gameId)
         setup.context.system.receptionist ! Receptionist.Find(key, receptionistAdapter)
         deleteGameEx(key)
-      case ServiceRoutes.CreateGame(replyTo, playerNumber) =>
+      case ServiceRoutes.CreateGame(replyTo, playersNumber) =>
         setup.context.system.receptionist ! Receptionist.Find(Master.masterServiceKey, receptionistAdapter)
-        createGameEx(replyTo, Master.masterServiceKey)
-      case ServiceRoutes.CreateConnectionGame(replyTo, gameId) =>
+        createGameEx(replyTo, Master.masterServiceKey, playersNumber)
+      case ServiceRoutes.CreateConnectionGame(replyTo, gameId, playerName) =>
         val key = ServiceKey[Game.GameCommand](gameId)
         setup.context.system.receptionist ! Receptionist.Find(key, receptionistAdapter)
         craeteGameConnectionEx(replyTo, key)
@@ -83,7 +83,8 @@ private class ServiceHandler(setup: Setup) {
    * Behaviour dedicato alla gestione della richiesta di creazione di una partita
    */
   def createGameEx(replyTo: ActorRef[ServiceRoutes.ResponseCreateGame],
-                   key: ServiceKey[Master.MasterCommand]): Behavior[ServiceRoutes.RoutesCommand] =
+                   key: ServiceKey[Master.MasterCommand],
+                   playersNumber:Int): Behavior[ServiceRoutes.RoutesCommand] =
     Behaviors.withStash(Settings.stashSize) { buffer =>
       Behaviors.receiveMessage {
         case ListingResponse(key.Listing(listings)) =>
@@ -91,7 +92,7 @@ private class ServiceHandler(setup: Setup) {
             replyTo ! ServiceRoutes.FailureCrG("Errore, servizio di gioco non attivo")
             buffer.unstashAll(mainRoutine())
           } else {
-            listings.head ! Master.CreateGame(respondCreateGameAdapter)
+            listings.head ! Master.CreateGame(respondCreateGameAdapter, playersNumber)
             Behaviors.same
           }
         case WrapRespCreateGame(response) =>

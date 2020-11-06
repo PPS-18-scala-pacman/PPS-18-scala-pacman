@@ -12,7 +12,7 @@ object Master {
 
   // Messaggi gestiti dall'attore
   sealed trait MasterCommand
-  case class CreateGame(replyTo: ActorRef[GameCreated]) extends MasterCommand
+  case class CreateGame(replyTo: ActorRef[GameCreated], playersNumber: Int) extends MasterCommand
 
   // Messaggio di notifica gioco creato
   case class GameCreated(gameId: String)
@@ -31,10 +31,10 @@ object Master {
 
   private def master(setup: Setup, gameCounter: Int): Behavior[MasterCommand] =
     Behaviors.receiveMessage {
-      case CreateGame(replyTo) =>
+      case CreateGame(replyTo, playersNumber) =>
         val newCounter = gameCounter + 1
         val gameId = gameIdPrefix format newCounter
-        setup.context.spawn(Game(gameId), gameId + gameCounter)
+        setup.context.spawn(Game(gameId, playersNumber), gameId + gameCounter)
         if(replyTo != null) replyTo ! GameCreated(gameId)
         master(setup, newCounter)
     }

@@ -23,5 +23,7 @@ object Settings {
 
   val levelDifficulty = 1
 
+  val maxPlayersNumber = 4
+
   // scalastyle:on magic.number
 }
