@@ -3,15 +3,14 @@ package it.unibo.scalapacman.lib.model
 import it.unibo.scalapacman.lib.model.Character.{Ghost, Pacman}
 import it.unibo.scalapacman.lib.engine.GameHelpers.MapHelper
 import it.unibo.scalapacman.lib.model.GhostType.GhostType
+import it.unibo.scalapacman.lib.model.PlayerType.indexToPlayerTypeVal
 import it.unibo.scalapacman.lib.model.SpeedCondition.SpeedCondition
 import it.unibo.scalapacman.lib.model.SpeedLevel.SpeedLevel
-
-import scala.reflect.ClassTag
 
 trait LevelGenerator {
   def map: Map
 
-  def characters: List[Character]
+  def characters(numPlayers: Int): List[Character]
 
   def fruit: Fruit.Value
 
@@ -26,8 +25,11 @@ object Level {
     private val mapType = MapType.CLASSIC
     val map: Map = Map.create(mapType)
 
-    def characters: List[Character] = pacman :: ghost(GhostType.BLINKY) :: ghost(GhostType.PINKY) ::
-      ghost(GhostType.INKY) :: ghost(GhostType.CLYDE) :: Nil
+    def characters(numPlayers: Int): List[Character] =
+      (0 until numPlayers).map(i => pacman.copy(playerType = indexToPlayerTypeVal(i))).toList :::
+      ghost(GhostType.BLINKY) :: ghost(GhostType.PINKY) ::
+      ghost(GhostType.INKY) :: ghost(GhostType.CLYDE) ::
+      Nil
 
     def pacman: Pacman = Pacman(Map.getStartPosition(mapType, Pacman, None), pacmanSpeed(level), Direction.WEST)
 

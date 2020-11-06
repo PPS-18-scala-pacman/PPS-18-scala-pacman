@@ -32,10 +32,11 @@ trait PacmanRestClient extends Logging { this: HttpClient =>
 
   /**
    * Invia richiesta nuova partita
+   * @param players il numero di giocatori per questa partita
    * @return l'id della nuova partita
    */
-  def startGame: Future[String] = {
-    val request = Post(PacmanRestClient.GAMES_URL)
+  def startGame(players: String): Future[String] = {
+    val request = Post(PacmanRestClient.GAMES_URL, players)
     sendRequest(request) flatMap { response =>
       response.status match {
         case StatusCodes.Created => Unmarshal(response.entity).to[String]

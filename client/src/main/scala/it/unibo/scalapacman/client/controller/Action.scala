@@ -8,6 +8,7 @@ sealed trait Action
 object Action {
   case object START_GAME extends Action
   case object START_GAME_MULTI extends Action
+  case object JOIN_GAME_MULTI extends Action
   case object END_GAME extends Action
   case object SUBSCRIBE_TO_EVENTS extends Action
   case object EXIT_APP extends Action

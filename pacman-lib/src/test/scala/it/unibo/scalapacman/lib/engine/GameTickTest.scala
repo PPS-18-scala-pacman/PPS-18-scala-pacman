@@ -4,13 +4,12 @@ import java.util.concurrent.TimeUnit
 
 import it.unibo.scalapacman.lib.math.{Point2D, TileGeography}
 import it.unibo.scalapacman.lib.model.{Direction, Dot, Fruit, GameState, GameTimedEvent, GhostType, LevelState, Map, MapType, Tile}
-import it.unibo.scalapacman.lib.engine.GameTick.{
-  calculateDeaths, calculateGameState, calculateLevelState, calculateMap,
-  calculateSpeeds, collisions, consumeTimeOfGameEvents, removeTimedOutGameEvents, updateEvents, handleEvents
-}
+import it.unibo.scalapacman.lib.engine.GameTick.{calculateDeaths, calculateGameState, calculateLevelState, calculateMap,
+  calculateSpeeds, collisions, consumeTimeOfGameEvents, handleEvents, removeTimedOutGameEvents, updateEvents}
 import it.unibo.scalapacman.lib.engine.GameHelpers.{CharacterHelper, MapHelper}
 import it.unibo.scalapacman.lib.model.Character.{Ghost, Pacman}
-import it.unibo.scalapacman.lib.model.GameTimedEventType.{ENERGIZER_STOP, GHOST_RESTART, FRUIT_SPAWN, FRUIT_STOP}
+import it.unibo.scalapacman.lib.model.GameTimedEventType.{ENERGIZER_STOP, FRUIT_SPAWN, FRUIT_STOP, GHOST_RESTART}
+import it.unibo.scalapacman.lib.model.PlayerType.{PlayerType, PLAYER_TWO}
 import org.scalatest.wordspec.AnyWordSpec
 
 import scala.concurrent.duration.FiniteDuration
@@ -44,6 +43,9 @@ class GameTickTest extends AnyWordSpec {
         "Pacman's tile is empty" in {
           assert(collisions(List(PACMAN)).isEmpty)
         }
+        "two pacmans are on the same empty tile" in {
+          assert(collisions(List(PACMAN, PACMAN.copy(playerType = PLAYER_TWO))).isEmpty)
+        }
       }
       "return ghosts" when {
         "they are in the same position" in {
@@ -59,20 +61,24 @@ class GameTickTest extends AnyWordSpec {
         }
       }
       "return the tile's game object" when {
-        "a fruit is in the Pacman's tile" in {
+        "a small dot is in the Pacman's tile" in {
           val pacman = Pacman(PACMAN.position + Point2D(0, TileGeography.SIZE), 0.0, Direction.SOUTH)
           val coll = collisions(List(pacman))
           assert(coll.size == 1 && coll.head._2 == Dot.SMALL_DOT)
         }
-        "a small dot is in the Pacman's tile" in {
+        "an energized dot is in the Pacman's tile" in {
           val pacman = Pacman(PACMAN.position + Point2D(0, TileGeography.SIZE * 2), 0.0, Direction.NORTH)
           val coll = collisions(List(pacman))
           assert(coll.size == 1 && coll.head._2 == Dot.ENERGIZER_DOT)
         }
-        "an energized dot is in the Pacman's tile" in {
+        "a fruit is in the Pacman's tile" in {
           val pacman = Pacman(PACMAN.position + Point2D(0, TileGeography.SIZE * 3), 0.0, Direction.WEST)
           val coll = collisions(List(pacman))
           assert(coll.size == 1 && coll.head._2 == Fruit.APPLE)
+        }
+        "two pacmans are on the same small dot" in {
+          val pacman = Pacman(PACMAN.position + Point2D(0, TileGeography.SIZE), 0.0, Direction.SOUTH)
+          assert(collisions(List(pacman, pacman.copy(playerType = PLAYER_TWO))).size == 1)
         }
       }
       "return ghosts and tile's game object" when {

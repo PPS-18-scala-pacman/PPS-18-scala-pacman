@@ -44,6 +44,7 @@ class PacmanRestClientTest
   private var pacmanRestClient: PacmanRestClientWithMockClientHandler = _
   private val GAME_ID_EXAMPLE = "1"
   private val FAILURE_MESSAGE = "Failure message"
+  private val NUM_PLAYERS: String = "1"
 
   override protected def beforeAll(): Unit = {
     super.beforeAll()
@@ -57,10 +58,10 @@ class PacmanRestClientTest
       val expectedGameId = GAME_ID_EXAMPLE
 
       pacmanRestClient.mockHttp
-        .expects(HttpRequest(method = HttpMethods.POST, uri = PacmanRestClient.GAMES_URL))
+        .expects(HttpRequest(method = HttpMethods.POST, uri = PacmanRestClient.GAMES_URL, entity = HttpEntity(NUM_PLAYERS)))
         .returning(Future.successful(HttpResponse(status = StatusCodes.Created, entity = HttpEntity(ByteString(expectedGameId)))))
 
-      whenReady(pacmanRestClient.startGame) { res =>
+      whenReady(pacmanRestClient.startGame(NUM_PLAYERS)) { res =>
         res shouldEqual expectedGameId
       }
     }
@@ -69,11 +70,11 @@ class PacmanRestClientTest
       val failureMessage = FAILURE_MESSAGE
 
       pacmanRestClient.mockHttp
-        .expects(HttpRequest(method = HttpMethods.POST, uri = PacmanRestClient.GAMES_URL))
+        .expects(HttpRequest(method = HttpMethods.POST, uri = PacmanRestClient.GAMES_URL, entity = HttpEntity(NUM_PLAYERS)))
         .returning(Future.successful(HttpResponse(status = StatusCodes.InternalServerError, entity = HttpEntity(ByteString(FAILURE_MESSAGE)))))
 
       recoverToSucceededIf[IOException] {
-        pacmanRestClient.startGame flatMap { res =>
+        pacmanRestClient.startGame(NUM_PLAYERS) flatMap { res =>
           res shouldEqual failureMessage
         }
       }
@@ -83,11 +84,11 @@ class PacmanRestClientTest
       val failureMessage = FAILURE_MESSAGE
 
       pacmanRestClient.mockHttp
-        .expects(HttpRequest(method = HttpMethods.POST, uri = PacmanRestClient.GAMES_URL))
+        .expects(HttpRequest(method = HttpMethods.POST, uri = PacmanRestClient.GAMES_URL, entity = HttpEntity(NUM_PLAYERS)))
         .returning(Future.successful(HttpResponse(status = StatusCodes.NotFound, entity = HttpEntity(ByteString(failureMessage)))))
 
       recoverToSucceededIf[IOException] {
-        pacmanRestClient.startGame flatMap { res =>
+        pacmanRestClient.startGame(NUM_PLAYERS) flatMap { res =>
           res shouldEqual failureMessage
         }
       }

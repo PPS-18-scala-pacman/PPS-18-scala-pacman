@@ -2,7 +2,7 @@ package it.unibo.scalapacman.lib.engine
 
 import it.unibo.scalapacman.lib.model.{Character, Dot, Eatable, Fruit, GameObject, GameState, GameTimedEvent,
   Level, LevelState, Map, SpeedCondition, Tile}
-import it.unibo.scalapacman.lib.model.GameTimedEventType.{FRUIT_STOP, GHOST_RESTART, FRUIT_SPAWN, ENERGIZER_STOP, GameTimedEventType}
+import it.unibo.scalapacman.lib.model.GameTimedEventType.{FRUIT_STOP, GHOST_RESTART, FRUIT_SPAWN, ENERGIZER_STOP}
 import it.unibo.scalapacman.lib.engine.GameHelpers.{CharacterHelper, MapHelper}
 import it.unibo.scalapacman.lib.model.Character.{Ghost, Pacman}
 import it.unibo.scalapacman.lib.model.GhostType.GhostType
@@ -22,10 +22,14 @@ object GameTick {
    * @return Le collisioni rilevate
    */
   def collisions(characters: List[Character])(implicit map: Map): List[(Character, GameObject)] = {
-    def characterCollisions(character: Character): List[(Character, GameObject)] =
-      (character.tile.eatable ++: characters.filter(_ != character).filter(_.tileIndexes == character.tileIndexes)).map(obj => (character, obj))
+    def characterGhostCollisions(character: Character): List[(Character, GameObject)] =
+      characters filter(!_.isInstanceOf[Pacman]) filter(_.tileIndexes == character.tileIndexes) map(obj => (character, obj))
+    def characterEatableCollisions(character: Character): List[(Character, GameObject)] =
+      character.tile.eatable map(obj => (character, obj)) toList
 
-    characters collect { case p: Pacman => p } flatMap characterCollisions
+    val pacmans = characters collect { case p: Pacman => p }
+
+    (pacmans flatMap characterGhostCollisions).:::(pacmans flatMap characterEatableCollisions).groupBy(_._2).map(_._2.head)(collection.breakOut)
   }
 
   /**
@@ -83,7 +87,7 @@ object GameTick {
 
   private def calculateDeath(character: Character, gameState: GameState, collisions: List[(Character, Character)])(implicit map: Map): Character = {
     def pacmanCollideGhost(pacman: Pacman)(collision: (Character, Character)): Boolean = collision match {
-      case (pacman: Pacman, _: Ghost) if pacman.eq(pacman) => true
+      case (p: Pacman, _: Ghost) if p.playerType == pacman.playerType => true
       case _ => false
     }
     def killGhost(ghost: Ghost): Ghost = ghost.copy(isDead = true, position = Map.getRestartPosition(map.mapType, Ghost, Some(ghost.ghostType)))
@@ -122,17 +126,17 @@ object GameTick {
   private def calculateSpeed(character: Character, level: Int, speedCondition: SpeedCondition)
                             (implicit collisions: List[(Character, GameObject)], map: Map): Character =
     character match {
-      case pacman@Pacman(_, speed, _, _) => if (speed == pacmanSpeed(level, speedCondition)) pacman else pacman.copy(speed = pacmanSpeed(level, speedCondition))
-      case ghost@Ghost(_, _, speed, _, _) => if (speed == ghostSpeed(level, speedCondition)) ghost else ghost.copy(speed = ghostSpeed(level, speedCondition))
+      case p@Pacman(_, speed, _, _, _) => if (speed == pacmanSpeed(level, speedCondition)) p else p.copy(speed = pacmanSpeed(level, speedCondition))
+      case g@Ghost(_, _, speed, _, _) => if (speed == ghostSpeed(level, speedCondition)) g else g.copy(speed = ghostSpeed(level, speedCondition))
       case _ => character
     }
 
   private def calculateSpeedCondition(character: Character, gameState: GameState)
                                      (implicit collisions: List[(Character, GameObject)], map: Map): SpeedCondition.Value =
     character match {
-      case Pacman(_, _, _, _) if gameState.pacmanEmpowered => SpeedCondition.FRIGHT
-      case Ghost(_, _, _, _, _) if character.tile.isInstanceOf[Tile.TrackTunnel] => SpeedCondition.TUNNEL
-      case Ghost(_, _, _, _, _) if gameState.ghostInFear => SpeedCondition.FRIGHT
+      case _: Pacman if gameState.pacmanEmpowered => SpeedCondition.FRIGHT
+      case _: Ghost if character.tile.isInstanceOf[Tile.TrackTunnel] => SpeedCondition.TUNNEL
+      case _: Ghost if gameState.ghostInFear => SpeedCondition.FRIGHT
       case _ => SpeedCondition.NORM
     }
 
@@ -145,7 +149,7 @@ object GameTick {
    * @return Stato del gioco aggiornato
    */
   def calculateLevelState(gameState: GameState, characters: List[Character], map: Map): GameState = gameState.copy(
-    levelState = calculateLevelState(characters.collect { case p@Pacman(_, _, _, _) => p }, map.dots)
+    levelState = calculateLevelState(characters.collect { case p: Pacman => p }, map.dots)
   )
 
   private def calculateLevelState(pacmans: List[Pacman], dots: Seq[((Int, Int), Dot.Dot)]): LevelState = (pacmans, dots) match {

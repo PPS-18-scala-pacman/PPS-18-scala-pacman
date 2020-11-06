@@ -311,8 +311,8 @@ class PlayView(implicit controller: Controller, viewChanger: ViewChanger) extend
    * Informa il controller di un'azione dell'utente
    * Effettuata all'interno di un Thread per non bloccare l'interfaccia
    *
-   * @param action
-   * @param param
+   * @param action azione da notificare al controller
+   * @param param eventuale parametro
    */
   private def askToController(action: Action, param: Option[Any]): Unit =
     new Thread() {
