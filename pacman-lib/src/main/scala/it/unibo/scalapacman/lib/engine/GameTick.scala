@@ -29,7 +29,7 @@ object GameTick {
 
     val pacmans = characters collect { case p: Pacman => p }
 
-    (pacmans flatMap characterGhostCollisions).:::(pacmans flatMap characterEatableCollisions).groupBy(_._2).map(_._2.head)(collection.breakOut)
+    (pacmans flatMap characterGhostCollisions).:::((pacmans flatMap characterEatableCollisions).groupBy(_._2).map(_._2.head)(collection.breakOut))
   }
 
   /**
