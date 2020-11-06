@@ -1,5 +1,7 @@
 package it.unibo.scalapacman.client.controller
 
+import java.net.InetAddress
+
 import grizzled.slf4j.Logging
 import it.unibo.scalapacman.client.communication.PacmanRestClient
 import Action.{END_GAME, EXIT_APP, JOIN_GAME_MULTI, MOVEMENT, PAUSE_RESUME, RESET_KEY_MAP, SAVE_KEY_MAP, START_GAME, START_GAME_MULTI, SUBSCRIBE_TO_EVENTS}
@@ -7,7 +9,7 @@ import it.unibo.scalapacman.client.event.{GamePaused, GameStarted, GameUpdate, N
 import it.unibo.scalapacman.client.input.JavaKeyBinding.DefaultJavaKeyBinding
 import it.unibo.scalapacman.client.input.KeyMap
 import it.unibo.scalapacman.client.map.PacmanMap
-import it.unibo.scalapacman.client.model.GameModel
+import it.unibo.scalapacman.client.model.{CreateGameData, GameModel, JoinGameData}
 import it.unibo.scalapacman.common.CommandType.CommandType
 import it.unibo.scalapacman.common.MoveCommandType.MoveCommandType
 import it.unibo.scalapacman.common.{Command, CommandType, CommandTypeHolder, JSONConverter, MapUpdater, MoveCommandTypeHolder, UpdateModelDTO}
@@ -61,9 +63,9 @@ private case class ControllerImpl(pacmanRestClient: PacmanRestClient) extends Co
 
   // scalastyle:off cyclomatic.complexity
   def handleAction(action: Action, param: Option[Any]): Unit = action match {
-    case START_GAME => evalStartGame(model.gameId, "1")
-    case START_GAME_MULTI => evalStartGameMulti(model.gameId, param.asInstanceOf[Option[String]])
-    case JOIN_GAME_MULTI => evalJoinGameMulti(model.gameId, param.asInstanceOf[Option[String]])
+    case START_GAME => evalStartGame(model.gameId, 1)
+    case START_GAME_MULTI => evalStartGameMulti(model.gameId, param.asInstanceOf[Option[CreateGameData]])
+    case JOIN_GAME_MULTI => evalJoinGameMulti(model.gameId, param.asInstanceOf[Option[JoinGameData]])
     case END_GAME => evalEndGame(model.gameId)
     case SUBSCRIBE_TO_EVENTS => evalSubscribeToGameUpdates(param.asInstanceOf[Option[PacmanSubscriber]])
     case MOVEMENT => evalMovement(param.asInstanceOf[Option[MoveCommandType]], _prevUserAction, model.gameId)
@@ -87,34 +89,29 @@ private case class ControllerImpl(pacmanRestClient: PacmanRestClient) extends Co
    *
    * @param gameId il valore attuale di gameId ottenuto dal Model
    */
-  private def evalStartGame(gameId: Option[String], players: String): Unit = gameId match {
+  private def evalStartGame(gameId: Option[String], players: Int): Unit = gameId match {
     case None => pacmanRestClient.startGame(players) onComplete {
       case Success(value) =>
         info(s"Partita creata con successo: id $value") // scalastyle:ignore multiple.string.literals
         model = model.copy(gameId = Some(value), paused = true) // Il gioco parte sempre in pausa
         _prevUserAction = None
         new Thread(_webSocketRunnable).start()
-        pacmanRestClient.openWS(value, handleWebSocketMessage)
+        // TODO: sostituire secondo parametro con nickname
+        pacmanRestClient.openWS(value, model.nickname, handleWebSocketMessage)
         _publisher.notifySubscribers(GameStarted())
       case Failure(exception) => error(s"Errore nella creazione della partita: ${exception.getMessage}") // scalastyle:ignore multiple.string.literals
     }
     case Some(_) => error("Impossibile creare nuova partita quando ce n'è già una in corso")
   }
 
-  /**
-   *
-   * @param gameId
-   * @param numPlayers
-   */
-  private def evalStartGameMulti(gameId: Option[String], numPlayers: Option[String]): Unit = evalStartGame(gameId, numPlayers.getOrElse("2"))
+  private def evalStartGameMulti(gameId: Option[String], cgdMaybe: Option[CreateGameData]): Unit = {
+    val cgd = cgdMaybe.get
+    model = model.copy(nickname = cgd.nickname)
+    evalStartGame(gameId, cgd.players)
+  }
 
-  /**
-   *
-   * @param gameId
-   * @param joinGameId
-   */
-  private def evalJoinGameMulti(gameId: Option[String], joinGameId: Option[String]): Unit = gameId match {
-    case _ => debug(s"Join Game Multi non ancora implementato - ${joinGameId.getOrElse(0)}")
+  private def evalJoinGameMulti(gameId: Option[String], jgd: Option[JoinGameData]): Unit = gameId match {
+    case _ => debug(s"Join Game Multi non ancora implementato - ${jgd.get.gameId}")
   }
 
   /**
@@ -237,7 +234,7 @@ private case class ControllerImpl(pacmanRestClient: PacmanRestClient) extends Co
   }
 
   /**
-   * Pulisce il Model, riportandolo alla situazione iniziale (mantenendo invariato però la configurazione dei tasti)
+   * Pulisce il Model, riportandolo alla situazione iniziale (mantenendo invariato però la configurazione dei tasti e il nickname)
    */
   private def clearModel(): Unit = model = model.copy(gameId = None, paused = false, map = Map.create(MapType.CLASSIC))
 

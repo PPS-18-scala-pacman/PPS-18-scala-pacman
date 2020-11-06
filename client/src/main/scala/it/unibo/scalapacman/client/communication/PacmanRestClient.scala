@@ -6,12 +6,14 @@ import akka.Done
 import akka.actor.{ActorRef, ActorSystem}
 import akka.http.scaladsl.client.RequestBuilding.{Delete, Post}
 import akka.http.scaladsl.model.ws.{Message, TextMessage, WebSocketRequest}
-import akka.http.scaladsl.model.{HttpRequest, HttpResponse, StatusCodes}
+import akka.http.scaladsl.model.{ContentTypes, HttpEntity, HttpMethods, HttpRequest, HttpResponse, StatusCodes}
 import akka.http.scaladsl.unmarshalling.Unmarshal
 import akka.stream.{CompletionStrategy, OverflowStrategy}
 import akka.stream.scaladsl.{Keep, Sink, Source}
 import grizzled.slf4j.Logging
 import it.unibo.scalapacman.client.config.ConfLoader.appConf
+import spray.json.DefaultJsonProtocol.{IntJsonFormat, StringJsonFormat, mapFormat}
+import spray.json.enrichAny
 
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContextExecutor, Future}
@@ -35,8 +37,13 @@ trait PacmanRestClient extends Logging { this: HttpClient =>
    * @param players il numero di giocatori per questa partita
    * @return l'id della nuova partita
    */
-  def startGame(players: String): Future[String] = {
-    val request = Post(PacmanRestClient.GAMES_URL, players)
+  def startGame(players: Int): Future[String] = {
+    // Come passare un JSON https://stackoverflow.com/a/56569369/4328569
+    val request = HttpRequest(
+      method = HttpMethods.POST,
+      uri = PacmanRestClient.GAMES_URL,
+      entity = HttpEntity(ContentTypes.`application/json`, Map("playersNumber" -> players).toJson.toString())
+    )
     sendRequest(request) flatMap { response =>
       response.status match {
         case StatusCodes.Created => Unmarshal(response.entity).to[String]
@@ -71,8 +78,8 @@ trait PacmanRestClient extends Logging { this: HttpClient =>
    * @param serverMessageHandler funzione a cui vengono passati i messaggi del server
    */
   // Source: https://stackoverflow.com/questions/40345697/how-to-use-akka-http-client-websocket-send-message
-  def openWS(gameId: String, serverMessageHandler: String => Unit): Unit = {
-    val request = WebSocketRequest(s"${PacmanRestClient.GAMES_WS_URL}/$gameId")
+  def openWS(gameId: String, playerName: String, serverMessageHandler: String => Unit): Unit = {
+    val request = WebSocketRequest(s"${PacmanRestClient.GAMES_WS_URL}/$gameId?playerName=${playerName}")
 
     val messageSource: Source[Message, ActorRef] =
       Source.actorRef(
