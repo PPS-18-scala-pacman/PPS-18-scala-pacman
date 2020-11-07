@@ -6,7 +6,7 @@ import akka.actor.ActorSystem
 import akka.actor.testkit.typed.scaladsl.ScalaTestWithActorTestKit
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.ws.{Message, WebSocketRequest, WebSocketUpgradeResponse}
-import akka.http.scaladsl.model.{HttpEntity, HttpMethods, HttpRequest, HttpResponse, StatusCodes}
+import akka.http.scaladsl.model.{ContentTypes, HttpEntity, HttpMethods, HttpRequest, HttpResponse, StatusCodes}
 import akka.stream.scaladsl.Flow
 import akka.util.ByteString
 import grizzled.slf4j.Logging
@@ -14,6 +14,7 @@ import it.unibo.scalapacman.client.communication.{HttpClient, PacmanRestClient}
 import it.unibo.scalapacman.client.controller.Action.{END_GAME, MOVEMENT, PAUSE_RESUME, RESET_KEY_MAP, SAVE_KEY_MAP, START_GAME}
 import it.unibo.scalapacman.client.input.JavaKeyBinding.DefaultJavaKeyBinding
 import it.unibo.scalapacman.client.input.KeyMap
+import it.unibo.scalapacman.client.model.CreateGameData
 import it.unibo.scalapacman.common.{CommandType, MoveCommandType}
 import it.unibo.scalapacman.lib.model.{Map, MapType}
 import org.scalamock.function.MockFunction1
@@ -21,6 +22,8 @@ import org.scalamock.scalatest.MockFactory
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpecLike
+import spray.json.DefaultJsonProtocol.{IntJsonFormat, StringJsonFormat, mapFormat}
+import spray.json.enrichAny
 
 import scala.concurrent.{ExecutionContextExecutor, Future}
 
@@ -86,14 +89,20 @@ class ControllerTest
 
     "handling user action" must {
       "be able to start a new game" in {
-        val numPlayers: String = "1"
+        val NUM_PLAYERS: Int = 1
+        val START_GAME_REQUEST_ENTITY = HttpEntity(
+          ContentTypes.`application/json`,
+          scala.collection.immutable.Map("playersNumber" -> NUM_PLAYERS).toJson.toString()
+        )
+        val cgd: CreateGameData = CreateGameData("test", NUM_PLAYERS)
+
         _controller.model.gameId shouldEqual None
 
         _pacmanRestClientWithMockClientHandler.mockHttp
-          .expects(HttpRequest(method = HttpMethods.POST, uri = PacmanRestClient.GAMES_URL, entity = HttpEntity(numPlayers)))
+          .expects(HttpRequest(method = HttpMethods.POST, uri = PacmanRestClient.GAMES_URL, entity = START_GAME_REQUEST_ENTITY))
           .returning(Future.successful(HttpResponse(status = StatusCodes.Created, entity = HttpEntity(ByteString(GAME_ID)))))
 
-        _controller.handleAction(START_GAME, None)
+        _controller.handleAction(START_GAME, Some(cgd))
 
         // TODO si riesce a cambiare metodo?
         // Attendo molto per dare tempo alla websocket(?) poiché non so come mockarla?
@@ -104,15 +113,20 @@ class ControllerTest
 
       "be able to handle failure when starting a new game" in {
         val FAILURE_MESSAGE: String = "failure"
-        val numPlayers: String = "1"
+        val NUM_PLAYERS: Int = 1
+        val START_GAME_REQUEST_ENTITY = HttpEntity(
+          ContentTypes.`application/json`,
+          scala.collection.immutable.Map("playersNumber" -> NUM_PLAYERS).toJson.toString()
+        )
+        val cgd: CreateGameData = CreateGameData("test", NUM_PLAYERS)
 
         _controller.model.gameId shouldEqual None
 
         _pacmanRestClientWithMockClientHandler.mockHttp
-          .expects(HttpRequest(method = HttpMethods.POST, uri = PacmanRestClient.GAMES_URL, entity = HttpEntity(numPlayers)))
+          .expects(HttpRequest(method = HttpMethods.POST, uri = PacmanRestClient.GAMES_URL, entity = START_GAME_REQUEST_ENTITY))
           .returning(Future.successful(HttpResponse(status = StatusCodes.InternalServerError, entity = HttpEntity(ByteString(FAILURE_MESSAGE)))))
 
-        _controller.handleAction(START_GAME, None)
+        _controller.handleAction(START_GAME, Some(cgd))
 
         // TODO si riesce a cambiare metodo?
         Thread.sleep(100)// scalastyle:ignore
