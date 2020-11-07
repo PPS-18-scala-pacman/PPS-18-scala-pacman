@@ -2,10 +2,10 @@ package it.unibo.scalapacman.lib.model
 
 import it.unibo.scalapacman.lib.math.Point2D
 import it.unibo.scalapacman.lib.model.Direction.Direction
-import it.unibo.scalapacman.lib.model.GhostType.GhostType
-import it.unibo.scalapacman.lib.model.PlayerType.PlayerType
+import it.unibo.scalapacman.lib.model.PacmanType.PACMAN
 
 trait Character extends GameObject {
+  val characterType: CharacterType
   val position: Point2D
   val speed: Double
   val direction: Direction
@@ -14,16 +14,31 @@ trait Character extends GameObject {
 
 object Character {
 
+  object Pacman {
+    def apply(
+               position: Point2D,
+               speed: Double,
+               direction: Direction,
+               isDead: Boolean
+             ): Pacman = new Pacman(PACMAN, position, speed, direction, isDead)
+
+    def apply(
+               position: Point2D,
+               speed: Double,
+               direction: Direction
+             ): Pacman = new Pacman(PACMAN, position, speed, direction, false)
+  }
+
   case class Pacman(
+                     override val characterType: PacmanType.PacmanType,
                      override val position: Point2D,
                      override val speed: Double,
                      override val direction: Direction,
-                     override val isDead: Boolean = false,
-                     playerType: PlayerType = PlayerType.PLAYER_ONE
+                     override val isDead: Boolean = false
                    ) extends Character
 
   case class Ghost(
-                    ghostType: GhostType,
+                    override val characterType: GhostType.GhostType,
                     override val position: Point2D,
                     override val speed: Double,
                     override val direction: Direction,

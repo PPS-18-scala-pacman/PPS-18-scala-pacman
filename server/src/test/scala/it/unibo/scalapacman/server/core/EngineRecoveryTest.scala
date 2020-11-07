@@ -27,7 +27,7 @@ class EngineRecoveryTest extends ScalaTestWithActorTestKit(ConfLoader.akkaConf) 
     val fooWatcherProbe = createTestProbe[Engine.UpdateCommand]()
 
     engineActor ! Engine.RegisterPlayer(watcherPlayerProbe.ref)
-    GhostType.values.filter(_ != BLINKY).foreach(engineActor ! Engine.RegisterGhost(fooWatcherProbe.ref, _))
+    GhostType.values.filter(_ != BLINKY).foreach(gt => engineActor ! Engine.RegisterGhost(fooWatcherProbe.ref, gt.asInstanceOf[GhostType.GhostType]))
 
     engineActor ! Engine.RegisterGhost(watcherBlinkyProbe.ref, BLINKY)
 

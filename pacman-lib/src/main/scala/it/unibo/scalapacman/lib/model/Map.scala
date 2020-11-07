@@ -4,7 +4,6 @@ import it.unibo.scalapacman.lib.Utility
 import it.unibo.scalapacman.lib.math.{Point2D, TileGeography}
 import it.unibo.scalapacman.lib.model.Character.{Ghost, Pacman}
 import it.unibo.scalapacman.lib.model.Dot.{ENERGIZER_DOT, SMALL_DOT}
-import it.unibo.scalapacman.lib.model.GhostType.GhostType
 import it.unibo.scalapacman.lib.model.Tile.{GhostSpawn, Track, TrackSafe, TrackTunnel, Wall}
 
 import scala.reflect.ClassTag
@@ -79,30 +78,37 @@ case object Map {
     val CLYDE_START_POSITION: Point2D = Point2D(15 * TileGeography.SIZE, 14 * TileGeography.SIZE) + TileGeography.center
     val FRUIT_INDEXES: MapIndexes = (14, 17)
 
-    def getStartPosition[T >: Character: ClassTag](c: T, ghostType: Option[GhostType] = None): Point2D = (c, ghostType) match {
-      case (Pacman, _) => PACMAN_START_POSITION
-      case (Ghost, Some(GhostType.BLINKY)) => BLINKY_START_POSITION
-      case (Ghost, Some(GhostType.PINKY)) => PINKY_START_POSITION
-      case (Ghost, Some(GhostType.INKY)) => INKY_START_POSITION
-      case (Ghost, Some(GhostType.CLYDE)) => CLYDE_START_POSITION
-      case _ => throw new IllegalArgumentException("Unknown character")
-    }
+    def getStartPosition[T >: Character: ClassTag](c: T, characterType: CharacterType): Point2D =
+      (c, characterType) match {
+        case (Pacman, PacmanType.PACMAN) => PACMAN_START_POSITION
+        case (Pacman, PacmanType.MS_PACMAN) => PACMAN_START_POSITION + Point2D(TileGeography.SIZE, TileGeography.SIZE)
+        case (Pacman, PacmanType.CAPMAN) => PACMAN_START_POSITION + Point2D(-TileGeography.SIZE, -TileGeography.SIZE)
+        case (Pacman, PacmanType.RAPMAN) => PACMAN_START_POSITION + Point2D(TileGeography.SIZE * 2, TileGeography.SIZE * 2)
+        case (Ghost, GhostType.BLINKY) => BLINKY_START_POSITION
+        case (Ghost, GhostType.PINKY) => PINKY_START_POSITION
+        case (Ghost, GhostType.INKY) => INKY_START_POSITION
+        case (Ghost, GhostType.CLYDE) => CLYDE_START_POSITION
+        case _ => throw new IllegalArgumentException("Unknown character")
+      }
 
-    def getRestartPosition[T >: Character: ClassTag](c: T, ghostType: Option[GhostType] = None): Point2D = (c, ghostType) match {
-      case (Ghost, Some(GhostType.BLINKY)) => PINKY_START_POSITION
-      case _ => getStartPosition(c, ghostType)
-    }
+    def getRestartPosition[T >: Character: ClassTag](c: T, characterType: CharacterType): Point2D =
+      (c, characterType) match {
+        case (Ghost, GhostType.BLINKY) => PINKY_START_POSITION
+        case _ => getStartPosition(c, characterType)
+      }
 
     def getFruitMapIndexes: MapIndexes = FRUIT_INDEXES
   }
 
-  def getStartPosition[T >: Character: ClassTag](mapType: MapType.MapType, c: T, ghostType: Option[GhostType] = None): Point2D = mapType match {
-    case MapType.CLASSIC => Classic.getStartPosition(c, ghostType)
-  }
+  def getStartPosition[T >: Character: ClassTag](mapType: MapType.MapType, c: T, characterType: CharacterType): Point2D =
+    mapType match {
+      case MapType.CLASSIC => Classic.getStartPosition(c, characterType)
+    }
 
-  def getRestartPosition[T >: Character: ClassTag](mapType: MapType.MapType, c: T, ghostType: Option[GhostType] = None): Point2D = mapType match {
-    case MapType.CLASSIC => Classic.getRestartPosition(c, ghostType)
-  }
+  def getRestartPosition[T >: Character: ClassTag](mapType: MapType.MapType, c: T, characterType: CharacterType): Point2D =
+    mapType match {
+      case MapType.CLASSIC => Classic.getRestartPosition(c, characterType)
+    }
 
   def getFruitMapIndexes(mapType: MapType.MapType): MapIndexes = mapType match {
     case MapType.CLASSIC => Classic.getFruitMapIndexes

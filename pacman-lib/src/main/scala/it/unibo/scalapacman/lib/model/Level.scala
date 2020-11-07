@@ -2,8 +2,7 @@ package it.unibo.scalapacman.lib.model
 
 import it.unibo.scalapacman.lib.model.Character.{Ghost, Pacman}
 import it.unibo.scalapacman.lib.engine.GameHelpers.MapHelper
-import it.unibo.scalapacman.lib.model.GhostType.GhostType
-import it.unibo.scalapacman.lib.model.PlayerType.indexToPlayerTypeVal
+import it.unibo.scalapacman.lib.model.PacmanType.{PACMAN, indexToPlayerTypeVal}
 import it.unibo.scalapacman.lib.model.SpeedCondition.SpeedCondition
 import it.unibo.scalapacman.lib.model.SpeedLevel.SpeedLevel
 
@@ -26,18 +25,19 @@ object Level {
     val map: Map = Map.create(mapType)
 
     def characters(numPlayers: Int): List[Character] =
-      (0 until numPlayers).map(i => pacman.copy(playerType = indexToPlayerTypeVal(i))).toList :::
+      (0 until numPlayers).map(i => pacman(indexToPlayerTypeVal(i))).toList :::
       ghost(GhostType.BLINKY) :: ghost(GhostType.PINKY) ::
       ghost(GhostType.INKY) :: ghost(GhostType.CLYDE) ::
       Nil
 
-    def pacman: Pacman = Pacman(Map.getStartPosition(mapType, Pacman, None), pacmanSpeed(level), Direction.WEST)
+    def pacman(pType: PacmanType.PacmanType = PACMAN): Pacman =
+      Pacman(pType, Map.getStartPosition(mapType, Pacman, pType), pacmanSpeed(level), Direction.WEST)
 
-    def ghost(gType: GhostType): Ghost = gType match {
-      case GhostType.BLINKY => Ghost(gType, Map.getStartPosition(mapType, Ghost, Some(gType)), ghostSpeed(level), Direction.WEST)
-      case GhostType.PINKY  => Ghost(gType, Map.getStartPosition(mapType, Ghost, Some(gType)), ghostSpeed(level), Direction.NORTH)
-      case GhostType.INKY   => Ghost(gType, Map.getStartPosition(mapType, Ghost, Some(gType)), ghostSpeed(level), Direction.EAST, isDead = true)
-      case GhostType.CLYDE  => Ghost(gType, Map.getStartPosition(mapType, Ghost, Some(gType)), ghostSpeed(level), Direction.WEST, isDead = true)
+    def ghost(gType: GhostType.GhostType): Ghost = gType match {
+      case GhostType.BLINKY => Ghost(gType, Map.getStartPosition(mapType, Ghost, gType), ghostSpeed(level), Direction.WEST)
+      case GhostType.PINKY  => Ghost(gType, Map.getStartPosition(mapType, Ghost, gType), ghostSpeed(level), Direction.NORTH)
+      case GhostType.INKY   => Ghost(gType, Map.getStartPosition(mapType, Ghost, gType), ghostSpeed(level), Direction.EAST, isDead = true)
+      case GhostType.CLYDE  => Ghost(gType, Map.getStartPosition(mapType, Ghost, gType), ghostSpeed(level), Direction.WEST, isDead = true)
     }
 
     def fruit: Fruit.Value = Level.fruit(level)
@@ -103,7 +103,7 @@ object Level {
     case _ => 0
   }) * 1000
 
-  def ghostRespawnDotCounter(level: Int, ghostType: GhostType): Int = ghostType match {
+  def ghostRespawnDotCounter(level: Int, ghostType: GhostType.GhostType): Int = ghostType match {
     case GhostType.INKY => 7
     case GhostType.CLYDE => 17
     case _ => 0
