@@ -54,6 +54,8 @@ class OptionsView()(implicit controller: Controller, viewChanger: ViewChanger) e
   private val leftTextField: JTextField = createTextField()
   private val pauseTextField: JTextField = createTextField()
 
+  alignTextField()
+
   private val upIdentifier: String = "UP"
   private val downIdentifier: String = "DOWN"
   private val rightIdentifier: String = "RIGHT"
@@ -151,6 +153,14 @@ class OptionsView()(implicit controller: Controller, viewChanger: ViewChanger) e
    * @param keyCode codice del nuovo tasto impostato
    */
   private def updateTextField(keyTextField: JTextField)(keyCode: Int): Unit = keyTextField setText KeyEvent.getKeyText(keyCode)
+
+  private def alignTextField(): Unit = {
+    upTextField setHorizontalAlignment SwingConstants.RIGHT
+    downTextField setHorizontalAlignment SwingConstants.RIGHT
+    rightTextField setHorizontalAlignment SwingConstants.RIGHT
+    leftTextField setHorizontalAlignment SwingConstants.RIGHT
+    pauseTextField setHorizontalAlignment SwingConstants.RIGHT
+  }
 
   /**
    * Aggiorna la mappa di configurazione dei comandi

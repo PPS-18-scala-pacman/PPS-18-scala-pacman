@@ -26,7 +26,7 @@ class MultiPlayerView(implicit controller: Controller, viewChanger: ViewChanger)
   private val SL_V_GAP: Int = 30
   private val SL_EMPTY_BORDER_Y_AXIS: Int = 345
   private val SL_EMPTY_BORDER_X_AXIS: Int = 100
-  private val MIN_PLAYERS: Int = 2
+  private val MIN_PLAYERS: Int = 1
   private val MAX_PLAYERS: Int = 4
 
   private val titleLabel: JLabel = createTitleLabel(TITLE_LABEL)
@@ -41,7 +41,10 @@ class MultiPlayerView(implicit controller: Controller, viewChanger: ViewChanger)
   private val numPlayersSpinner: JSpinner = createNumberPlayersField()
   private val gameIdTextField: JTextField = createTextField()
 
+  nicknameTextField setHorizontalAlignment SwingConstants.RIGHT
   nicknameTextField setText controller.model.nickname
+
+  gameIdTextField setHorizontalAlignment SwingConstants.RIGHT
 
   private val createGameButton: JButton = createButton(CREATE_GAME_BUTTON_LABEL)
   private val joinGameButton: JButton = createButton(JOIN_GAME_BUTTON_LABEL)
