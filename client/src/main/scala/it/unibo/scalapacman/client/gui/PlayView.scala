@@ -28,7 +28,7 @@ object PlayView {
 class PlayView(implicit controller: Controller, viewChanger: ViewChanger) extends PanelImpl {
   private val SCORE_LABEL: String = "Punteggio"
   private val LIVES_LABEL: String = "Vite"
-  private val START_GAME_BUTTON_LABEL: String = "Inizia partita"
+//  private val START_GAME_BUTTON_LABEL: String = "Inizia partita"
   private val END_GAME_BUTTON_LABEL: String = "Fine partita"
   private val BACK_BUTTON_LABEL: String = "Indietro"
   private val PLAY_PANEL_BORDER: Int = 5
@@ -68,7 +68,7 @@ class PlayView(implicit controller: Controller, viewChanger: ViewChanger) extend
   private val userMessage: JLabel = createLabel(START_MESSAGE)
   private val gameCanvas: GameCanvas = initGameCanvas()
 
-  private val startGameButton: JButton = createButton(START_GAME_BUTTON_LABEL)
+//  private val startGameButton: JButton = createButton(START_GAME_BUTTON_LABEL)
   private val endGameButton: JButton = createButton(END_GAME_BUTTON_LABEL)
   private val backButton: JButton = createButton(BACK_BUTTON_LABEL)
 
@@ -86,9 +86,9 @@ class PlayView(implicit controller: Controller, viewChanger: ViewChanger) extend
 
   userMessage setFont new Font(MAIN_FONT_NAME, Font.BOLD, MAIN_LABELS_FONT)
 
-  startGameButton addActionListener (_ => {
-    askToController(START_GAME, None)
-  })
+//  startGameButton addActionListener (_ => {
+//    askToController(START_GAME, None)
+//  })
 
   endGameButton addActionListener (_ => {
     updateGameView(_map.getOrElse(Nil), _gameState.getOrElse(GameState(score = 0)).copy(levelState = LevelState.DEFEAT), gameCanvas, scoreCount)
@@ -106,7 +106,7 @@ class PlayView(implicit controller: Controller, viewChanger: ViewChanger) extend
   private val buttonsPanel: PanelImpl = PanelImpl()
   private val labelsPanel: PanelImpl = PanelImpl()
 
-  buttonsPanel add startGameButton
+//  buttonsPanel add startGameButton
   buttonsPanel add endGameButton
   buttonsPanel add backButton
 

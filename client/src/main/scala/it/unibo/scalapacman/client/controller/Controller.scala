@@ -1,10 +1,8 @@
 package it.unibo.scalapacman.client.controller
 
-import java.net.InetAddress
-
 import grizzled.slf4j.Logging
 import it.unibo.scalapacman.client.communication.PacmanRestClient
-import Action.{END_GAME, EXIT_APP, JOIN_GAME_MULTI, MOVEMENT, PAUSE_RESUME, RESET_KEY_MAP, SAVE_KEY_MAP, START_GAME, START_GAME_MULTI, SUBSCRIBE_TO_EVENTS}
+import Action.{END_GAME, EXIT_APP, JOIN_GAME, MOVEMENT, PAUSE_RESUME, RESET_KEY_MAP, SAVE_KEY_MAP, START_GAME, SUBSCRIBE_TO_EVENTS}
 import it.unibo.scalapacman.client.event.{GamePaused, GameStarted, GameUpdate, NewKeyMap, PacmanPublisher, PacmanSubscriber}
 import it.unibo.scalapacman.client.input.JavaKeyBinding.DefaultJavaKeyBinding
 import it.unibo.scalapacman.client.input.KeyMap
@@ -63,9 +61,8 @@ private case class ControllerImpl(pacmanRestClient: PacmanRestClient) extends Co
 
   // scalastyle:off cyclomatic.complexity
   def handleAction(action: Action, param: Option[Any]): Unit = action match {
-    case START_GAME => evalStartGame(model.gameId, 1)
-    case START_GAME_MULTI => evalStartGameMulti(model.gameId, param.asInstanceOf[Option[CreateGameData]])
-    case JOIN_GAME_MULTI => evalJoinGameMulti(model.gameId, param.asInstanceOf[Option[JoinGameData]])
+    case START_GAME => evalStartGame(model.gameId, param.asInstanceOf[Option[CreateGameData]])
+    case JOIN_GAME => evalJoinGameMulti(model.gameId, param.asInstanceOf[Option[JoinGameData]])
     case END_GAME => evalEndGame(model.gameId)
     case SUBSCRIBE_TO_EVENTS => evalSubscribeToGameUpdates(param.asInstanceOf[Option[PacmanSubscriber]])
     case MOVEMENT => evalMovement(param.asInstanceOf[Option[MoveCommandType]], _prevUserAction, model.gameId)
@@ -80,34 +77,36 @@ private case class ControllerImpl(pacmanRestClient: PacmanRestClient) extends Co
   def userAction: Option[MoveCommandType] = _prevUserAction
 
   /**
-   * Se non c'è nessuna partita in corso, effettua la chiamata al Server per creare una nuova partita.
+   * Se non c'è nessuna partita in corso, procede con la creazione di una nuova partita.
+   *
+   * @param gameId il valore attuale di gameId ottenuto dal Model
+   * @param cgdMaybe oggetto di configurazione per la nuova partita
+   */
+  private def evalStartGame(gameId: Option[String], cgdMaybe: Option[CreateGameData]): Unit = gameId match {
+    case None => startGame(cgdMaybe.get)
+    case Some(_) => error("Impossibile creare nuova partita quando ce n'è già una in corso")
+  }
+
+  /**
    * Se la chiamata ha successo:
    * - re-inizializza il Model
    * - istanzia un nuovo thread per la gestione dei messaggi WebSocket
    * - la chiamata al Server per aprire il canale WebSocket
    * - pubblica l'evento di gioco iniziato tramite il Publisher
    *
-   * @param gameId il valore attuale di gameId ottenuto dal Model
+   * @param cgd l'oggetto di configurazione per la nuova partita
    */
-  private def evalStartGame(gameId: Option[String], players: Int): Unit = gameId match {
-    case None => pacmanRestClient.startGame(players) onComplete {
-      case Success(value) =>
-        info(s"Partita creata con successo: id $value") // scalastyle:ignore multiple.string.literals
-        model = model.copy(gameId = Some(value), paused = true) // Il gioco parte sempre in pausa
-        _prevUserAction = None
-        new Thread(_webSocketRunnable).start()
-        // TODO: sostituire secondo parametro con nickname
-        pacmanRestClient.openWS(value, model.nickname, handleWebSocketMessage)
-        _publisher.notifySubscribers(GameStarted())
-      case Failure(exception) => error(s"Errore nella creazione della partita: ${exception.getMessage}") // scalastyle:ignore multiple.string.literals
-    }
-    case Some(_) => error("Impossibile creare nuova partita quando ce n'è già una in corso")
-  }
-
-  private def evalStartGameMulti(gameId: Option[String], cgdMaybe: Option[CreateGameData]): Unit = {
-    val cgd = cgdMaybe.get
-    model = model.copy(nickname = cgd.nickname)
-    evalStartGame(gameId, cgd.players)
+  private def startGame(cgd: CreateGameData): Unit = pacmanRestClient.startGame(cgd.players) onComplete {
+    case Success(value) =>
+      info(s"Partita creata con successo: id $value") // scalastyle:ignore multiple.string.literals
+      model = model.copy(gameId = Some(value), paused = true) // Il gioco parte sempre in pausa
+      model = model.copy(nickname = cgd.nickname)
+      _prevUserAction = None
+      new Thread(_webSocketRunnable).start()
+      // TODO: sostituire secondo parametro con nickname
+      pacmanRestClient.openWS(value, model.nickname, handleWebSocketMessage)
+      _publisher.notifySubscribers(GameStarted())
+    case Failure(exception) => error(s"Errore nella creazione della partita: ${exception.getMessage}") // scalastyle:ignore multiple.string.literals
   }
 
   private def evalJoinGameMulti(gameId: Option[String], jgd: Option[JoinGameData]): Unit = gameId match {

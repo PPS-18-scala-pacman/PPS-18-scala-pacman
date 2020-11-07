@@ -1,19 +1,19 @@
 package it.unibo.scalapacman.client.gui
 
-import java.awt.{BorderLayout, GridBagLayout, GridLayout}
+import java.awt.{BorderLayout, GridLayout}
 
-import it.unibo.scalapacman.client.controller.Action.{JOIN_GAME_MULTI, START_GAME_MULTI}
+import it.unibo.scalapacman.client.controller.Action.{JOIN_GAME, START_GAME}
 import it.unibo.scalapacman.client.controller.Controller
-import it.unibo.scalapacman.client.gui.View.MENU
+import it.unibo.scalapacman.client.gui.View.{MENU, PLAY}
 import it.unibo.scalapacman.client.model.{CreateGameData, JoinGameData}
-import javax.swing.{BorderFactory, Box, BoxLayout, JButton, JLabel, JSpinner, JTextField, SwingConstants}
+import javax.swing.{BorderFactory, JButton, JLabel, JSpinner, JTextField, SwingConstants}
 
-object MultiPlayerView {
-  def apply()(implicit controller: Controller, viewChanger: ViewChanger): MultiPlayerView = new MultiPlayerView()
+object SetupGameView {
+  def apply()(implicit controller: Controller, viewChanger: ViewChanger): SetupGameView = new SetupGameView()
 }
 
-class MultiPlayerView(implicit controller: Controller, viewChanger: ViewChanger) extends PanelImpl {
-  private val TITLE_LABEL: String = "Multigiocatore"
+class SetupGameView(implicit controller: Controller, viewChanger: ViewChanger) extends PanelImpl {
+  private val TITLE_LABEL: String = "Setup partita"
   private val CREATE_GAME_BUTTON_LABEL: String = "Crea"
   private val JOIN_GAME_BUTTON_LABEL: String = "Partecipa"
   private val BACK_BUTTON_LABEL: String = "Indietro"
@@ -77,14 +77,13 @@ class MultiPlayerView(implicit controller: Controller, viewChanger: ViewChanger)
   add(settingsPanel, BorderLayout.CENTER)
   add(buttonsPanel, BorderLayout.PAGE_END)
 
-  // TODO: dovrebbe redirezionare alla schermata di gioco
   private def handleCreateGameButton(): Unit = if (checkNickName()) {
-    controller.handleAction(START_GAME_MULTI, Some(CreateGameData(nicknameTextField.getText(), numPlayersSpinner.getValue.toString.toInt)))
-    viewChanger.changeView(View.PLAY)
+    controller.handleAction(START_GAME, Some(CreateGameData(nicknameTextField.getText(), numPlayersSpinner.getValue.toString.toInt)))
+    viewChanger.changeView(PLAY)
   }
 
   private def handleJoinGameButton(): Unit = if (checkNickName()) {
-    controller.handleAction(JOIN_GAME_MULTI, Some(JoinGameData(nicknameTextField.getText(), gameIdTextField.getText)))
+    controller.handleAction(JOIN_GAME, Some(JoinGameData(nicknameTextField.getText(), gameIdTextField.getText)))
 //    viewChanger.changeView(View.LOBBY)
   }
 
