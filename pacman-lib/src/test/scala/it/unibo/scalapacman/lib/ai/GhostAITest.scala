@@ -5,6 +5,7 @@ import it.unibo.scalapacman.lib.ai.GhostAI.prologEngine
 import it.unibo.scalapacman.lib.math.{Point2D, TileGeography}
 import it.unibo.scalapacman.lib.model.Character.{Ghost, Pacman}
 import it.unibo.scalapacman.lib.model.Map.{emptyTrack, wall}
+import it.unibo.scalapacman.lib.model.PacmanType.PACMAN
 import org.scalatest.wordspec.AnyWordSpec
 
 class GhostAITest extends AnyWordSpec {
@@ -59,7 +60,7 @@ class GhostAITest extends AnyWordSpec {
         val map = generator.map
         var blinky = generator.ghost(GhostType.BLINKY)
         blinky = blinky.copy(position = blinky.position + Point2D(TileGeography.SIZE * -4, 0)) // scalastyle:ignore magic.number
-        val pacman = generator.pacman
+        val pacman = generator.pacman(PACMAN)
         val desiredDirection = GhostAI.desiredDirection(blinky, pacman)(prologEngine, map)
         assert(desiredDirection == Direction.SOUTH)
       }

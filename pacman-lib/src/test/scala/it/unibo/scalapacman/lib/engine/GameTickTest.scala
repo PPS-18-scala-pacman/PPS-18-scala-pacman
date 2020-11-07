@@ -4,12 +4,12 @@ import java.util.concurrent.TimeUnit
 
 import it.unibo.scalapacman.lib.math.{Point2D, TileGeography}
 import it.unibo.scalapacman.lib.model.{Direction, Dot, Fruit, GameState, GameTimedEvent, GhostType, LevelState, Map, MapType, Tile}
-import it.unibo.scalapacman.lib.engine.GameTick.{calculateDeaths, calculateGameState, calculateLevelState, calculateMap,
-  calculateSpeeds, collisions, consumeTimeOfGameEvents, handleEvents, removeTimedOutGameEvents, updateEvents}
+import it.unibo.scalapacman.lib.engine.GameTick.{calculateDeaths, calculateGameState, calculateLevelState, calculateMap, calculateSpeeds,
+  collisions, consumeTimeOfGameEvents, handleEvents, removeTimedOutGameEvents, updateEvents}
 import it.unibo.scalapacman.lib.engine.GameHelpers.{CharacterHelper, MapHelper}
 import it.unibo.scalapacman.lib.model.Character.{Ghost, Pacman}
 import it.unibo.scalapacman.lib.model.GameTimedEventType.{ENERGIZER_STOP, FRUIT_SPAWN, FRUIT_STOP, GHOST_RESTART}
-import it.unibo.scalapacman.lib.model.PlayerType.{PlayerType, PLAYER_TWO}
+import it.unibo.scalapacman.lib.model.PacmanType.MS_PACMAN
 import org.scalatest.wordspec.AnyWordSpec
 
 import scala.concurrent.duration.FiniteDuration
@@ -44,7 +44,7 @@ class GameTickTest extends AnyWordSpec {
           assert(collisions(List(PACMAN)).isEmpty)
         }
         "two pacmans are on the same empty tile" in {
-          assert(collisions(List(PACMAN, PACMAN.copy(playerType = PLAYER_TWO))).isEmpty)
+          assert(collisions(List(PACMAN, PACMAN.copy(characterType = MS_PACMAN))).isEmpty)
         }
       }
       "return ghosts" when {
@@ -78,19 +78,19 @@ class GameTickTest extends AnyWordSpec {
         }
         "two pacmans are on the same small dot" in {
           val pacman = Pacman(PACMAN.position + Point2D(0, TileGeography.SIZE), 0.0, Direction.SOUTH)
-          assert(collisions(List(pacman, pacman.copy(playerType = PLAYER_TWO))).size == 1)
+          assert(collisions(List(pacman, pacman.copy(characterType = MS_PACMAN))).size == 1)
         }
       }
       "return ghosts and tile's game object" when {
         "they are all in the Pacman's tile" in {
           var pacman = Pacman(PACMAN.position + Point2D(0, TileGeography.SIZE), 0.0, Direction.EAST)
-          var ghost1 = Ghost(GHOST_1.ghostType, GHOST_1.position + Point2D(0, TileGeography.SIZE), 0.0, Direction.EAST)
-          var ghost2 = Ghost(GHOST_2.ghostType, GHOST_2.position + Point2D(0, TileGeography.SIZE), 0.0, Direction.EAST)
+          var ghost1 = Ghost(GHOST_1.characterType, GHOST_1.position + Point2D(0, TileGeography.SIZE), 0.0, Direction.EAST)
+          var ghost2 = Ghost(GHOST_2.characterType, GHOST_2.position + Point2D(0, TileGeography.SIZE), 0.0, Direction.EAST)
           assert(collisions(List(pacman, ghost1, ghost2)).size == 3)
 
           pacman = Pacman(pacman.position + Point2D(0, TileGeography.SIZE), 0.0, Direction.EAST)
-          ghost1 = Ghost(ghost1.ghostType, ghost1.position + Point2D(0, TileGeography.SIZE), 0.0, Direction.EAST)
-          ghost2 = Ghost(ghost2.ghostType, ghost2.position + Point2D(0, TileGeography.SIZE), 0.0, Direction.EAST)
+          ghost1 = Ghost(ghost1.characterType, ghost1.position + Point2D(0, TileGeography.SIZE), 0.0, Direction.EAST)
+          ghost2 = Ghost(ghost2.characterType, ghost2.position + Point2D(0, TileGeography.SIZE), 0.0, Direction.EAST)
           assert(collisions(List(pacman, ghost1, ghost2)).size == 3)
         }
       }
@@ -195,7 +195,7 @@ class GameTickTest extends AnyWordSpec {
           val noCollisions = Nil
           assert(calculateDeaths(characters, state)(noCollisions, map) == characters)
           val charactersCollisions = (PACMAN, GHOST_1) :: Nil
-          val expectedResult = PACMAN.copy(isDead = true, position = Map.getRestartPosition(map.mapType, Pacman)) :: GHOST_1 :: Nil
+          val expectedResult = PACMAN.copy(isDead = true, position = Map.getRestartPosition(map.mapType, Pacman, PACMAN.characterType)) :: GHOST_1 :: Nil
           assert(calculateDeaths(characters, state)(charactersCollisions, map) == expectedResult)
         }
       }
@@ -207,7 +207,7 @@ class GameTickTest extends AnyWordSpec {
           val noCollisions = Nil
           assert(calculateDeaths(characters, state)(noCollisions, map) == characters)
           val charactersCollisions = (PACMAN, GHOST_1) :: Nil
-          val expectedResult = PACMAN :: GHOST_1.copy(isDead = true, position = Map.getRestartPosition(map.mapType, Ghost, Some(GhostType.PINKY))) :: Nil
+          val expectedResult = PACMAN :: GHOST_1.copy(isDead = true, position = Map.getRestartPosition(map.mapType, Ghost, GhostType.PINKY)) :: Nil
           assert(calculateDeaths(characters, state)(charactersCollisions, map) == expectedResult)
         }
       }
@@ -263,22 +263,22 @@ class GameTickTest extends AnyWordSpec {
       }
       "should include ghost restart event when a ghost died" in {
         val newEvents = updateEvents(Nil, GameState(score = 0, ghostInFear = true, pacmanEmpowered = true), (PACMAN, GHOST_1) :: Nil)(MAP)
-        assert(newEvents.exists(e => e.eventType == GHOST_RESTART && e.payload.contains(GHOST_1.ghostType)) && newEvents.size == 1)
+        assert(newEvents.exists(e => e.eventType == GHOST_RESTART && e.payload.contains(GHOST_1.characterType)) && newEvents.size == 1)
       }
       "should be handled updating characters" in {
         val characters = PACMAN :: GHOST_1.copy(isDead = true) :: GHOST_2.copy(isDead = true) :: Nil
-        val events = GameTimedEvent(GHOST_RESTART, payload = Some(GHOST_1.ghostType)) ::
-          GameTimedEvent(GHOST_RESTART, timeMs = Some(1), payload = Some(GHOST_2.ghostType)) ::
+        val events = GameTimedEvent(GHOST_RESTART, payload = Some(GHOST_1.characterType)) ::
+          GameTimedEvent(GHOST_RESTART, timeMs = Some(1), payload = Some(GHOST_2.characterType)) ::
           Nil
         val newCharacters = handleEvents(events, characters)(Map.create(MapType.CLASSIC))
-        assert(newCharacters.exists { case Ghost(GHOST_1.ghostType, _, _, _, false) => true; case _ => false } &&
-          newCharacters.exists { case Ghost(GHOST_2.ghostType, _, _, _, true) => true; case _ => false } &&
+        assert(newCharacters.exists { case Ghost(GHOST_1.`characterType`, _, _, _, false) => true; case _ => false } &&
+          newCharacters.exists { case Ghost(GHOST_2.`characterType`, _, _, _, true) => true; case _ => false } &&
           newCharacters.size == 3)
       }
       "should be handled adding and removing the fruit" in {
         var events = GameTimedEvent(FRUIT_SPAWN, payload = Some(Fruit.CHERRIES)) :: Nil
         var newMap = handleEvents(events, Map.create(MapType.CLASSIC))
-        assert(newMap.fruit exists { case (_, Fruit.CHERRIES) => true })
+        assert(newMap.fruit exists { case (_, Fruit.CHERRIES) => true; case _ => false })
 
         events = GameTimedEvent(FRUIT_STOP) :: Nil
         newMap = handleEvents(events, newMap)

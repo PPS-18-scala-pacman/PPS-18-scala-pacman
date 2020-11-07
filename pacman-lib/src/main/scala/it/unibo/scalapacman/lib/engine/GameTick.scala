@@ -87,11 +87,11 @@ object GameTick {
 
   private def calculateDeath(character: Character, gameState: GameState, collisions: List[(Character, Character)])(implicit map: Map): Character = {
     def pacmanCollideGhost(pacman: Pacman)(collision: (Character, Character)): Boolean = collision match {
-      case (p: Pacman, _: Ghost) if p.playerType == pacman.playerType => true
+      case (p: Pacman, _: Ghost) if p.characterType == pacman.characterType => true
       case _ => false
     }
-    def killGhost(ghost: Ghost): Ghost = ghost.copy(isDead = true, position = Map.getRestartPosition(map.mapType, Ghost, Some(ghost.ghostType)))
-    def killPacman(pacman: Pacman): Pacman = pacman.copy(isDead = true, position = Map.getRestartPosition(map.mapType, Pacman))
+    def killGhost(ghost: Ghost): Ghost = ghost.copy(isDead = true, position = Map.getRestartPosition(map.mapType, Ghost, ghost.characterType))
+    def killPacman(pacman: Pacman): Pacman = pacman.copy(isDead = true, position = Map.getRestartPosition(map.mapType, Pacman, pacman.characterType))
 
     if (ghostCanBeKilled(gameState)) {
       character match {
@@ -126,7 +126,7 @@ object GameTick {
   private def calculateSpeed(character: Character, level: Int, speedCondition: SpeedCondition)
                             (implicit collisions: List[(Character, GameObject)], map: Map): Character =
     character match {
-      case p@Pacman(_, speed, _, _, _) => if (speed == pacmanSpeed(level, speedCondition)) p else p.copy(speed = pacmanSpeed(level, speedCondition))
+      case p@Pacman(_, _, speed, _, _) => if (speed == pacmanSpeed(level, speedCondition)) p else p.copy(speed = pacmanSpeed(level, speedCondition))
       case g@Ghost(_, _, speed, _, _) => if (speed == ghostSpeed(level, speedCondition)) g else g.copy(speed = ghostSpeed(level, speedCondition))
       case _ => character
     }
@@ -213,8 +213,8 @@ object GameTick {
       if (ghostCanBeKilled(gameState)) {
         collisions.map(_._2).collect { case ghost: Ghost => ghost } .map(ghost => Some(GameTimedEvent(
           GHOST_RESTART,
-          dots = Some(map.dots.size - Level.ghostRespawnDotCounter(gameState.levelNumber, ghost.ghostType)),
-          payload = Some(ghost.ghostType))
+          dots = Some(map.dots.size - Level.ghostRespawnDotCounter(gameState.levelNumber, ghost.characterType)),
+          payload = Some(ghost.characterType))
         ))
       } else {
         Nil
@@ -239,7 +239,7 @@ object GameTick {
   def handleEvents(gameEvents: List[GameTimedEvent[Any]], characters: List[Character])(implicit map: Map): List[Character] = {
     def handleEvent(gameEvent: GameTimedEvent[Any], characters: List[Character])(implicit map: Map): List[Character] = gameEvent match {
       case GameTimedEvent(GHOST_RESTART, _, _, Some(ghostType: GhostType)) => characters.map {
-        case ghost: Ghost if ghost.ghostType == ghostType => ghost.copy(isDead = false)
+        case ghost: Ghost if ghost.characterType == ghostType => ghost.copy(isDead = false)
         case character: Character => character
       }
       case _ => characters

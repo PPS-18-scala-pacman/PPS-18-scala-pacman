@@ -23,10 +23,10 @@ class EngineCommandTest extends ScalaTestWithActorTestKit with AnyWordSpecLike {
     watcherPlayerProbe = createTestProbe[Engine.UpdateCommand]()
 
     engineActor ! Engine.RegisterPlayer(watcherPlayerProbe.ref)
-    val ghostMap = GhostType.values.map( gt => {
+    val ghostMap = GhostType.values.map(gt => {
       val curProbe = createTestProbe[Engine.UpdateCommand]()
-      engineActor ! Engine.RegisterGhost(curProbe.ref, gt)
-      GameCharacter.ghostTypeToGameCharacter(gt) -> curProbe
+      engineActor ! Engine.RegisterGhost(curProbe.ref, gt.asInstanceOf[GhostType.GhostType])
+      GameCharacter.ghostTypeToGameCharacter(gt.asInstanceOf[GhostType.GhostType]) -> curProbe
     }).toMap
 
     engineActor ! Engine.Resume()

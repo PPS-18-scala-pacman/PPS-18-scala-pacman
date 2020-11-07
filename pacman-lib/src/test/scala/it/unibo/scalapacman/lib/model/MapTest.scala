@@ -45,30 +45,34 @@ class MapTest extends AnyWordSpec with BeforeAndAfterAll {
         assertResult(SPAWN_TRACKS_COUNT)(classicMap.tiles.flatten.count(tile => tile.isInstanceOf[Tile.GhostSpawn]))
       }
       "return the correct starting position for every character" in {
-        assert(Map.getStartPosition(MapType.CLASSIC, Pacman, None) == Map.Classic.PACMAN_START_POSITION)
-        assert(Map.getStartPosition(MapType.CLASSIC, Ghost, Some(GhostType.BLINKY)) == Map.Classic.BLINKY_START_POSITION)
-        assert(Map.getStartPosition(MapType.CLASSIC, Ghost, Some(GhostType.PINKY)) == Map.Classic.PINKY_START_POSITION)
-        assert(Map.getStartPosition(MapType.CLASSIC, Ghost, Some(GhostType.INKY)) == Map.Classic.INKY_START_POSITION)
-        assert(Map.getStartPosition(MapType.CLASSIC, Ghost, Some(GhostType.CLYDE)) == Map.Classic.CLYDE_START_POSITION)
+        assert(Map.getStartPosition(MapType.CLASSIC, Pacman, PacmanType.PACMAN) == Map.Classic.PACMAN_START_POSITION)
+        assert(Map.getStartPosition(MapType.CLASSIC, Pacman, PacmanType.MS_PACMAN) != Map.Classic.PACMAN_START_POSITION)
+        assert(Map.getStartPosition(MapType.CLASSIC, Ghost, GhostType.BLINKY) == Map.Classic.BLINKY_START_POSITION)
+        assert(Map.getStartPosition(MapType.CLASSIC, Ghost, GhostType.PINKY) == Map.Classic.PINKY_START_POSITION)
+        assert(Map.getStartPosition(MapType.CLASSIC, Ghost, GhostType.INKY) == Map.Classic.INKY_START_POSITION)
+        assert(Map.getStartPosition(MapType.CLASSIC, Ghost, GhostType.CLYDE) == Map.Classic.CLYDE_START_POSITION)
         assertThrows[java.lang.IllegalArgumentException](Map.getStartPosition(MapType.CLASSIC, new Character {
+          override val characterType: CharacterType = new CharacterType {}
           override val position: Point2D = Point2D(0, 0)
           override val speed: Double = 1.0
           override val direction: Direction = Direction.NORTH
           override val isDead: Boolean = false
-        }, None))
+        }, new CharacterType {}))
       }
       "return the correct respawn position for every character" in {
-        assert(Map.getRestartPosition(MapType.CLASSIC, Pacman, None) == Map.Classic.PACMAN_START_POSITION)
-        assert(Map.getRestartPosition(MapType.CLASSIC, Ghost, Some(GhostType.BLINKY)) == Map.Classic.PINKY_START_POSITION)
-        assert(Map.getRestartPosition(MapType.CLASSIC, Ghost, Some(GhostType.PINKY)) == Map.Classic.PINKY_START_POSITION)
-        assert(Map.getRestartPosition(MapType.CLASSIC, Ghost, Some(GhostType.INKY)) == Map.Classic.INKY_START_POSITION)
-        assert(Map.getRestartPosition(MapType.CLASSIC, Ghost, Some(GhostType.CLYDE)) == Map.Classic.CLYDE_START_POSITION)
+        assert(Map.getRestartPosition(MapType.CLASSIC, Pacman, PacmanType.PACMAN) == Map.Classic.PACMAN_START_POSITION)
+        assert(Map.getRestartPosition(MapType.CLASSIC, Pacman, PacmanType.MS_PACMAN) != Map.Classic.PACMAN_START_POSITION)
+        assert(Map.getRestartPosition(MapType.CLASSIC, Ghost, GhostType.BLINKY) == Map.Classic.PINKY_START_POSITION)
+        assert(Map.getRestartPosition(MapType.CLASSIC, Ghost, GhostType.PINKY) == Map.Classic.PINKY_START_POSITION)
+        assert(Map.getRestartPosition(MapType.CLASSIC, Ghost, GhostType.INKY) == Map.Classic.INKY_START_POSITION)
+        assert(Map.getRestartPosition(MapType.CLASSIC, Ghost, GhostType.CLYDE) == Map.Classic.CLYDE_START_POSITION)
         assertThrows[java.lang.IllegalArgumentException](Map.getRestartPosition(MapType.CLASSIC, new Character {
+          override val characterType: CharacterType = new CharacterType {}
           override val position: Point2D = Point2D(0, 0)
           override val speed: Double = 1.0
           override val direction: Direction = Direction.NORTH
           override val isDead: Boolean = false
-        }, None))
+        }, new CharacterType {}))
       }
       "return the correct spawn map indexes for fruits" in {
         assert(Map.getFruitMapIndexes(MapType.CLASSIC) == (14, 17))

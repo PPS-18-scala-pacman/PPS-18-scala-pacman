@@ -6,7 +6,6 @@ import akka.actor.typed.scaladsl.{ActorContext, Behaviors}
 import akka.http.scaladsl.model.ws.Message
 import it.unibo.scalapacman.common.GameCharacter
 import it.unibo.scalapacman.lib.model.GhostType
-import it.unibo.scalapacman.lib.model.GhostType.GhostType
 import it.unibo.scalapacman.server.core.Engine.EngineCommand
 import it.unibo.scalapacman.server.core.Game.{CloseCommand, GameCommand, Model, RegisterPlayer, Setup}
 import it.unibo.scalapacman.server.core.Player.{PlayerCommand, PlayerRegistration, RegistrationRejected}
@@ -30,7 +29,7 @@ object Game {
                             engine: ActorRef[EngineCommand])
 
   private case class Model( player: ActorRef[PlayerCommand],
-                            ghosts: Map[ActorRef[Engine.UpdateCommand],GhostType])
+                            ghosts: Map[ActorRef[Engine.UpdateCommand],GhostType.GhostType])
 
   def apply(id: String, visible: Boolean = true): Behavior[GameCommand] =
     Behaviors.setup { context =>
@@ -45,8 +44,9 @@ object Game {
       val player = context.spawn(Player(id, engine), "PlayerActor")
 
       val props  = MailboxSelector.fromConfig("ghost-mailbox")
-      val ghosts = GhostType.values.map( gt =>
-        context.spawn(GhostAct(id, engine, gt), s"${gt}Actor", props) -> gt
+      val ghosts = GhostType.values.map(gt =>
+        context.spawn(GhostAct(id, engine, gt.asInstanceOf[GhostType.GhostType]),
+        s"${gt}Actor", props) -> gt.asInstanceOf[GhostType.GhostType]
       ).toMap
 
       (Set(engine, player) ++ ghosts.keySet).foreach(context.watch(_))

@@ -13,7 +13,7 @@ class GhostActUpdateTest extends ScalaTestWithActorTestKit(ConfLoader.akkaConf) 
 
   val fakeGameId = "fakeCreateGameId"
 
-  val ghostTestType: GhostType.Value = GhostType.BLINKY
+  val ghostTestType: GhostType.GhostType = GhostType.BLINKY
 
   private var ghostActor  : ActorRef[Engine.UpdateCommand] = _
   private var engineProbe : TestProbe[Engine.EngineCommand] = _

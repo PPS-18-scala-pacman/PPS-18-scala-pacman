@@ -10,7 +10,7 @@ import it.unibo.scalapacman.lib.model.Character.{Ghost, Pacman}
 import it.unibo.scalapacman.lib.model.Direction.Direction
 import it.unibo.scalapacman.lib.model.Dot.{ENERGIZER_DOT, SMALL_DOT}
 import it.unibo.scalapacman.lib.model.GhostType.{BLINKY, CLYDE, GhostType, INKY, PINKY}
-import it.unibo.scalapacman.lib.model.PlayerType.{PLAYER_FOUR, PLAYER_ONE, PLAYER_THREE, PLAYER_TWO}
+import it.unibo.scalapacman.lib.model.PacmanType.{RAPMAN, PACMAN, CAPMAN, MS_PACMAN}
 import it.unibo.scalapacman.lib.model.Tile.{GhostSpawn, Track, TrackSafe, Wall}
 
 /**
@@ -20,19 +20,19 @@ import it.unibo.scalapacman.lib.model.Tile.{GhostSpawn, Track, TrackSafe, Wall}
 object PacmanMap {
   type PacmanMap = List[List[(String, Option[ElementStyle])]]
 
-  private val WALL_STYLE = ElementStyle(Left(Color.BLUE))
+  val WALL_STYLE: ElementStyle = ElementStyle(Left(Color.BLUE))
 
-  private val PACMAN_ONE_STYLE = ElementStyle(Left(Color.YELLOW))
-  private val PACMAN_TWO_STYLE = ElementStyle(Left(Color.ORANGE))
-  private val PACMAN_THREE_STYLE = ElementStyle(Left(Color.GREEN))
-  private val PACMAN_FOUR_STYLE = ElementStyle(Left(Color.BLUE))
+  val PACMAN_STYLE: ElementStyle = ElementStyle(Left(Color.YELLOW))
+  val MS_PACMAN_STYLE: ElementStyle = ElementStyle(Left(Color.ORANGE))
+  val CAPMAN_STYLE: ElementStyle = ElementStyle(Left(Color.GREEN))
+  val RAPMAN_STYLE: ElementStyle = ElementStyle(Left(Color.BLUE))
 
   private val GHOST_FEARED_COLOR = Color.LIGHT_GRAY
   private def ghostColor(primaryColor: Color)(gameState: GameState): Color = if (gameState.ghostInFear) GHOST_FEARED_COLOR else primaryColor
-  private val BLINKY_STYLE = ElementStyle(Right(ghostColor(Color.RED)))
-  private val INKY_STYLE = ElementStyle(Right(ghostColor(Color.CYAN)))
-  private val PINKY_STYLE = ElementStyle(Right(ghostColor(Color.PINK)))
-  private val CLYDE_STYLE = ElementStyle(Right(ghostColor(Color.ORANGE)))
+  val BLINKY_STYLE: ElementStyle = ElementStyle(Right(ghostColor(Color.RED)))
+  val INKY_STYLE: ElementStyle = ElementStyle(Right(ghostColor(Color.CYAN)))
+  val PINKY_STYLE: ElementStyle = ElementStyle(Right(ghostColor(Color.PINK)))
+  val CLYDE_STYLE: ElementStyle = ElementStyle(Right(ghostColor(Color.ORANGE)))
 
   /**
    * Ritorna la mappa nella versione che sarà utilizzata poi dalla view, compresa la presenza dei personaggi
@@ -78,10 +78,10 @@ object PacmanMap {
   }
 
   private def retrieveStyle(character: Character): Option[ElementStyle] = character match {
-    case Pacman(_, _, _, _, PLAYER_ONE) => Some(PACMAN_ONE_STYLE)
-    case Pacman(_, _, _, _, PLAYER_TWO) => Some(PACMAN_TWO_STYLE)
-    case Pacman(_, _, _, _, PLAYER_THREE) => Some(PACMAN_THREE_STYLE)
-    case Pacman(_, _, _, _, PLAYER_FOUR) => Some(PACMAN_FOUR_STYLE)
+    case Pacman(PACMAN, _, _, _, _) => Some(PACMAN_STYLE)
+    case Pacman(MS_PACMAN, _, _, _, _) => Some(MS_PACMAN_STYLE)
+    case Pacman(CAPMAN, _, _, _, _) => Some(CAPMAN_STYLE)
+    case Pacman(RAPMAN, _, _, _, _) => Some(RAPMAN_STYLE)
     case Ghost(BLINKY, _, _, _, _) => Some(BLINKY_STYLE)
     case Ghost(INKY, _, _, _, _) => Some(INKY_STYLE)
     case Ghost(PINKY, _, _, _, _) => Some(PINKY_STYLE)
@@ -97,7 +97,7 @@ object PacmanMap {
 
   private def getPacmanCode(direction: Direction): String = ElementsCode.PACMAN_CODES_MAP(direction)
 
-  private def getGhostCompleteCode(ghost: Ghost): String = getGhostCode(ghost.ghostType) + getArrowCode(ghost.direction)
+  private def getGhostCompleteCode(ghost: Ghost): String = getGhostCode(ghost.characterType) + getArrowCode(ghost.direction)
 
   private def getGhostCode(ghostType: GhostType): String = ElementsCode.GHOST_CODES_MAP(ghostType)
 

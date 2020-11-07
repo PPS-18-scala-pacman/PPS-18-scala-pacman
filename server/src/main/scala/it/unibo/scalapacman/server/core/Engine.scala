@@ -10,10 +10,8 @@ import it.unibo.scalapacman.common.{DotDTO, FruitDTO, GameEntityDTO, UpdateModel
 import it.unibo.scalapacman.lib.engine.{GameMovement, GameTick}
 import it.unibo.scalapacman.lib.engine.GameHelpers.MapHelper
 import it.unibo.scalapacman.lib.model.Direction.Direction
-import it.unibo.scalapacman.lib.model.GhostType.GhostType
-import it.unibo.scalapacman.lib.model.{Character, GameObject, GhostType, Level, LevelState, Map}
-import it.unibo.scalapacman.server.core.Engine.{ActorRecovery, ChangeDirectionCur, ChangeDirectionReq, EngineCommand,
-  Pause, RegisterGhost, RegisterPlayer, Resume, Setup, UpdateCommand, UpdateMsg, WakeUp}
+import it.unibo.scalapacman.lib.model.{Character, GameObject, GhostType, Level, LevelState, Map, PacmanType}
+import it.unibo.scalapacman.server.core.Engine.{ActorRecovery, ChangeDirectionCur, ChangeDirectionReq, EngineCommand, Pause, RegisterGhost, RegisterPlayer, Resume, Setup, UpdateCommand, UpdateMsg, WakeUp}
 import it.unibo.scalapacman.server.model.GameParticipant.gameParticipantToGameEntity
 import it.unibo.scalapacman.server.model.MoveDirection.MoveDirection
 import it.unibo.scalapacman.server.model.{EngineModel, GameParticipant, Players, RegistrationModel}
@@ -42,7 +40,7 @@ object Engine {
   case class ChangeDirectionReq(id: ActorRef[UpdateCommand], direction: MoveDirection) extends EngineCommand
   case class ChangeDirectionCur(id: ActorRef[UpdateCommand]) extends EngineCommand
 
-  case class RegisterGhost(actor: ActorRef[UpdateCommand], ghostType: GhostType) extends EngineCommand
+  case class RegisterGhost(actor: ActorRef[UpdateCommand], ghostType: GhostType.GhostType) extends EngineCommand
   case class RegisterPlayer(actor: ActorRef[UpdateCommand]) extends EngineCommand
 
   // Messaggi inviati agli osservatori
@@ -182,7 +180,7 @@ private class Engine(setup: Setup) {
 
     val classicFactory = Level.Classic(setup.level)
     val players = Players(
-      pacman = GameParticipant(classicFactory.pacman, startMod.pacman.get.actor),
+      pacman = GameParticipant(classicFactory.pacman(PacmanType.PACMAN), startMod.pacman.get.actor),
       blinky = GameParticipant(classicFactory.ghost(GhostType.BLINKY), startMod.blinky.get.actor),
       clyde  = GameParticipant(classicFactory.ghost(GhostType.CLYDE), startMod.clyde.get.actor),
       inky   = GameParticipant(classicFactory.ghost(GhostType.INKY), startMod.inky.get.actor),
