@@ -5,8 +5,7 @@ import akka.actor.typed.receptionist.{Receptionist, ServiceKey}
 import akka.actor.typed.scaladsl.{ActorContext, Behaviors}
 import akka.http.scaladsl.model.ws.Message
 import it.unibo.scalapacman.lib.model.GhostType
-import it.unibo.scalapacman.lib.model.GhostType.GhostType
-import it.unibo.scalapacman.lib.model.PlayerType.PlayerType
+import it.unibo.scalapacman.lib.model.PacmanType.PacmanType
 import it.unibo.scalapacman.server.core.Engine.EngineCommand
 import it.unibo.scalapacman.server.core.Game.{CloseCommand, GameCommand, Model, RegisterPlayer, Setup}
 import it.unibo.scalapacman.server.core.Player.{PlayerCommand, PlayerRegistration, RegistrationRejected}
@@ -25,7 +24,7 @@ object Game {
   case class CloseCommand() extends GameCommand
   case class RegisterPlayer(replyTo: ActorRef[PlayerRegistration], source: ActorRef[Message]) extends GameCommand
 
-  private case class Player(ref: ActorRef[PlayerCommand], typePlayer: PlayerType)
+  private case class Player(ref: ActorRef[PlayerCommand], typePlayer: PacmanType)
 
   private case class Setup( id: String,
                             context: ActorContext[GameCommand],
@@ -33,7 +32,7 @@ object Game {
                             playersNumber: Int)
 
   private case class Model( players: Set[Player],
-                            ghosts: Map[ActorRef[Engine.UpdateCommand], GhostType])
+                            ghosts: Map[ActorRef[Engine.UpdateCommand], GhostType.GhostType])
 
   def apply(id: String, playersNumber: Int = 1, visible: Boolean = true): Behavior[GameCommand] = {
     require(playersNumber > 0 || playersNumber <= Settings.maxPlayersNumber, "Numero di giocatori errato")
@@ -49,7 +48,9 @@ object Game {
 
       val props = MailboxSelector.fromConfig("ghost-mailbox")
       val ghosts = GhostType.values.map(gt =>
-        context.spawn(GhostAct(id, engine, gt), s"${gt}Actor", props) -> gt
+        context.spawn(
+          GhostAct(id, engine, gt.asInstanceOf[GhostType.GhostType]),
+          s"${gt}Actor", props) -> gt.asInstanceOf[GhostType.GhostType]
       ).toMap
 
       (Set(engine) ++ ghosts.keySet).foreach(context.watch(_))

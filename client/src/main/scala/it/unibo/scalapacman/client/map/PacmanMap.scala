@@ -1,5 +1,8 @@
 package it.unibo.scalapacman.client.map
 
+import java.awt.Color
+
+import it.unibo.scalapacman.client.gui.ElementStyle
 import it.unibo.scalapacman.common.GameEntityDTO
 import it.unibo.scalapacman.lib.model.{Character, Fruit, GameState, Map, Tile}
 import it.unibo.scalapacman.lib.engine.GameHelpers.CharacterHelper
@@ -7,7 +10,7 @@ import it.unibo.scalapacman.lib.model.Character.{Ghost, Pacman}
 import it.unibo.scalapacman.lib.model.Direction.Direction
 import it.unibo.scalapacman.lib.model.Dot.{ENERGIZER_DOT, SMALL_DOT}
 import it.unibo.scalapacman.lib.model.GhostType.{BLINKY, CLYDE, GhostType, INKY, PINKY}
-import it.unibo.scalapacman.lib.model.PacmanType.{RAPMAN, PACMAN, CAPMAN, MS_PACMAN}
+import it.unibo.scalapacman.lib.model.PacmanType.{CAPMAN, MS_PACMAN, PACMAN, RAPMAN}
 import it.unibo.scalapacman.lib.model.Tile.{GhostSpawn, Track, TrackSafe, Wall}
 
 /**
@@ -43,12 +46,12 @@ object PacmanMap {
 
     pacmanMap = gameEntities.map(entity => entity.toGhost)
       .collect { case Some(ghost) => ghost }
-      .foldLeft(pacmanMap)((pacmanMap, ghost) => addCharacter(getGhostCompleteCode(ghost))(pacmanMap, ghost))
+      .foldLeft(pacmanMap)((pacmanMap, ghost) => addCharacter(getGhostCompleteCode(ghost), retrieveStyle(ghost))(pacmanMap, ghost))
 
     // Stampo pacman per ultimo E se non è morto
     pacmanMap = gameEntities.map(entity => entity.toPacman)
       .collect { case Some(pacman) if !pacman.isDead => pacman }
-      .foldLeft(pacmanMap)((pacmanMap, pacman) => addCharacter(getPacmanCode(pacman.direction))(pacmanMap, pacman))
+      .foldLeft(pacmanMap)((pacmanMap, pacman) => addCharacter(getPacmanCode(pacman.direction), retrieveStyle(pacman))(pacmanMap, pacman))
 
     pacmanMap
   }
@@ -89,12 +92,12 @@ object PacmanMap {
   private def addCharacter(elementCode: (String, Option[ElementStyle]))(pacmanMap: PacmanMap, character: Character)(implicit map: Map): PacmanMap =
     addElement(pacmanMap, elementCode, character.tileIndexes)
 
-  private def addElement(pacmanMap: PacmanMap, element: String, position: (Int, Int)): PacmanMap =
+  private def addElement(pacmanMap: PacmanMap, element: (String, Option[ElementStyle]), position: (Int, Int)): PacmanMap =
     pacmanMap updated (position._2, pacmanMap(position._2) updated (position._1, element))
 
   private def getPacmanCode(direction: Direction): String = ElementsCode.PACMAN_CODES_MAP(direction)
 
-  private def getGhostCompleteCode(ghost: Ghost): String = getGhostCode(ghost.ghostType) + getArrowCode(ghost.direction)
+  private def getGhostCompleteCode(ghost: Ghost): String = getGhostCode(ghost.characterType) + getArrowCode(ghost.direction)
 
   private def getGhostCode(ghostType: GhostType): String = ElementsCode.GHOST_CODES_MAP(ghostType)
 
