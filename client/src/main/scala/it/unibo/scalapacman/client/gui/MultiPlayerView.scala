@@ -41,6 +41,8 @@ class MultiPlayerView(implicit controller: Controller, viewChanger: ViewChanger)
   private val numPlayersSpinner: JSpinner = createNumberPlayersField()
   private val gameIdTextField: JTextField = createTextField()
 
+  nicknameTextField setText controller.model.nickname
+
   private val createGameButton: JButton = createButton(CREATE_GAME_BUTTON_LABEL)
   private val joinGameButton: JButton = createButton(JOIN_GAME_BUTTON_LABEL)
 
