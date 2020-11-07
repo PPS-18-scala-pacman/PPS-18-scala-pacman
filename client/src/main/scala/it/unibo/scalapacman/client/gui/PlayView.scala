@@ -8,7 +8,7 @@ import it.unibo.scalapacman.client.controller.{Action, Controller}
 import it.unibo.scalapacman.client.event.{GamePaused, GameStarted, GameUpdate, NewKeyMap, PacmanEvent, PacmanSubscriber}
 import it.unibo.scalapacman.client.input.{KeyMap, UserInput}
 import it.unibo.scalapacman.client.gui.View.MENU
-import it.unibo.scalapacman.client.map.{ElementsCode, PacmanMap}
+import it.unibo.scalapacman.client.map.PacmanMap
 import it.unibo.scalapacman.client.map.PacmanMap.PacmanMap
 import it.unibo.scalapacman.common.CommandType
 import it.unibo.scalapacman.lib.model.{GameState, LevelState, Map, MapType}
@@ -52,23 +52,6 @@ class PlayView(implicit controller: Controller, viewChanger: ViewChanger) extend
   private val FONT_PATH = "font/unifont/unifont.ttf"
   private val UNIFONT: Font = loadFont(FONT_PATH)
   private val PLAY_FONT_SIZE: Float = 24f
-  private val PACMAN_SN = "pacman"
-  private val PACMAN_COLOR: Color = Color.YELLOW
-  private val GHOST_SN = "ghost"
-  private val GHOST_FEARED_COLOR: Color = Color.LIGHT_GRAY
-  private val GHOST_COLOR: Color = Color.RED
-  private val DOT_SN = "dot"
-  private val DOT_COLOR: Color = Color.WHITE
-  private val WALL_SN = "wall"
-  private val WALL_COLOR: Color = Color.BLUE
-
-  private val defaultElementStyles: List[ElementStyle] =
-    ElementStyle(PACMAN_SN, PACMAN_COLOR) :: ElementStyle(DOT_SN, DOT_COLOR) ::
-      ElementStyle(GHOST_SN, GHOST_COLOR) :: ElementStyle(WALL_SN, WALL_COLOR) :: Nil
-
-  private val energizerElementStyles: List[ElementStyle] =
-    ElementStyle(PACMAN_SN, PACMAN_COLOR) :: ElementStyle(DOT_SN, DOT_COLOR) ::
-      ElementStyle(GHOST_SN, GHOST_FEARED_COLOR) :: ElementStyle(WALL_SN, WALL_COLOR) :: Nil
 
   private var _map: Option[PacmanMap] = None
   private var _gameState: Option[GameState] = None
@@ -241,17 +224,11 @@ class PlayView(implicit controller: Controller, viewChanger: ViewChanger) extend
    * @param gameCanvas il componente su cui disegnare la mappa
    */
   private def doPrint(map: PacmanMap, gameState: GameState, gameCanvas: GameCanvas): Unit = {
-    def styleGetter(name: String): Option[ElementStyle] = if (gameState.ghostInFear) {
-      energizerElementStyles.find(style => style.styleName == name)
-    } else {
-      defaultElementStyles.find(style => style.styleName == name)
-    }
-
-    gameCanvas setText (
+    gameCanvas.setText(
       (for (x <- map.head.indices;
             y <- map.indices;
             tile <- Some(map(y)(x))
-            ) yield ((x, y), (tile, retrieveStyle(tile, styleGetter)))) toMap
+            ) yield ((x, y), (tile._1, tile._2.map(ResolvedElementStyle(_, gameState))))) toMap
       )
   }
 
@@ -276,16 +253,6 @@ class PlayView(implicit controller: Controller, viewChanger: ViewChanger) extend
     case LevelState.VICTORY => s"$VICTORY_MESSAGE $SCORE_MESSAGE: ${gameState.score}"
     case LevelState.DEFEAT => s"$GAME_OVER_MESSAGE $SCORE_MESSAGE: ${gameState.score}"
   }
-
-  // scalastyle:off cyclomatic.complexity
-  private def retrieveStyle(elem: String, styleGetter: String => Option[ElementStyle]): Option[ElementStyle] = elem match {
-    case _ if ElementsCode.matchDot(elem) || ElementsCode.matchFruit(elem) => styleGetter(DOT_SN)
-    case _ if ElementsCode.matchPacman(elem) => styleGetter(PACMAN_SN)
-    case _ if elem.length == 2 && ElementsCode.matchGhost(elem.substring(0, 1)) => styleGetter(GHOST_SN)
-    case ElementsCode.WALL_CODE => styleGetter(WALL_SN)
-    case ElementsCode.EMPTY_SPACE_CODE => None
-  }
-  // scalastyle:on cyclomatic.complexity
 
   /**
    * Gestisce gli eventi PacmanEvent pubblicati dal Controller

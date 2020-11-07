@@ -8,7 +8,7 @@ import it.unibo.scalapacman.client.gui.GameCanvas.CompositeMessage
 import javax.swing.{JPanel, SwingUtilities}
 
 object GameCanvas {
-  type CompositeMessage = Map[(Int, Int), (String, Option[ElementStyle])]
+  type CompositeMessage = Map[(Int, Int), (String, Option[ResolvedElementStyle])]
 }
 
 /**
@@ -18,7 +18,7 @@ object GameCanvas {
  */
 class GameCanvas extends JPanel with Runnable with Logging {
 
-  private var text: Map[(Int, Int), (String, Option[ElementStyle])] = Map.empty
+  private var text: Map[(Int, Int), (String, Option[ResolvedElementStyle])] = Map.empty
   private var running = false
   private var gameThread: Thread = _
   private val pleaseRender = new Semaphore(0)
@@ -63,7 +63,7 @@ class GameCanvas extends JPanel with Runnable with Logging {
     }
 
   /**
-   * Termina il thread per diegnare sul canvas
+   * Termina il thread per disegnare sul canvas
    */
   def stop(): Unit = {
     if (running) {
