@@ -5,11 +5,12 @@ import it.unibo.scalapacman.lib.model.Character.{Ghost, Pacman}
 import it.unibo.scalapacman.lib.model.GhostType.{BLINKY, CLYDE, INKY, PINKY}
 import it.unibo.scalapacman.lib.model.Map.MapIndexes
 import it.unibo.scalapacman.lib.model.{Dot, Fruit, GameState}
-import it.unibo.scalapacman.lib.model.PlayerType.{PLAYER_ONE, PLAYER_TWO, PLAYER_THREE, PLAYER_FOUR}
+import it.unibo.scalapacman.lib.model.PacmanType.{PACMAN, MS_PACMAN, CAPMAN, RAPMAN}
 
 
 case class GameEntityDTO(gameCharacterHolder: GameCharacterHolder, id: Option[String], position: Point2D,
                          speed: Double, isDead: Boolean, dir: DirectionHolder) {
+
   def toGhost: Option[Ghost] = gameCharacterHolder.gameChar match {
     case GameCharacter.INKY   => Some(Ghost(INKY,   position, speed, dir.direction, isDead))
     case GameCharacter.BLINKY => Some(Ghost(BLINKY, position, speed, dir.direction, isDead))
@@ -18,10 +19,10 @@ case class GameEntityDTO(gameCharacterHolder: GameCharacterHolder, id: Option[St
     case _ => None
   }
   def toPacman: Option[Pacman] = gameCharacterHolder.gameChar match {
-    case GameCharacter.PLAYER_ONE   => Some(Pacman(position, speed, dir.direction, isDead, PLAYER_ONE))
-    case GameCharacter.PLAYER_TWO   => Some(Pacman(position, speed, dir.direction, isDead, PLAYER_TWO))
-    case GameCharacter.PLAYER_THREE => Some(Pacman(position, speed, dir.direction, isDead, PLAYER_THREE))
-    case GameCharacter.PLAYER_FOUR  => Some(Pacman(position, speed, dir.direction, isDead, PLAYER_FOUR))
+    case GameCharacter.PACMAN     => Some(Pacman(PACMAN,    position, speed, dir.direction, isDead))
+    case GameCharacter.MS_PACMAN  => Some(Pacman(MS_PACMAN, position, speed, dir.direction, isDead))
+    case GameCharacter.CAPMAN     => Some(Pacman(CAPMAN,    position, speed, dir.direction, isDead))
+    case GameCharacter.RAPMAN     => Some(Pacman(RAPMAN,    position, speed, dir.direction, isDead))
     case _ => None
   }
 }
