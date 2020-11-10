@@ -1,31 +1,51 @@
+import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
+
 plugins {
-  id("org.springframework.boot") version "2.4.0-SNAPSHOT"
-  id("io.spring.dependency-management") version "1.0.10.RELEASE"
   java
+  application
+  // fat jar
+  id("com.github.johnrengelman.shadow") version "5.2.0"
 }
 
-configurations {
-	compileOnly {
-    extendsFrom(configurations.annotationProcessor.get())
-  }
-}
-
-repositories {
-  mavenCentral()
-  maven { url = uri("https://repo.spring.io/milestone") }
-  maven { url = uri("https://repo.spring.io/snapshot") }
-}
+val vertxVersion = "3.9.4"
+val junitVersion = "5.3.2"
 
 dependencies {
-  implementation(group = "org.springframework.boot", name = "spring-boot-starter-data-jpa")
-  implementation(group = "org.springframework.boot", name = "spring-boot-starter-web")
-  compileOnly(group = "org.projectlombok", name = "lombok")
-  developmentOnly(group = "org.springframework.boot", name = "spring-boot-devtools")
-  runtimeOnly(group = "org.postgresql", name = "postgresql")
-  annotationProcessor(group = "org.projectlombok", name = "lombok")
-  testImplementation(group = "org.springframework.boot", name = "spring-boot-starter-test")
+  implementation(group = "io.vertx", name = "vertx-core", version = vertxVersion)
+
+  testImplementation(group = "io.vertx", name = "vertx-junit5", version = vertxVersion)
+  testImplementation(group = "io.vertx", name = "vertx-web-client", version = vertxVersion)
+  testImplementation(group = "org.junit.jupiter", name = "junit-jupiter-api", version = junitVersion)
+  testRuntimeOnly(group = "org.junit.jupiter", name = "junit-jupiter-engine", version = junitVersion)
 }
 
-//test {
-//	useJUnitPlatform()
-//}
+java {
+  sourceCompatibility = JavaVersion.VERSION_1_8
+}
+
+application {
+  mainClassName = "io.vertx.core.Launcher"
+}
+
+val mainVerticleName = "$group.lobby.MainVerticle"
+val watchForChange = "src/**/*.java"
+val doOnChange = "${projectDir}/gradlew classes"
+
+tasks {
+  test {
+    useJUnitPlatform()
+  }
+
+  getByName<JavaExec>("run") {
+    args = listOf("run", mainVerticleName, "--redeploy=${watchForChange}", "--launcher-class=${application.mainClassName}", "--on-redeploy=${doOnChange}")
+  }
+
+  withType<ShadowJar> {
+    manifest {
+      attributes["Main-Verticle"] = mainVerticleName
+    }
+    mergeServiceFiles {
+      include("META-INF/services/io.vertx.core.spi.VerticleFactory")
+    }
+  }
+}
