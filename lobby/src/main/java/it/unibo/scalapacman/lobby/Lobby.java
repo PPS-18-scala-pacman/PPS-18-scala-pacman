@@ -5,19 +5,20 @@ import io.vertx.core.json.JsonObject;
 
 public class Lobby {
 
-  private String id, description;
+  private Integer id;
+  private String description;
 
-  public Lobby(final String id, final String description) {
+  public Lobby(final Integer id, final String description) {
     this.id = id;
     this.description = description;
   }
 
   public Lobby(JsonObject json) {
-    this.id = json.getString("id");
+    this.id = json.getInteger("id");
     this.description = json.getString("description");
   }
 
-  public String getId() {
+  public Integer getId() {
     return id;
   }
 

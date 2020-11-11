@@ -18,15 +18,10 @@ import io.vertx.sqlclient.PoolOptions;
 
 public class MainVerticle extends AbstractVerticle {
 
-  private Logger logger;
+  private final Logger logger = this.initMainLogger();
 
   @Override
   public void start(Promise promise) {
-    // Setting up SLF4J
-    System.setProperty("vertx.logger-delegate-factory-class-name", "io.vertx.core.logging.SLF4JLogDelegateFactory");
-    LoggerFactory.initialise();
-    logger = LoggerFactory.getLogger(MainVerticle.class);
-
     Future<Void> steps = getConfiguration()
       .compose(this::start);
 
@@ -41,37 +36,49 @@ public class MainVerticle extends AbstractVerticle {
 
   public Future<Void> start(JsonObject config) {
     return prepareDatabase(config.getJsonObject("DATABASE"))
-      .compose(v -> startHttpServer(config));
+      .compose(this::createRepository)
+      .compose(this::createService)
+      .compose(service -> startHttpServer(config, service));
   }
 
   private Future<JsonObject> getConfiguration() {
     Promise<JsonObject> promise = Promise.promise();
     ConfigRetriever.create(vertx)
-      .getConfig(
-        config -> {
-          if (config.failed()) {
-            promise.fail(config.cause());
-          } else {
-            JsonObject result = config.result();
-            promise.complete(result);
-          }
+      .getConfig(config -> {
+        if (config.failed()) {
+          promise.fail(config.cause());
+        } else {
+          JsonObject result = config.result();
+          promise.complete(result);
         }
-      );
+      });
     return promise.future();
   }
 
-  private Future<Void> startHttpServer(JsonObject config) {
-    return this.startHttpServer(config.getInteger("HTTP_PORT", 8080));
+  private Future<LobbyRepository> createRepository(PgPool dbClient) {
+    Promise<LobbyRepository> promise = Promise.promise();
+    promise.complete(new LobbyRepository(dbClient));
+    return promise.future();
   }
 
-  private Future<Void> startHttpServer(Integer localPort) {
+  private Future<LobbyService> createService(LobbyRepository repository) {
+    Promise<LobbyService> promise = Promise.promise();
+    promise.complete(new LobbyService(repository));
+    return promise.future();
+  }
+
+  private Future<Void> startHttpServer(JsonObject config, LobbyService service) {
+    return this.startHttpServer(config.getInteger("HTTP_PORT", 8080), service);
+  }
+
+  private Future<Void> startHttpServer(Integer localPort, LobbyService service) {
     Promise<Void> promise = Promise.promise();
     final Router router = Router.router(vertx);
 
     router.route().handler(corsHandler());
     router.route().handler(BodyHandler.create());
 
-    new LobbyResource(router);
+    new LobbyResource(router, service);
 
     //router.route().handler(StaticHandler.create().setWebRoot("webroot/myname").setCachingEnabled(false));
 
@@ -122,4 +129,10 @@ public class MainVerticle extends AbstractVerticle {
     return promise.future();
   }
 
+  private Logger initMainLogger() {
+    // Setting up SLF4J
+    System.setProperty("vertx.logger-delegate-factory-class-name", "io.vertx.core.logging.SLF4JLogDelegateFactory");
+    LoggerFactory.initialise();
+    return LoggerFactory.getLogger(MainVerticle.class);
+  }
 }

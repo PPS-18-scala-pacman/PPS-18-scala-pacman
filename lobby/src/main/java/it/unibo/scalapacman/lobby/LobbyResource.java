@@ -6,23 +6,18 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Optional;
 
 public class LobbyResource {
 
-  @SuppressWarnings("serial")
-  private List<Lobby> lobbies = new ArrayList<Lobby>() {{
-    add(new Lobby("L001", "Lobby 1"));
-    add(new Lobby("L002", "Lobby 2"));
-    add(new Lobby("L003", "Lobby 3"));
-  }};
+  private final LobbyService service;
 
-  LobbyResource(Router router) {
+  LobbyResource(Router router, LobbyService service) {
+    this.service = service;
+
     router.get("/api/lobby").handler(this::handleGetAllLobbies);
     router.get("/api/lobby/:id").handler(this::handleGetLobbyById);
-    router.post("/api/lobby").handler(this::handleAddLobby);
+    router.post("/api/lobby").handler(this::handleCreateLobby);
     router.put("/api/lobby/:id").handler(this::handleUpdateLobby);
     router.delete("/api/lobby/:id").handler(this::handleDeleteLobby);
   }
@@ -30,7 +25,7 @@ public class LobbyResource {
   private void handleGetAllLobbies(final RoutingContext routingContext) {
     final JsonArray array = new JsonArray();
 
-    lobbies.forEach(lobby -> array.add(lobby.toJson()));
+    this.service.getAll();
 
     routingContext.response()
       .putHeader(C.HTTP.HeaderElement.CONTENT_TYPE, C.HTTP.HeaderElement.ContentType.APPLICATION_JSON)
@@ -39,9 +34,9 @@ public class LobbyResource {
   }
 
   private void handleGetLobbyById(final RoutingContext routingContext) {
-    final String id = routingContext.request().getParam("id");
+    final Integer id = Integer.valueOf(routingContext.request().getParam("id"));
 
-    final Optional<Lobby> lobby = lobbies.stream().filter(u -> u.getId().contentEquals(id)).findFirst();
+    final Optional<Lobby> lobby = lobbies.stream().filter(u -> u.getId().equals(id)).findFirst();
 
     if (lobby.isPresent()) {
       routingContext.response()
@@ -55,11 +50,11 @@ public class LobbyResource {
     }
   }
 
-  private void handleAddLobby(final RoutingContext routingContext) {
+  private void handleCreateLobby(final RoutingContext routingContext) {
 
     final Lobby lobby = new Lobby((JsonObject) Json.decodeValue(routingContext.getBodyAsString()));
 
-    lobbies.add(lobby);
+    this.service.create(lobby);
 
     routingContext.response().setStatusCode(C.HTTP.ResponseCode.CREATED)
       .putHeader(C.HTTP.HeaderElement.CONTENT_TYPE, C.HTTP.HeaderElement.ContentType.APPLICATION_JSON)
@@ -67,14 +62,13 @@ public class LobbyResource {
   }
 
   private void handleUpdateLobby(final RoutingContext routingContext) {
-    final String id = routingContext.request().getParam("id");
+    final Integer id = Integer.valueOf(routingContext.request().getParam("id"));
 
-    final Optional<Lobby> lobby = lobbies.stream().filter(u -> u.getId().contentEquals(id)).findFirst();
-
+    // FIXME
     if (lobby.isPresent()) {
-      final JsonObject newLobby = (JsonObject) Json.decodeValue(routingContext.getBodyAsString());
+      final Lobby newLobby = new Lobby((JsonObject) Json.decodeValue(routingContext.getBodyAsString()));
 
-      lobby.get().setDescription(newLobby.getString("description"));
+      this.service.update(newLobby);
 
       routingContext.response()
         .putHeader(C.HTTP.HeaderElement.CONTENT_TYPE, C.HTTP.HeaderElement.ContentType.APPLICATION_JSON)
@@ -88,10 +82,11 @@ public class LobbyResource {
   }
 
   private void handleDeleteLobby(final RoutingContext routingContext) {
-    final String id = routingContext.request().getParam("id");
+    final Integer id = Integer.valueOf(routingContext.request().getParam("id"));
 
-    final Optional<Lobby> lobby = lobbies.stream().filter(u -> u.getId().contentEquals(id)).findFirst();
+    this.service.delete(id);
 
+    // FIXME
     if (lobby.isPresent()) {
       lobbies.remove(lobby.get());
 
