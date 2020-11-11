@@ -1,0 +1,11 @@
+{
+  "vertx.logger-delegate-factory-class-name": "io.vertx.core.logging.SLF4JLogDelegateFactory",
+  "HTTP_PORT": 8080,
+  "DATABASE": {
+    "HOST": "localhost",
+    "PORT": 5432,
+    "DATABASE": "lobby",
+    "USER": "postgres",
+    "PASSWORD": "postgres"
+  }
+}
