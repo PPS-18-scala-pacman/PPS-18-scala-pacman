@@ -2,16 +2,21 @@ package it.unibo.scalapacman.lobby;
 
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
+import io.vertx.core.logging.Logger;
+import io.vertx.core.logging.LoggerFactory;
 import io.vertx.pgclient.PgPool;
 import io.vertx.sqlclient.Row;
 import io.vertx.sqlclient.RowSet;
 import io.vertx.sqlclient.Tuple;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 public class LobbyRepository {
+  private final Logger logger = LoggerFactory.getLogger(LobbyRepository.class);
+
   private final PgPool dbClient;
 
   LobbyRepository(PgPool dbClient) {
@@ -38,27 +43,28 @@ public class LobbyRepository {
             .collect(Collectors.toList());
           promise.complete(entities);
         } else {
-          System.out.println("Failure: " + ar.cause().getMessage());
+          logger.error("Failure: " + ar.cause().getMessage());
           promise.fail(ar.cause());
         }
       });
     return promise.future();
   }
 
-  Future<Lobby> get(Integer id) {
-    Promise<Lobby> promise = Promise.promise();
+  Future<Optional<Lobby>> get(Integer id) {
+    Promise<Optional<Lobby>> promise = Promise.promise();
     dbClient
       .preparedQuery("SELECT * FROM lobby WHERE id=$1")
       .execute(Tuple.of(id), ar -> {
         if (ar.succeeded()) {
           RowSet<Row> rows = ar.result();
-          System.out.println("Got " + rows.size() + " rows ");
+          logger.debug("Got " + rows.size() + " rows ");
           List<Lobby> entities = StreamSupport.stream(rows.spliterator(), false)
             .map(LobbyRepository::toEntity)
             .collect(Collectors.toList());
-          promise.complete(entities.get(0));
+          promise.complete(entities.stream().findFirst());
         } else {
-          System.out.println("Failure: " + ar.cause().getMessage());
+          logger.error("Failure: " + ar.cause().getMessage());
+          promise.fail(ar.cause());
         }
       });
     return promise.future();
@@ -71,13 +77,14 @@ public class LobbyRepository {
       .execute(Tuple.of(lobby.getDescription()), ar -> {
         if (ar.succeeded()) {
           RowSet<Row> rows = ar.result();
-          System.out.println("Got " + rows.size() + " rows ");
+          logger.debug("Got " + rows.size() + " rows ");
           List<Lobby> entities = StreamSupport.stream(rows.spliterator(), false)
             .map(LobbyRepository::toEntity)
             .collect(Collectors.toList());
           promise.complete(entities.get(0));
         } else {
-          System.out.println("Failure: " + ar.cause().getMessage());
+          logger.error("Failure: " + ar.cause().getMessage());
+          promise.fail(ar.cause());
         }
       });
     return promise.future();
@@ -90,10 +97,11 @@ public class LobbyRepository {
       .execute(Tuple.of(lobby.getId(), lobby.getDescription()), ar -> {
         if (ar.succeeded()) {
           RowSet<Row> rows = ar.result();
-          System.out.println("Got " + rows.size() + " rows ");
+          logger.debug("Got " + rows.size() + " rows ");
           promise.complete(lobby);
         } else {
-          System.out.println("Failure: " + ar.cause().getMessage());
+          logger.error("Failure: " + ar.cause().getMessage());
+          promise.fail(ar.cause());
         }
       });
     return promise.future();
@@ -106,13 +114,14 @@ public class LobbyRepository {
       .execute(Tuple.of(id), ar -> {
         if (ar.succeeded()) {
           RowSet<Row> rows = ar.result();
-          System.out.println("Got " + rows.size() + " rows ");
+          logger.debug("Got " + rows.size() + " rows ");
           List<Lobby> entities = StreamSupport.stream(rows.spliterator(), false)
             .map(LobbyRepository::toEntity)
             .collect(Collectors.toList());
           promise.complete(entities.get(0));
         } else {
-          System.out.println("Failure: " + ar.cause().getMessage());
+          logger.error("Failure: " + ar.cause().getMessage());
+          promise.fail(ar.cause());
         }
       });
     return promise.future();

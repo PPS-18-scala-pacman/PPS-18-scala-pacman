@@ -3,6 +3,7 @@ package it.unibo.scalapacman.lobby;
 import io.vertx.core.Future;
 
 import java.util.List;
+import java.util.Optional;
 
 public class LobbyService {
   private final LobbyRepository repository;
@@ -15,7 +16,7 @@ public class LobbyService {
     return this.repository.getAll();
   }
 
-  Future<Lobby> get(Integer id) {
+  Future<Optional<Lobby>> get(Integer id) {
     return this.repository.get(id);
   }
 
