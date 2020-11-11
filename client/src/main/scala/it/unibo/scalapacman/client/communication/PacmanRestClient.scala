@@ -4,7 +4,7 @@ import java.io.IOException
 
 import akka.Done
 import akka.actor.{ActorRef, ActorSystem}
-import akka.http.scaladsl.client.RequestBuilding.{Delete, Post}
+import akka.http.scaladsl.client.RequestBuilding.Delete
 import akka.http.scaladsl.model.ws.{Message, TextMessage, WebSocketRequest}
 import akka.http.scaladsl.model.{ContentTypes, HttpEntity, HttpMethods, HttpRequest, HttpResponse, StatusCodes}
 import akka.http.scaladsl.unmarshalling.Unmarshal
@@ -17,6 +17,9 @@ import spray.json.enrichAny
 
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContextExecutor, Future}
+import scala.util.{Failure, Success}
+
+// scalastyle:off multiple.string.literals
 
 /**
  * Interfaccia per la gestione della comunicazione con il server
@@ -48,7 +51,7 @@ trait PacmanRestClient extends Logging { this: HttpClient =>
       response.status match {
         case StatusCodes.Created => Unmarshal(response.entity).to[String]
         case StatusCodes.InternalServerError => Unmarshal(response.entity).to[String] flatMap { body =>
-          Future.failed(new IOException(s"Non è stato possibile creare una nuova partita: $body")) // scalastyle:ignore multiple.string.literals
+          Future.failed(new IOException(s"Non è stato possibile creare una nuova partita: $body"))
         }
         case _ => handleUnknownStatusCode(request, response)
       }
@@ -70,16 +73,24 @@ trait PacmanRestClient extends Logging { this: HttpClient =>
     }
   }
 
+  // scalastyle:off
   /**
    * Apre il canale di comunicazione WebSocket per ricezione aggiornamenti di gioco.
    * Salva il riferimento dell'attore che gestisce il Source per poter inviare informazioni al server
    * tramite la WebSocket
    * @param gameId id della partita
+   * @param playerName nickname del giocatore
    * @param serverMessageHandler funzione a cui vengono passati i messaggi del server
+   * @param connectionErrorHandler funzione per la gestione della caduta improvvisa della connessione
    */
   // Source: https://stackoverflow.com/questions/40345697/how-to-use-akka-http-client-websocket-send-message
-  def openWS(gameId: String, playerName: String, serverMessageHandler: String => Unit): Unit = {
-    val request = WebSocketRequest(s"${PacmanRestClient.GAMES_WS_URL}/$gameId?playerName=${playerName}")
+  def openWS(
+              gameId: String,
+              playerName: String,
+              serverMessageHandler: String => Unit,
+              connectionErrorHandler: Boolean => Unit,
+            ): Unit = {
+    val request = WebSocketRequest(s"${PacmanRestClient.GAMES_WS_URL}/$gameId?playerName=$playerName")
 
     val messageSource: Source[Message, ActorRef] =
       Source.actorRef(
@@ -94,6 +105,7 @@ trait PacmanRestClient extends Logging { this: HttpClient =>
       )
 
     val messageSink: Sink[Message, Future[Done]] = Sink.foreachAsync(1) {
+      case tms: TextMessage.Strict => serverMessageHandler(tms.text); Future.successful(Unit);
       case tm: TextMessage => tm.toStrict(FiniteDuration(TEXT_MESSAGE_TO_STRICT, "ms")) map { tms =>
         serverMessageHandler(tms.text)
       }
@@ -109,18 +121,32 @@ trait PacmanRestClient extends Logging { this: HttpClient =>
 
     _webSocketSpeaker = Some(webSocketSpeaker)
 
-    // TODO connected da usare?
-//    val connected = upgradeResponse.flatMap { upgrade =>
     upgradeResponse.flatMap { upgrade =>
       if (upgrade.response.status == StatusCodes.SwitchingProtocols) {
+        info("[upgradeResponse - Success] Connessione weboscket stabilita correttamente")
         Future.successful(Done)
       } else {
-        throw new RuntimeException(s"Connection failed: ${upgrade.response.status}")
+        val msg = s"Connessione fallita: ${upgrade.response.status}"
+
+        info(s"[upgradeResponse - Failure] $msg")
+
+        throw new RuntimeException(msg)
       }
     }
 
-    // TODO da passare anche questo sopra? Se la websocket chiude, vuol dire che anche il gioco deve chiudersi?
-    closed.foreach(thing => debug(s"WebSocket chiusa: $thing"))
+    closed onComplete {
+      case Success(_) => closeWebSocket()
+      case Failure(exception) =>
+        error(s"[closed - Failure] ${exception.getMessage}")
+
+        if (!exception.getMessage.contains("Internal Server Error")) {
+          connectionErrorHandler(false)
+        } else {
+          info("Problema con il server, tentativo di riconnessione annullato")
+          connectionErrorHandler(true)
+          closeWebSocket()
+        }
+    }
   }
 
   /**
@@ -140,6 +166,8 @@ trait PacmanRestClient extends Logging { this: HttpClient =>
     Future.failed(new IOException(s"Stato risposta dal server è ${response.status} [${request.uri}] e il body è $body"))
   }
 }
+// scalastyle:on multiple.string.literals
+
 
 case object PacmanRestClient {
 

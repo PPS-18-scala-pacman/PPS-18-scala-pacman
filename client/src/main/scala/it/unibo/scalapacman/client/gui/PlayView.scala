@@ -3,9 +3,9 @@ package it.unibo.scalapacman.client.gui
 import java.awt.{BorderLayout, Color, Font, GridLayout}
 import java.util.{Timer, TimerTask}
 
-import it.unibo.scalapacman.client.controller.Action.{END_GAME, PAUSE_RESUME, START_GAME, SUBSCRIBE_TO_EVENTS}
+import it.unibo.scalapacman.client.controller.Action.{END_GAME, PAUSE_RESUME, SUBSCRIBE_TO_EVENTS}
 import it.unibo.scalapacman.client.controller.{Action, Controller}
-import it.unibo.scalapacman.client.event.{GamePaused, GameStarted, GameUpdate, NewKeyMap, PacmanEvent, PacmanSubscriber}
+import it.unibo.scalapacman.client.event.{GamePaused, GameStarted, GameUpdate, NetworkIssue, NewKeyMap, PacmanEvent, PacmanSubscriber}
 import it.unibo.scalapacman.client.input.{KeyMap, UserInput}
 import it.unibo.scalapacman.client.gui.View.MENU
 import it.unibo.scalapacman.client.map.PacmanMap
@@ -13,6 +13,8 @@ import it.unibo.scalapacman.client.map.PacmanMap.PacmanMap
 import it.unibo.scalapacman.common.CommandType
 import it.unibo.scalapacman.lib.model.{GameState, LevelState, Map, MapType}
 import javax.swing.{BorderFactory, JButton, JComponent, JLabel, SwingConstants}
+
+// scalastyle:off multiple.string.literals
 
 object PlayView {
   def apply()(implicit controller: Controller, viewChanger: ViewChanger): PlayView = new PlayView()
@@ -28,7 +30,6 @@ object PlayView {
 class PlayView(implicit controller: Controller, viewChanger: ViewChanger) extends PanelImpl {
   private val SCORE_LABEL: String = "Punteggio"
   private val LIVES_LABEL: String = "Vite"
-//  private val START_GAME_BUTTON_LABEL: String = "Inizia partita"
   private val END_GAME_BUTTON_LABEL: String = "Fine partita"
   private val BACK_BUTTON_LABEL: String = "Indietro"
   private val PLAY_PANEL_BORDER: Int = 5
@@ -40,12 +41,12 @@ class PlayView(implicit controller: Controller, viewChanger: ViewChanger) extend
   private val LABELS_LAYOUT_COLS: Int = 2
   private val STARTING_LIVES_COUNT: Int = 1
   private val STARTING_POINTS_COUNT: Int = 0
-  private val START_MESSAGE: String = "Per una nuova partita, cliccare sul pulsante 'Inizia partita'"
   private val GOOD_LUCK_MESSAGE: String = "Buona fortuna!"
   private val PAUSED_MESSAGE: String = "Gioco in pausa..."
   private val RESUME_MESSAGE: String = "Gioco ripreso"
   private val VICTORY_MESSAGE: String = "Vittoria!"
   private val GAME_OVER_MESSAGE: String = "Game Over!"
+  private val GAME_END_MESSAGE: String = "Gioco terminato."
   private val SCORE_MESSAGE: String = "Punteggio"
 
   /* GameCanvas constants */
@@ -65,10 +66,9 @@ class PlayView(implicit controller: Controller, viewChanger: ViewChanger) extend
   private val scoreLabel: JLabel = createLabel(SCORE_LABEL)
   private val livesLabel: JLabel = createLabel(LIVES_LABEL)
 
-  private val userMessage: JLabel = createLabel(START_MESSAGE)
+  private val userMessage: JLabel = createLabel("")
   private val gameCanvas: GameCanvas = initGameCanvas()
 
-//  private val startGameButton: JButton = createButton(START_GAME_BUTTON_LABEL)
   private val endGameButton: JButton = createButton(END_GAME_BUTTON_LABEL)
   private val backButton: JButton = createButton(BACK_BUTTON_LABEL)
 
@@ -85,10 +85,6 @@ class PlayView(implicit controller: Controller, viewChanger: ViewChanger) extend
   livesCount setFont new Font(MAIN_FONT_NAME, Font.BOLD, SUB_LABELS_FONT)
 
   userMessage setFont new Font(MAIN_FONT_NAME, Font.BOLD, MAIN_LABELS_FONT)
-
-//  startGameButton addActionListener (_ => {
-//    askToController(START_GAME, None)
-//  })
 
   endGameButton addActionListener (_ => {
     updateGameView(_map.getOrElse(Nil), _gameState.getOrElse(GameState(score = 0)).copy(levelState = LevelState.DEFEAT), gameCanvas, scoreCount)
@@ -136,7 +132,7 @@ class PlayView(implicit controller: Controller, viewChanger: ViewChanger) extend
    * Prepara il messaggio di benvenuto all'utente ed azzera il punteggio visualizzato
    */
   def setupView(): Unit = {
-    userMessage setText START_MESSAGE
+    userMessage setText ""
     updateScore(0, scoreCount)
   }
 
@@ -174,7 +170,7 @@ class PlayView(implicit controller: Controller, viewChanger: ViewChanger) extend
         askToController(PAUSE_RESUME, Some(CommandType.RESUME))
         t.cancel()
       }
-    }, DELAYED_RESUME_TIME)
+    }, GAME_RESUME_TIME_DELAY)
   }
 
   /**
@@ -271,6 +267,8 @@ class PlayView(implicit controller: Controller, viewChanger: ViewChanger) extend
       _gameRunning = true
     case GameStarted() => gameStarted()
     case NewKeyMap(keyMap) => bindKeys(playPanel, keyMap)
+    case NetworkIssue(false, info) => userMessage setText s"$PAUSED_MESSAGE $info"
+    case NetworkIssue(true, info) => userMessage setText s"$GAME_END_MESSAGE $info"
     case _ => Unit
   }
 
@@ -286,3 +284,5 @@ class PlayView(implicit controller: Controller, viewChanger: ViewChanger) extend
       override def run(): Unit = controller.handleAction(action, param)
     } start()
 }
+
+// scalastyle:on multiple.string.literals

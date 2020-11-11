@@ -29,3 +29,5 @@ case class GameStarted() extends PacmanEvent
  * @param keyMap la nuova configurazione di comandi
  */
 case class NewKeyMap(keyMap: KeyMap) extends PacmanEvent
+
+case class NetworkIssue(serverError: Boolean, info: String) extends PacmanEvent
