@@ -26,7 +26,7 @@ object ServiceRoutes {
   trait RoutesCommand
   case class DeleteGame(gameId: String) extends RoutesCommand
   case class CreateGame(replyTo: ActorRef[ResponseCreateGame], playerNumber: Int) extends RoutesCommand
-  case class CreateConnectionGame(replyTo: ActorRef[ResponseConnGame], gameId: String, playerName: String) extends RoutesCommand
+  case class CreateConnectionGame(replyTo: ActorRef[ResponseConnGame], gameId: String, nickname: String) extends RoutesCommand
 
   // Messaggi di risposta per creazione nuova partita
   sealed trait ResponseCreateGame
@@ -77,8 +77,8 @@ object ServiceRoutes {
         )
       },
       path("connection-management" / "games" / Segment) { gameId: String =>
-        parameters('playerName.as[String]) { playerName =>
-          val operationPerformed: Future[ResponseConnGame] = handler.ask(CreateConnectionGame(_, gameId, playerName))
+        parameters('playerName.as[String]) { nickname =>
+          val operationPerformed: Future[ResponseConnGame] = handler.ask(CreateConnectionGame(_, gameId, nickname))
           onSuccess(operationPerformed) {
             case ServiceRoutes.SuccessConG(flow) => handleWebSocketMessages(flow)
             case ServiceRoutes.FailureConG(reason) => complete(StatusCodes.InternalServerError -> reason)
