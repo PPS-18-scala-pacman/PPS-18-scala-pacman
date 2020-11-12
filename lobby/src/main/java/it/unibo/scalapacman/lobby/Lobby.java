@@ -5,7 +5,7 @@ import io.vertx.core.json.JsonObject;
 
 public class Lobby {
 
-  private Integer id;
+  private final Integer id;
   private String description;
 
   public Lobby(final Integer id, final String description) {

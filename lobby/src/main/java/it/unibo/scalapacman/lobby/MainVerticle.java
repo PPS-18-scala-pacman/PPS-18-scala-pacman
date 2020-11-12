@@ -1,78 +1,61 @@
 package it.unibo.scalapacman.lobby;
 
-import java.util.HashSet;
-import java.util.Set;
-
-import io.vertx.config.ConfigRetriever;
-import io.vertx.core.*;
+import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
-import io.vertx.ext.web.Router;
-import io.vertx.ext.web.handler.BodyHandler;
-import io.vertx.ext.web.handler.CorsHandler;
 import io.vertx.pgclient.PgConnectOptions;
-import io.vertx.pgclient.PgPool;
+import io.vertx.rxjava.config.ConfigRetriever;
+import io.vertx.rxjava.core.AbstractVerticle;
+import io.vertx.rxjava.core.http.HttpServer;
+import io.vertx.rxjava.ext.web.Router;
+import io.vertx.rxjava.ext.web.handler.BodyHandler;
+import io.vertx.rxjava.ext.web.handler.CorsHandler;
+import io.vertx.rxjava.pgclient.PgPool;
 import io.vertx.sqlclient.PoolOptions;
+import it.unibo.scalapacman.lobby.util.exception.APIException;
+import rx.Completable;
+import rx.Single;
+
+import java.util.HashSet;
+import java.util.Set;
 
 public class MainVerticle extends AbstractVerticle {
 
   private final Logger logger = this.initMainLogger();
 
   @Override
-  public void start(Promise promise) {
-    Future<Void> steps = getConfiguration()
-      .compose(this::start);
-
-    steps.onComplete((AsyncResult<Void> result) -> {
-      if (result.failed()) {
-        promise.fail(result.cause());
-      } else {
-        promise.complete();
-      }
-    });
+  public Completable rxStart() {
+    return getConfiguration()
+      .flatMap(this::start)
+      .toCompletable();
   }
 
-  public Future<Void> start(JsonObject config) {
+  public Single<?> start(JsonObject config) {
     return prepareDatabase(config.getJsonObject("DATABASE"))
-      .compose(this::createRepository)
-      .compose(this::createService)
-      .compose(service -> startHttpServer(config, service));
+      .flatMap(this::initRepository)
+      .flatMap(this::initService)
+      .flatMap(service -> startHttpServer(config, service));
   }
 
-  private Future<JsonObject> getConfiguration() {
-    Promise<JsonObject> promise = Promise.promise();
-    ConfigRetriever.create(vertx)
-      .getConfig(config -> {
-        if (config.failed()) {
-          promise.fail(config.cause());
-        } else {
-          JsonObject result = config.result();
-          promise.complete(result);
-        }
-      });
-    return promise.future();
+  private Single<JsonObject> getConfiguration() {
+    return ConfigRetriever.create(vertx).rxGetConfig();
   }
 
-  private Future<LobbyRepository> createRepository(PgPool dbClient) {
-    Promise<LobbyRepository> promise = Promise.promise();
-    promise.complete(new LobbyRepository(dbClient));
-    return promise.future();
+  private Single<LobbyRepository> initRepository(PgPool dbClient) {
+    return Single.just(new LobbyRepository(dbClient));
   }
 
-  private Future<LobbyService> createService(LobbyRepository repository) {
-    Promise<LobbyService> promise = Promise.promise();
-    promise.complete(new LobbyService(repository));
-    return promise.future();
+  private Single<LobbyService> initService(LobbyRepository repository) {
+    return Single.just(new LobbyService(repository));
   }
 
-  private Future<Void> startHttpServer(JsonObject config, LobbyService service) {
+  private Single<HttpServer> startHttpServer(JsonObject config, LobbyService service) {
     return this.startHttpServer(config.getInteger("HTTP_PORT", 8080), service);
   }
 
-  private Future<Void> startHttpServer(Integer localPort, LobbyService service) {
-    Promise<Void> promise = Promise.promise();
+  private Single<HttpServer> startHttpServer(Integer localPort, LobbyService service) {
     final Router router = Router.router(vertx);
 
     router.route().handler(corsHandler());
@@ -82,16 +65,22 @@ public class MainVerticle extends AbstractVerticle {
 
     //router.route().handler(StaticHandler.create().setWebRoot("webroot/myname").setCachingEnabled(false));
 
-    getVertx().createHttpServer().requestHandler(router).listen(localPort, ar -> {
-      if (ar.succeeded()) {
-        logger.info("HTTP server running on port " + localPort);
-        promise.complete();
-      } else {
-        logger.error("Could not start a HTTP server", ar.cause());
-        promise.fail(ar.cause());
-      }
+    router.route().failureHandler(ctx -> {
+      final JsonObject error = new JsonObject()
+        .put("timestamp", System.nanoTime())
+        .put("exception", ctx.failure().getClass().getName())
+        .put("exceptionMessage", ctx.failure().getMessage())
+        .put("path", ctx.request().path());
+
+      ctx.response().putHeader(HttpHeaders.CONTENT_TYPE, "application/json; charset=utf-8")
+        .setStatusCode(ctx.failure() instanceof APIException ? ((APIException) ctx.failure()).getCode() : C.HTTP.ResponseCode.INTERNAL_SERVER_ERROR)
+        .end(error.encode());
     });
-    return promise.future();
+
+    return vertx.createHttpServer()
+      .requestHandler(router)
+      .rxListen(localPort)
+      .doOnSuccess(res -> logger.info("HTTP server running on port " + localPort));
   }
 
   private CorsHandler corsHandler() {
@@ -111,13 +100,11 @@ public class MainVerticle extends AbstractVerticle {
     return CorsHandler.create("*").allowedHeaders(allowHeaders).allowedMethods(allowMethods);
   }
 
-  private Future<PgPool> prepareDatabase(JsonObject config) {
+  private Single<PgPool> prepareDatabase(JsonObject config) {
     return this.prepareDatabase(DatabaseConfig.create(config));
   }
 
-  private Future<PgPool> prepareDatabase(PgConnectOptions connectOptions) {
-    Promise<PgPool> promise = Promise.promise();
-
+  private Single<PgPool> prepareDatabase(PgConnectOptions connectOptions) {
     // Pool options
     PoolOptions poolOptions = new PoolOptions()
       .setMaxSize(5);
@@ -125,8 +112,7 @@ public class MainVerticle extends AbstractVerticle {
     // Create the pooled client
     PgPool pgPool = PgPool.pool(vertx, connectOptions, poolOptions);
 
-    promise.complete(pgPool);
-    return promise.future();
+    return Single.just(pgPool);
   }
 
   private Logger initMainLogger() {
