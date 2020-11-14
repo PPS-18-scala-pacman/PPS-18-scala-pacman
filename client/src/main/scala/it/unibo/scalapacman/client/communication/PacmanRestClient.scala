@@ -111,6 +111,7 @@ trait PacmanRestClient extends Logging { this: HttpClient =>
       case tm: TextMessage => tm.toStrict(FiniteDuration(TEXT_MESSAGE_TO_STRICT, "ms")) map { tms =>
         serverMessageHandler(tms.text)
       }
+      case _ => warn("[WebSocket] Ricevuto messaggio non gestito"); Future.successful(Unit);
     }
 
     val webSocketFlow = establishWebSocket(request)
