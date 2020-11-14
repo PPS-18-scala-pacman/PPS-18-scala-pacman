@@ -105,7 +105,9 @@ trait PacmanRestClient extends Logging { this: HttpClient =>
       )
 
     val messageSink: Sink[Message, Future[Done]] = Sink.foreachAsync(1) {
+      // Caso per l'esecuzione di server e client in locale
       case tms: TextMessage.Strict => serverMessageHandler(tms.text); Future.successful(Unit);
+      // Caso per l'esecuzione di server e client tramite la rete
       case tm: TextMessage => tm.toStrict(FiniteDuration(TEXT_MESSAGE_TO_STRICT, "ms")) map { tms =>
         serverMessageHandler(tms.text)
       }
@@ -142,7 +144,7 @@ trait PacmanRestClient extends Logging { this: HttpClient =>
         if (!exception.getMessage.contains("Internal Server Error")) {
           connectionErrorHandler(false)
         } else {
-          info("Problema con il server, tentativo di riconnessione annullato")
+          info("[closed - Failure] Problema con il server, tentativo di riconnessione annullato")
           connectionErrorHandler(true)
           closeWebSocket()
         }

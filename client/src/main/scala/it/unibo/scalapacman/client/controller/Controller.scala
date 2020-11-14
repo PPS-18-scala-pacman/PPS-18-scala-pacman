@@ -263,7 +263,8 @@ private case class ControllerImpl(pacmanRestClient: PacmanRestClient) extends Co
    */
   private def handleWSConnectionError(serverError: Boolean = false): Unit = if (!serverError) {
     if (model.gameId.isDefined) {
-      debug(s"[handleWSConnectionError] Connessione websocket chiusa in modo anomalo, tentativo di riconnessione in ${WS_RECONNECTION_TIME_DELAY / 1000} secondi")
+      debug(s"[handleWSConnectionError] Connessione websocket chiusa in modo anomalo, tentativo di riconnessione " +
+        s"in ${WS_RECONNECTION_TIME_DELAY / 1000} secondi")
       _publisher.notifySubscribers(NetworkIssue(serverError = false, s"Riconnessione al server in corso"))
       val t = new Timer
       t.schedule(new TimerTask() {
