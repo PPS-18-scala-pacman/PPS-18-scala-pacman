@@ -1,9 +1,12 @@
 package it.unibo.scalapacman.client.controller
 
+import java.util.{Timer, TimerTask}
+
 import grizzled.slf4j.Logging
 import it.unibo.scalapacman.client.communication.PacmanRestClient
 import Action.{END_GAME, EXIT_APP, JOIN_GAME, MOVEMENT, PAUSE_RESUME, RESET_KEY_MAP, SAVE_KEY_MAP, START_GAME, SUBSCRIBE_TO_EVENTS}
-import it.unibo.scalapacman.client.event.{GamePaused, GameStarted, GameUpdate, NewKeyMap, PacmanPublisher, PacmanSubscriber}
+import it.unibo.scalapacman.client.event.{GamePaused, GameStarted, GameUpdate, NetworkIssue, NewKeyMap, PacmanPublisher, PacmanSubscriber}
+import it.unibo.scalapacman.client.gui.{GAME_RESUME_TIME_DELAY, WS_RECONNECTION_TIME_DELAY}
 import it.unibo.scalapacman.client.input.JavaKeyBinding.DefaultJavaKeyBinding
 import it.unibo.scalapacman.client.input.KeyMap
 import it.unibo.scalapacman.client.map.PacmanMap
@@ -15,6 +18,8 @@ import it.unibo.scalapacman.lib.model.{Map, MapType}
 
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor}
 import scala.util.{Failure, Success}
+
+// scalastyle:off multiple.string.literals
 
 trait Controller {
   /**
@@ -103,8 +108,7 @@ private case class ControllerImpl(pacmanRestClient: PacmanRestClient) extends Co
       model = model.copy(nickname = cgd.nickname)
       _prevUserAction = None
       new Thread(_webSocketRunnable).start()
-      // TODO: sostituire secondo parametro con nickname
-      pacmanRestClient.openWS(value, model.nickname, handleWebSocketMessage)
+      pacmanRestClient.openWS(value, model.nickname, handleWebSocketMessage, handleWSConnectionError)
       _publisher.notifySubscribers(GameStarted())
     case Failure(exception) => error(s"Errore nella creazione della partita: ${exception.getMessage}") // scalastyle:ignore multiple.string.literals
   }
@@ -253,4 +257,30 @@ private case class ControllerImpl(pacmanRestClient: PacmanRestClient) extends Co
    * @param message il messaggio ricevuto sulla WebSocket
    */
   private def handleWebSocketMessage(message: String): Unit = _webSocketRunnable.addMessage(message)
+
+  /**
+   * Gestisce il caso in cui la websocket per comunicare col server venga interrotta per un problema di rete
+   */
+  private def handleWSConnectionError(serverError: Boolean = false): Unit = if (!serverError) {
+    if (model.gameId.isDefined) {
+      debug(s"[handleWSConnectionError] Connessione websocket chiusa in modo anomalo, tentativo di riconnessione " +
+        s"in ${WS_RECONNECTION_TIME_DELAY / 1000} secondi")
+      _publisher.notifySubscribers(NetworkIssue(serverError = false, s"Riconnessione al server in corso"))
+      val t = new Timer
+      t.schedule(new TimerTask() {
+        override def run(): Unit = {
+          // Devo ricontrollare perché potrebbe essere che nel frattempo l'utente sia uscito dalla schermata di gioco
+          if (model.gameId.isDefined) {
+            pacmanRestClient.openWS(model.gameId.get, model.nickname, handleWebSocketMessage, handleWSConnectionError)
+          }
+          t.cancel()
+        }
+      }, WS_RECONNECTION_TIME_DELAY)
+    }
+  } else {
+    debug(s"[handleWSConnectionError] Errore nella comunicazione col server, comunicazione tramite WebSocket terminata")
+    _publisher.notifySubscribers(NetworkIssue(serverError = true, "Errore comunicazione col server"))
+  }
 }
+
+// scalastyle:on multiple.string.literals

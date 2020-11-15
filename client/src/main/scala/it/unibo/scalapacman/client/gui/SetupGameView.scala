@@ -6,7 +6,8 @@ import it.unibo.scalapacman.client.controller.Action.{JOIN_GAME, START_GAME}
 import it.unibo.scalapacman.client.controller.Controller
 import it.unibo.scalapacman.client.gui.View.{MENU, PLAY}
 import it.unibo.scalapacman.client.model.{CreateGameData, JoinGameData}
-import javax.swing.{BorderFactory, JButton, JLabel, JSpinner, JTextField, SwingConstants}
+import javax.swing.{BorderFactory, Box, BoxLayout, DefaultListModel, JButton, JLabel, JList, JScrollPane, JSeparator,
+  JSpinner, JTextField, ListSelectionModel, SwingConstants}
 
 object SetupGameView {
   def apply()(implicit controller: Controller, viewChanger: ViewChanger): SetupGameView = new SetupGameView()
@@ -19,13 +20,15 @@ class SetupGameView(implicit controller: Controller, viewChanger: ViewChanger) e
   private val BACK_BUTTON_LABEL: String = "Indietro"
   private val NICKNAME_LABEL: String = "Nickname"
   private val NUMBER_OF_PLAYERS_LABEL: String = "Numero di giocatori"
-  private val GAME_ID_LABEL: String = "ID Partita"
-  private val SL_ROWS: Int = 3
-  private val SL_COLS: Int = 3
-  private val SL_H_GAP: Int = 10
-  private val SL_V_GAP: Int = 30
-  private val SL_EMPTY_BORDER_Y_AXIS: Int = 345
-  private val SL_EMPTY_BORDER_X_AXIS: Int = 100
+  private val SUB_SL_ROWS: Int = 1
+  private val SUB_SL_COLS: Int = 3
+  private val SUB_SL_H_GAP: Int = 10
+  private val SUB_SL_V_GAP: Int = 30
+  private val SL_EMPTY_BORDER_Y_AXIS: Int = 100
+  private val SUB_SL_EMPTY_BORDER_Y_AXIS: Int = 10
+  private val SL_EMPTY_BORDER_X_AXIS: Int = 10
+  private val SUB_SL_EMPTY_BORDER_X_AXIS: Int = 100
+  private val BL_STRUCT_GAP: Int = 5
   private val MIN_PLAYERS: Int = 1
   private val MAX_PLAYERS: Int = 4
 
@@ -35,7 +38,6 @@ class SetupGameView(implicit controller: Controller, viewChanger: ViewChanger) e
   private val emptyLabel: JLabel = createLabel("")
   private val nicknameLabel: JLabel = createLabel(NICKNAME_LABEL)
   private val numPlayersLabel: JLabel = createLabel(NUMBER_OF_PLAYERS_LABEL)
-  private val joinGameLabel: JLabel = createLabel(GAME_ID_LABEL)
 
   private val nicknameTextField: JTextField = createTextField()
   private val numPlayersSpinner: JSpinner = createNumberPlayersField()
@@ -58,18 +60,63 @@ class SetupGameView(implicit controller: Controller, viewChanger: ViewChanger) e
   private val settingsPanel: PanelImpl = PanelImpl()
   private val buttonsPanel: PanelImpl = PanelImpl()
 
+  private val nicknamePanel: PanelImpl = PanelImpl()
+  private val newGamePanel: PanelImpl = PanelImpl()
+  private val joinGamePanel: PanelImpl = PanelImpl()
+
   buttonsPanel add backButton
 
-  settingsPanel setLayout new GridLayout(SL_ROWS, SL_COLS, SL_H_GAP, SL_V_GAP)
-  settingsPanel add nicknameLabel
-  settingsPanel add nicknameTextField
-  settingsPanel add emptyLabel // Per lasciare "vuoto" lo spazio
-  settingsPanel add numPlayersLabel
-  settingsPanel add numPlayersSpinner
-  settingsPanel add createGameButton
-  settingsPanel add joinGameLabel
-  settingsPanel add gameIdTextField
-  settingsPanel add joinGameButton
+  nicknamePanel setLayout new GridLayout(SUB_SL_ROWS, SUB_SL_COLS, SUB_SL_H_GAP, SUB_SL_V_GAP)
+  nicknamePanel add nicknameLabel
+  nicknamePanel add nicknameTextField
+  nicknamePanel add emptyLabel // Per lasciare "vuoto" lo spazio
+  nicknamePanel setBorder BorderFactory.createEmptyBorder(
+    SUB_SL_EMPTY_BORDER_Y_AXIS,
+    SUB_SL_EMPTY_BORDER_X_AXIS,
+    SUB_SL_EMPTY_BORDER_Y_AXIS,
+    SUB_SL_EMPTY_BORDER_X_AXIS
+  )
+
+  newGamePanel setLayout new GridLayout(SUB_SL_ROWS, SUB_SL_COLS, SUB_SL_H_GAP, SUB_SL_V_GAP)
+  newGamePanel add numPlayersLabel
+  newGamePanel add numPlayersSpinner
+  newGamePanel add createGameButton
+  newGamePanel setBorder BorderFactory.createEmptyBorder(
+    SUB_SL_EMPTY_BORDER_Y_AXIS,
+    SUB_SL_EMPTY_BORDER_X_AXIS,
+    SUB_SL_EMPTY_BORDER_Y_AXIS,
+    SUB_SL_EMPTY_BORDER_X_AXIS
+  )
+
+  private val listModel = new DefaultListModel[String]()
+  listModel addElement "Jane Doe"
+  listModel addElement "John Smith"
+  listModel addElement "Kathy Green"
+
+  private val lobbyList = new JList(listModel)
+  lobbyList setSelectionMode ListSelectionModel.SINGLE_SELECTION
+  private val listScrollPane = new JScrollPane(lobbyList)
+
+  joinGamePanel setLayout new BorderLayout(0, SUB_SL_V_GAP)
+  joinGamePanel add(listScrollPane, BorderLayout.CENTER)
+  joinGamePanel add(joinGameButton, BorderLayout.PAGE_END)
+  joinGamePanel setBorder BorderFactory.createEmptyBorder(
+    SUB_SL_EMPTY_BORDER_Y_AXIS,
+    SUB_SL_EMPTY_BORDER_X_AXIS,
+    SUB_SL_EMPTY_BORDER_Y_AXIS,
+    SUB_SL_EMPTY_BORDER_X_AXIS
+  )
+
+  settingsPanel setLayout new BoxLayout(settingsPanel, BoxLayout.PAGE_AXIS)
+  settingsPanel add nicknamePanel
+  settingsPanel add Box.createVerticalStrut(BL_STRUCT_GAP)
+  settingsPanel add new JSeparator(SwingConstants.HORIZONTAL)
+  settingsPanel add Box.createVerticalStrut(BL_STRUCT_GAP)
+  settingsPanel add newGamePanel
+  settingsPanel add Box.createVerticalStrut(BL_STRUCT_GAP)
+  settingsPanel add new JSeparator(SwingConstants.HORIZONTAL)
+  settingsPanel add Box.createVerticalStrut(BL_STRUCT_GAP)
+  settingsPanel add joinGamePanel
   settingsPanel setBorder BorderFactory.createEmptyBorder(SL_EMPTY_BORDER_Y_AXIS, SL_EMPTY_BORDER_X_AXIS, SL_EMPTY_BORDER_Y_AXIS, SL_EMPTY_BORDER_X_AXIS)
 
   setLayout(new BorderLayout)
