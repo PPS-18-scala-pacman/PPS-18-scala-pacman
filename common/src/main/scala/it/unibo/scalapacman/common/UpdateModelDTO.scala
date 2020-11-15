@@ -8,7 +8,7 @@ import it.unibo.scalapacman.lib.model.{Dot, Fruit, GameState}
 import it.unibo.scalapacman.lib.model.PacmanType.{PACMAN, MS_PACMAN, CAPMAN, RAPMAN}
 
 
-case class GameEntityDTO(gameCharacterHolder: GameCharacterHolder, id: Option[String], position: Point2D,
+case class GameEntityDTO( id: String, gameCharacterHolder: GameCharacterHolder, position: Point2D,
                          speed: Double, isDead: Boolean, dir: DirectionHolder) {
 
   def toGhost: Option[Ghost] = gameCharacterHolder.gameChar match {
