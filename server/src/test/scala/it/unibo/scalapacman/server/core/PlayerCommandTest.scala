@@ -25,22 +25,24 @@ class PlayerCommandTest extends ScalaTestWithActorTestKit with AnyWordSpecLike {
   private var testCommandFakeCmdJSON      : String = _
   private var testCommandFakeDataCmdJSON  : String = _
 
+  private val playerId = "playerId"
+
   override def beforeAll(): Unit = {
     // creazione e registrazione attore player
     ackProbe = createTestProbe[Ack]()
     engineProbe = createTestProbe[EngineCommand]()
     val fakeGameId = "fakeCreateGameId"
-    val playerActor = spawn(Player(fakeGameId, engineProbe.ref))
-    val regReqSender = createTestProbe[Player.PlayerRegistration]()
+    val playerActor = spawn(PlayerAct(fakeGameId, engineProbe.ref))
+    val regReqSender = createTestProbe[PlayerAct.PlayerRegistration]()
     val clientProbe = createTestProbe[Message]()
 
-    playerActor ! Player.RegisterUser(regReqSender.ref, clientProbe.ref)
+    playerActor ! PlayerAct.RegisterUser(regReqSender.ref, clientProbe.ref, playerId)
     engineProbe.receiveMessage() match {
-      case Engine.RegisterPlayer(updateRef) => playerUpdAdapter = updateRef
+      case Engine.RegisterWatcher(updateRef) => playerUpdAdapter = updateRef
       case _ => fail()
     }
     regReqSender.receiveMessage() match {
-      case Player.RegistrationAccepted(ref) => playerCmdAdapter = ref
+      case PlayerAct.RegistrationAccepted(ref) => playerCmdAdapter = ref
       case _ => fail()
     }
 
@@ -69,37 +71,37 @@ class PlayerCommandTest extends ScalaTestWithActorTestKit with AnyWordSpecLike {
 
     "handle Resume command" in {
       playerCmdAdapter ! ConnectionData(ackProbe.ref, TextMessage(testCommandResumeJSON))
-      engineProbe.expectMessageType[Engine.Resume]
+      engineProbe.expectMessageType[Engine.Run]
       receiveAck()
     }
 
     "handle Move Up command" in {
       playerCmdAdapter ! ConnectionData(ackProbe.ref, TextMessage(testCommandUPJSON))
-      engineProbe.expectMessage(Engine.ChangeDirectionReq(playerUpdAdapter, MoveDirection.UP))
+      engineProbe.expectMessage(Engine.ChangeDirectionReq(playerId, MoveDirection.UP))
       receiveAck()
     }
 
     "handle Move Down command" in {
       playerCmdAdapter ! ConnectionData(ackProbe.ref, TextMessage(testCommandDOWNJSON))
-      engineProbe.expectMessage(Engine.ChangeDirectionReq(playerUpdAdapter, MoveDirection.DOWN))
+      engineProbe.expectMessage(Engine.ChangeDirectionReq(playerId, MoveDirection.DOWN))
       receiveAck()
     }
 
     "handle Move Left command" in {
       playerCmdAdapter ! ConnectionData(ackProbe.ref, TextMessage(testCommandLEFTJSON))
-      engineProbe.expectMessage(Engine.ChangeDirectionReq(playerUpdAdapter, MoveDirection.LEFT))
+      engineProbe.expectMessage(Engine.ChangeDirectionReq(playerId, MoveDirection.LEFT))
       receiveAck()
     }
 
     "handle Move Right command" in {
       playerCmdAdapter ! ConnectionData(ackProbe.ref, TextMessage(testCommandRIGHTJSON))
-      engineProbe.expectMessage(Engine.ChangeDirectionReq(playerUpdAdapter, MoveDirection.RIGHT))
+      engineProbe.expectMessage(Engine.ChangeDirectionReq(playerId, MoveDirection.RIGHT))
       receiveAck()
     }
 
     "handle Move None command" in {
       playerCmdAdapter ! ConnectionData(ackProbe.ref, TextMessage(testCommandNONEJSON))
-      engineProbe.expectMessage(Engine.ChangeDirectionCur(playerUpdAdapter))
+      engineProbe.expectMessage(Engine.ChangeDirectionCur(playerId))
       receiveAck()
     }
 

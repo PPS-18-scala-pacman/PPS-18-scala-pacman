@@ -16,9 +16,9 @@ class GhostActRegistrationTest extends ScalaTestWithActorTestKit(ConfLoader.akka
       val ghostType = GhostType.BLINKY
 
       val props = MailboxSelector.fromConfig("ghost-mailbox")
-      val ghostActor: ActorRef[Engine.UpdateCommand] = spawn(GhostAct(fakeGameId, engineProbe.ref, ghostType), props)
+      val ghostActor: ActorRef[Engine.UpdateCommand] = spawn(GhostAct(fakeGameId, engineProbe.ref, ghostType.toString()), props)
 
-      engineProbe.expectMessage(Engine.RegisterGhost(ghostActor, ghostType))
+      engineProbe.expectMessage(Engine.RegisterWatcher(ghostActor))
     }
   }
 }

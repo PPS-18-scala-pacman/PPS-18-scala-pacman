@@ -7,34 +7,34 @@ import org.scalatest.wordspec.AnyWordSpecLike
 
 class PlayerRegistrationTest extends ScalaTestWithActorTestKit with AnyWordSpecLike {
 
-  private var playerActor: ActorRef[Player.PlayerCommand] = _
+  private var playerActor: ActorRef[PlayerAct.PlayerCommand] = _
 
   override def beforeAll(): Unit = {
     val engineProbe = createTestProbe[Engine.EngineCommand]()
     val fakeGameId = "fakeCreateGameId"
-    playerActor = spawn(Player(fakeGameId, engineProbe.ref))
+    playerActor = spawn(PlayerAct(fakeGameId, engineProbe.ref))
   }
 
   "A Player actor" must {
 
     "accept a registration user request" in {
-      val regReqSender = createTestProbe[Player.PlayerRegistration]()
+      val regReqSender = createTestProbe[PlayerAct.PlayerRegistration]()
       val clientProbe = createTestProbe[Message]()
 
-      playerActor ! Player.RegisterUser(regReqSender.ref, clientProbe.ref)
-      regReqSender.expectMessageType[Player.RegistrationAccepted]
+      playerActor ! PlayerAct.RegisterUser(regReqSender.ref, clientProbe.ref, "playerId")
+      regReqSender.expectMessageType[PlayerAct.RegistrationAccepted]
     }
 
     "reject a second registration user request" in {
-      val regReqSenderFst = createTestProbe[Player.PlayerRegistration]()
-      val regReqSenderSnd = createTestProbe[Player.PlayerRegistration]()
+      val regReqSenderFst = createTestProbe[PlayerAct.PlayerRegistration]()
+      val regReqSenderSnd = createTestProbe[PlayerAct.PlayerRegistration]()
       val clientProbe = createTestProbe[Message]()
 
-      playerActor ! Player.RegisterUser(regReqSenderFst.ref, clientProbe.ref)
+      playerActor ! PlayerAct.RegisterUser(regReqSenderFst.ref, clientProbe.ref, "playerId")
       regReqSenderFst.receiveMessage()
 
-      playerActor ! Player.RegisterUser(regReqSenderSnd.ref, clientProbe.ref)
-      regReqSenderSnd.expectMessageType[Player.RegistrationRejected]
+      playerActor ! PlayerAct.RegisterUser(regReqSenderSnd.ref, clientProbe.ref, "playerId")
+      regReqSenderSnd.expectMessageType[PlayerAct.RegistrationRejected]
     }
   }
 }

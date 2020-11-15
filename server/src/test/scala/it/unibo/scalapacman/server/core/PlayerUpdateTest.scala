@@ -12,6 +12,7 @@ import org.scalatest.wordspec.AnyWordSpecLike
 class PlayerUpdateTest extends ScalaTestWithActorTestKit with AnyWordSpecLike {
 
   private val fakeGameId = "fakeCreateGameId"
+  private val playerId = "playerId"
 
   var testModel: UpdateModelDTO = _
   var testModelJSON: String = _
@@ -19,9 +20,9 @@ class PlayerUpdateTest extends ScalaTestWithActorTestKit with AnyWordSpecLike {
   override def beforeAll(): Unit = {
     // scalastyle:off magic.number
     val gameEntities:Set[GameEntityDTO] = Set(
-      GameEntityDTO(GameCharacterHolder(GameCharacter.PACMAN), Point2D(1,2), 1, isDead=false, DirectionHolder(Direction.NORTH)),
-      GameEntityDTO(GameCharacterHolder(GameCharacter.BLINKY), Point2D(3,4), 1, isDead=false, DirectionHolder(Direction.NORTH)),
-      GameEntityDTO(GameCharacterHolder(GameCharacter.CLYDE),  Point2D(5,6), 1, isDead=false, DirectionHolder(Direction.NORTH)))
+      GameEntityDTO(playerId, GameCharacterHolder(GameCharacter.PACMAN), Point2D(1,2), 1, isDead=false, DirectionHolder(Direction.NORTH)),
+      GameEntityDTO("2", GameCharacterHolder(GameCharacter.BLINKY), Point2D(3,4), 1, isDead=false, DirectionHolder(Direction.NORTH)),
+      GameEntityDTO("3", GameCharacterHolder(GameCharacter.CLYDE),  Point2D(5,6), 1, isDead=false, DirectionHolder(Direction.NORTH)))
 
     val dots: Set[DotDTO] = Set(
       DotDTO(DotHolder(Dot.SMALL_DOT), (5, 6)),
@@ -34,9 +35,9 @@ class PlayerUpdateTest extends ScalaTestWithActorTestKit with AnyWordSpecLike {
 
     testModel = UpdateModelDTO(gameEntities, GameState(score = 2), dots, fruit)
 
-    testModelJSON = "{\"gameEntities\":[{\"gameCharacterHolder\":{\"gameChar\":\"PACMAN\"},\"position\":{\"x\":1.0,\"y\"" +
-      ":2.0},\"speed\":1.0,\"isDead\":false,\"dir\":{\"direction\":\"NORTH\"}},{\"gameCharacterHolder\":{\"gameChar\":\"" +
-      "BLINKY\"},\"position\":{\"x\":3.0,\"y\":4.0},\"speed\":1.0,\"isDead\":false,\"dir\":{\"direction\":\"NORTH\"}},{\"" +
+    testModelJSON = "{\"gameEntities\":[{\"id\":" + playerId + ",\"gameCharacterHolder\":{\"gameChar\":\"PACMAN\"},\"position\":" +
+      "{\"x\":1.0,\"y\":2.0},\"speed\":1.0,\"isDead\":false,\"dir\":{\"direction\":\"NORTH\"}},{\"id\":\"2\",\"gameCharacterHolder\":{\"gameChar\":\"" +
+      "BLINKY\"},\"position\":{\"x\":3.0,\"y\":4.0},\"speed\":1.0,\"isDead\":false,\"dir\":{\"direction\":\"NORTH\"}},{\"id\":\"3\",\"" +
       "gameCharacterHolder\":{\"gameChar\":\"CLYDE\"},\"position\":{\"x\":5.0,\"y\":6.0},\"speed\":1.0,\"isDead\":false,\"" +
       "dir\":{\"direction\":\"NORTH\"}}],\"state\":{\"score\":2,\"ghostInFear\":false,\"pacmanEmpowered\":false,\"" +
       "levelStateHolder\":{\"levelState\":\"ONGOING\"}},\"dots\":[{\"dotHolder\":{\"dot\":\"SMALL_DOT\"},\"pos\":[5,6]},{\"" +
@@ -48,21 +49,21 @@ class PlayerUpdateTest extends ScalaTestWithActorTestKit with AnyWordSpecLike {
 
     "handle updateModel message" in {
       val engineProbe = createTestProbe[Engine.EngineCommand]()
-      val playerActor = spawn(Player(fakeGameId, engineProbe.ref))
-      val regReqSender = createTestProbe[Player.PlayerRegistration]()
+      val playerActor = spawn(PlayerAct(fakeGameId, engineProbe.ref))
+      val regReqSender = createTestProbe[PlayerAct.PlayerRegistration]()
       val clientProbe = createTestProbe[Message]()
       val ackProbe = createTestProbe[Ack]()
 
-      playerActor ! Player.RegisterUser(regReqSender.ref, clientProbe.ref)
+      playerActor ! PlayerAct.RegisterUser(regReqSender.ref, clientProbe.ref, playerId)
       regReqSender.receiveMessage() match {
-        case Player.RegistrationAccepted(ref) =>
+        case PlayerAct.RegistrationAccepted(ref) =>
           ref! ConnectionInit(ackProbe.ref)
           ackProbe.expectMessageType[ConnectionAck]
         case _ => fail()
       }
 
       engineProbe.receiveMessage() match {
-        case Engine.RegisterPlayer(updateRef) => updateRef ! Engine.UpdateMsg(testModel)
+        case Engine.RegisterWatcher(updateRef) => updateRef ! Engine.UpdateMsg(testModel)
         case _ => fail()
       }
 

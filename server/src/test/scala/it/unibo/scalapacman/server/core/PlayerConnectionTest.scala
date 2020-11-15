@@ -6,7 +6,7 @@ import akka.actor.typed.ActorRef
 import akka.http.scaladsl.model.ws.Message
 import it.unibo.scalapacman.server.communication.ConnectionProtocol.{Ack, ConnectionAck, ConnectionEnded, ConnectionFailed, ConnectionInit, ConnectionMsg}
 import it.unibo.scalapacman.server.core.Engine.EngineCommand
-import it.unibo.scalapacman.server.core.Player.PlayerCommand
+import it.unibo.scalapacman.server.core.PlayerAct.PlayerCommand
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.wordspec.AnyWordSpecLike
 
@@ -25,15 +25,15 @@ class PlayerConnectionTest extends ScalaTestWithActorTestKit with AnyWordSpecLik
   override def beforeEach(): Unit = {
     // creazione e registrazione attore player
     val fakeGameId = "fakeCreateGameId"
-    val regReqSender = createTestProbe[Player.PlayerRegistration]()
+    val regReqSender = createTestProbe[PlayerAct.PlayerRegistration]()
     val clientProbe = createTestProbe[Message]()
-    playerActor = spawn(Player(fakeGameId, engineProbe.ref))
+    playerActor = spawn(PlayerAct(fakeGameId, engineProbe.ref))
 
-    playerActor ! Player.RegisterUser(regReqSender.ref, clientProbe.ref)
-    engineProbe.expectMessageType[Engine.RegisterPlayer]
+    playerActor ! PlayerAct.RegisterUser(regReqSender.ref, clientProbe.ref, "playerId")
+    engineProbe.expectMessageType[Engine.RegisterWatcher]
 
     regReqSender.receiveMessage() match {
-      case Player.RegistrationAccepted(ref) => playerCmdAdapter = ref
+      case PlayerAct.RegistrationAccepted(ref) => playerCmdAdapter = ref
       case _ => fail()
     }
   }

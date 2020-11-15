@@ -35,14 +35,14 @@ class RouteTest extends AnyWordSpec with ScalatestRouteTest with Matchers {
     implicit val actorSystem: ActorSystem[Nothing] = testKit.system
 
     val mockedBehavior = Behaviors.receiveMessage[ServiceRoutes.RoutesCommand] {
-      case ServiceRoutes.CreateGame(replyTo) =>
+      case ServiceRoutes.CreateGame(replyTo, _) =>
         replyTo ! ServiceRoutes.SuccessCrG(testGameId)
         Behaviors.same
-      case ServiceRoutes.CreateConnectionGame(replyTo, `testGameId`) =>
+      case ServiceRoutes.CreateConnectionGame(replyTo, `testGameId`, _) =>
         val echoFlow: Flow[Message, Message, NotUsed] =  Flow[Message]
         replyTo ! ServiceRoutes.SuccessConG(echoFlow)
         Behaviors.same
-      case ServiceRoutes.CreateConnectionGame(replyTo, `failureTestGameId`) =>
+      case ServiceRoutes.CreateConnectionGame(replyTo, `failureTestGameId`, _) =>
         replyTo ! ServiceRoutes.FailureConG(failureTestMsg)
         Behaviors.same
       case _ =>
@@ -82,7 +82,7 @@ class RouteTest extends AnyWordSpec with ScalatestRouteTest with Matchers {
         responseAs[String] shouldEqual testGameId
       }
       probeRoutesHandler.receiveMessage() match {
-        case ServiceRoutes.CreateGame(_) =>
+        case ServiceRoutes.CreateGame(_, _) =>
         case _ => fail()
       }
     }

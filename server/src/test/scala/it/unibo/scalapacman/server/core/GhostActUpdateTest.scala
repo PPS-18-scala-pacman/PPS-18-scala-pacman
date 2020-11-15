@@ -14,6 +14,7 @@ class GhostActUpdateTest extends ScalaTestWithActorTestKit(ConfLoader.akkaConf) 
   val fakeGameId = "fakeCreateGameId"
 
   val ghostTestType: GhostType.GhostType = GhostType.BLINKY
+  val ghostId = "ghostId"
 
   private var ghostActor  : ActorRef[Engine.UpdateCommand] = _
   private var engineProbe : TestProbe[Engine.EngineCommand] = _
@@ -26,8 +27,8 @@ class GhostActUpdateTest extends ScalaTestWithActorTestKit(ConfLoader.akkaConf) 
     super.beforeAll()
 
     // scalastyle:off magic.number
-    val pacman = GameEntityDTO(GameCharacterHolder(GameCharacter.PACMAN), Point2D(48,28), 1, isDead=false, DirectionHolder(Direction.WEST))
-    val aliveGhost = GameEntityDTO(GameCharacterHolder(ghostTestType), Point2D(120,80), 1, isDead=false, DirectionHolder(Direction.NORTH))
+    val pacman = GameEntityDTO("1", GameCharacterHolder(GameCharacter.PACMAN), Point2D(48,28), 1, isDead=false, DirectionHolder(Direction.WEST))
+    val aliveGhost = GameEntityDTO(ghostId, GameCharacterHolder(ghostTestType), Point2D(120,80), 1, isDead=false, DirectionHolder(Direction.NORTH))
     val deadGhost = aliveGhost.copy(isDead = true)
 
     testUpdateModel = UpdateModelDTO(Set(aliveGhost, pacman), GameState(score = 2), Set(), None)
@@ -43,7 +44,7 @@ class GhostActUpdateTest extends ScalaTestWithActorTestKit(ConfLoader.akkaConf) 
     engineProbe = createTestProbe[Engine.EngineCommand]()
 
     val props = MailboxSelector.fromConfig("ghost-mailbox")
-    ghostActor = spawn(GhostAct(fakeGameId, engineProbe.ref, ghostTestType), props)
+    ghostActor = spawn(GhostAct(fakeGameId, engineProbe.ref, ghostId), props)
     engineProbe.receiveMessage()
   }
 
@@ -55,7 +56,7 @@ class GhostActUpdateTest extends ScalaTestWithActorTestKit(ConfLoader.akkaConf) 
         ghostActor ! Engine.UpdateMsg(testUpdateModel)
 
         engineProbe.receiveMessage() match {
-          case Engine.ChangeDirectionReq(ghostAct, _) => ghostAct shouldEqual ghostActor
+          case Engine.ChangeDirectionReq(`ghostId`, _) =>
           case _ => fail()
         }
       }
@@ -67,13 +68,13 @@ class GhostActUpdateTest extends ScalaTestWithActorTestKit(ConfLoader.akkaConf) 
         ghostActor ! Engine.UpdateMsg(testUpdateModel)
 
         engineProbe.receiveMessage() match {
-          case Engine.ChangeDirectionReq(ghostAct, _) => ghostAct shouldEqual ghostActor
+          case Engine.ChangeDirectionReq(`ghostId`, _) =>
           case _ => fail()
         }
 
         ghostActor ! Engine.UpdateMsg(testDeadGhostModel)
 
-        engineProbe.expectMessage(Engine.ChangeDirectionCur(ghostActor))
+        engineProbe.expectMessage(Engine.ChangeDirectionCur(ghostId))
       }
     }
 
