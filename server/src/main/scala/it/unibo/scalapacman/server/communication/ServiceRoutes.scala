@@ -5,14 +5,15 @@ import akka.actor.typed.scaladsl.AskPattern.{Askable, schedulerFromActorSystem}
 import akka.actor.typed.{ActorRef, ActorSystem}
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.model.ws.Message
-import akka.http.scaladsl.server.Directives._ // scalastyle:ignore
+import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import akka.stream.scaladsl.Flow
 import it.unibo.scalapacman.server.config.Settings
 import it.unibo.scalapacman.server.config.Settings.askTimeout
 import spray.json.DefaultJsonProtocol
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
-import spray.json._ // scalastyle:ignore
+import it.unibo.scalapacman.server.model.{GameComponent, RequestMockUp}
+import spray.json._
 
 import scala.concurrent.Future
 
@@ -25,7 +26,7 @@ object ServiceRoutes {
   // Messaggi di gestione richieste ricevute
   trait RoutesCommand
   case class DeleteGame(gameId: String) extends RoutesCommand
-  case class CreateGame(replyTo: ActorRef[ResponseCreateGame], playerNumber: Int) extends RoutesCommand
+  case class CreateGame(replyTo: ActorRef[ResponseCreateGame], components: List[GameComponent]) extends RoutesCommand
   case class CreateConnectionGame(replyTo: ActorRef[ResponseConnGame], gameId: String, nickname: String) extends RoutesCommand
 
   // Messaggi di risposta per creazione nuova partita
@@ -38,7 +39,7 @@ object ServiceRoutes {
   case class SuccessConG(flow: Flow[Message, Message, Any]) extends ResponseConnGame
   case class FailureConG(reason: String) extends ResponseConnGame
 
-  case class CreateGameRequest(playersNumber: Int)
+  case class CreateGameRequest(playersNumber: Int) //TODO L da sostituire
   object JsonSupport extends SprayJsonSupport with DefaultJsonProtocol {
     implicit val createGameRequestFormat: RootJsonFormat[CreateGameRequest] = jsonFormat1(CreateGameRequest)
   }
@@ -57,7 +58,7 @@ object ServiceRoutes {
                 if(req.playersNumber < 1 || req.playersNumber > Settings.maxPlayersNumber) {
                   complete(StatusCodes.UnprocessableEntity -> "Numero di giocatori non valido")
                 } else {
-                  val operationPerformed: Future[ResponseCreateGame] = handler.ask(CreateGame(_, req.playersNumber))
+                  val operationPerformed: Future[ResponseCreateGame] = handler.ask(CreateGame(_, RequestMockUp.getComponentDefault(req.playersNumber)))
                   onSuccess(operationPerformed) {
                     case ServiceRoutes.SuccessCrG(gameId) => complete(StatusCodes.Created, gameId)
                     case ServiceRoutes.FailureCrG(reason) => complete(StatusCodes.InternalServerError -> reason)

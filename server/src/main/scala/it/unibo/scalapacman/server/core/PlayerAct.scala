@@ -6,19 +6,19 @@ import akka.http.scaladsl.model.ws.{Message, TextMessage}
 import it.unibo.scalapacman.common.{Command, CommandType, CommandTypeHolder, JSONConverter, MoveCommandType, MoveCommandTypeHolder}
 import it.unibo.scalapacman.server.communication.ConnectionProtocol.{ConnectionAck, ConnectionData, ConnectionEnded,
   ConnectionFailed, ConnectionInit, ConnectionMsg}
-import it.unibo.scalapacman.server.core.Engine.UpdateCommand
-import it.unibo.scalapacman.server.core.Player.{PlayerCommand, RegisterUser, RegistrationAccepted, RegistrationRejected, Setup, WrapRespMessage, WrapRespUpdate}
+import it.unibo.scalapacman.server.core.PlayerAct.{PlayerCommand, RegisterUser, RegistrationAccepted, RegistrationRejected,
+  Setup, WrapRespMessage, WrapRespUpdate}
 import it.unibo.scalapacman.server.model.MoveDirection
 
 /**
  * Attore che rappresenta un giocatore, scambia informazioni col Client, in modo tale da comunicare al sistema
  * i comandi ricevuti durante la sessione di gioco e di inviare lo stato aggiornato della partita
  */
-object Player {
+object PlayerAct {
 
   // Messaggi gestiti dall'attore
   sealed trait PlayerCommand
-  case class RegisterUser(replyTo: ActorRef[PlayerRegistration], sourceAct: ActorRef[Message]) extends PlayerCommand
+  case class RegisterUser(replyTo: ActorRef[PlayerRegistration], sourceAct: ActorRef[Message], nickname: String) extends PlayerCommand
 
   case class WrapRespMessage(response: ConnectionMsg) extends PlayerCommand
   case class WrapRespUpdate(response: Engine.UpdateCommand) extends PlayerCommand
@@ -34,11 +34,11 @@ object Player {
 
   def apply(gameId: String, engine: ActorRef[Engine.EngineCommand]): Behavior[PlayerCommand] =
     Behaviors.setup { context =>
-      new Player(Setup(gameId, context, engine)).initRoutine()
+      new PlayerAct(Setup(gameId, context, engine)).initRoutine()
     }
 }
 
-class Player(setup: Setup) {
+class PlayerAct(setup: Setup) {
 
   val clientMsgAdapter: ActorRef[ConnectionMsg] = setup.context.messageAdapter(WrapRespMessage)
   val updateMsgAdapter: ActorRef[Engine.UpdateCommand] = setup.context.messageAdapter(WrapRespUpdate)
@@ -48,10 +48,10 @@ class Player(setup: Setup) {
    */
   private def initRoutine(): Behavior[PlayerCommand] =
     Behaviors.receiveMessage {
-      case RegisterUser(replyTo, sourceAct) =>
-        setup.engine ! Engine.RegisterPlayer(updateMsgAdapter)
+      case RegisterUser(replyTo, sourceAct, nickname) =>
+        setup.engine ! Engine.RegisterWatcher(updateMsgAdapter)
         replyTo ! RegistrationAccepted(clientMsgAdapter)
-        setUpConnectionRoutine(sourceAct)
+        setUpConnectionRoutine(sourceAct, nickname)
       case _ =>
         setup.context.log.warn("Ricevuto messaggio non gestito")
         Behaviors.same
@@ -60,15 +60,16 @@ class Player(setup: Setup) {
   /**
    * Behavior di attesa instauramento connessione
    */
-  private def setUpConnectionRoutine(sourceAct: ActorRef[Message]): Behavior[PlayerCommand] =
+  private def setUpConnectionRoutine(sourceAct: ActorRef[Message], nickname: String): Behavior[PlayerCommand] =
     Behaviors.receiveMessage {
-      case RegisterUser(replyTo, _) =>
+      case RegisterUser(replyTo, _, _) =>
         replyTo ! RegistrationRejected("Player occupato")
         Behaviors.same
       case WrapRespMessage(ConnectionInit(act)) =>
         setup.context.log.info("Ricevuto messaggio connessione instaurata")
         act ! ConnectionAck()
-        mainRoutine(sourceAct)
+        Game.NotifyPlayerReady(nickname)
+        mainRoutine(sourceAct, nickname)
       case _ =>
         setup.context.log.warn("Ricevuto messaggio non gestito")
         Behaviors.same
@@ -77,9 +78,9 @@ class Player(setup: Setup) {
   /**
    * Behavior principale usato durante il corso della sessione di gioco
    */
-  private def mainRoutine(sourceAct: ActorRef[Message]): Behavior[PlayerCommand] =
+  private def mainRoutine(sourceAct: ActorRef[Message], nickname: String): Behavior[PlayerCommand] =
     Behaviors.receiveMessage {
-      case RegisterUser(replyTo, _) =>
+      case RegisterUser(replyTo, _, _) =>
         replyTo ! RegistrationRejected("Player occupato")
         Behaviors.same
       case WrapRespUpdate(Engine.UpdateMsg(model)) =>
@@ -89,7 +90,7 @@ class Player(setup: Setup) {
         Behaviors.same
       case WrapRespMessage(ConnectionData(act, TextMessage.Strict(msg))) =>
         setup.context.log.debug("Ricevuto messaggio: " + msg)
-        val command = JSONConverter.fromJSON[Command](msg) flatMap (parseClientCommand(_, updateMsgAdapter))
+        val command = JSONConverter.fromJSON[Command](msg) flatMap (parseClientCommand(_, nickname))
         if(command.isDefined) setup.engine ! command.get
         act ! ConnectionAck()
         Behaviors.same
@@ -109,36 +110,36 @@ class Player(setup: Setup) {
    * Parsing Comando del client
    *
    * @param clientCommand comando da parsare
-   * @param actRef        self
+   * @param nickname      self
    * @return              EngineCommand corrispondente
    */
-  private def parseClientCommand(clientCommand: Command, actRef: ActorRef[Engine.UpdateCommand]): Option[Engine.EngineCommand] = clientCommand match {
+  private def parseClientCommand(clientCommand: Command, nickname: String): Option[Engine.EngineCommand] = clientCommand match {
     case Command(CommandTypeHolder(CommandType.PAUSE), None) => Some(Engine.Pause())
-    case Command(CommandTypeHolder(CommandType.RESUME), None) => Some(Engine.Resume())
+    case Command(CommandTypeHolder(CommandType.RESUME), None) => Some(Engine.Run())
     case Command(CommandTypeHolder(CommandType.MOVE), Some(data)) =>
-      JSONConverter.fromJSON[MoveCommandTypeHolder](data) flatMap (parseClientMoveCommand(_, actRef))
+      JSONConverter.fromJSON[MoveCommandTypeHolder](data) flatMap (parseClientMoveCommand(_, nickname))
     case _ => None
   }
 
   /**
-   * Paseing di un Comando di movimento
+   * Parsing di un Comando di movimento
    *
    * @param clientMoveCommand comando di movimento da parsare
-   * @param actRef            self
+   * @param nickname          self
    * @return                  EngineCommand corrispondente
    */
-  private def parseClientMoveCommand(clientMoveCommand: MoveCommandTypeHolder, actRef: ActorRef[UpdateCommand]): Option[Engine.EngineCommand] =
+  private def parseClientMoveCommand(clientMoveCommand: MoveCommandTypeHolder, nickname: String): Option[Engine.EngineCommand] =
     clientMoveCommand match {
       case MoveCommandTypeHolder(MoveCommandType.UP) =>
-        Some(Engine.ChangeDirectionReq(actRef, MoveDirection.UP))
+        Some(Engine.ChangeDirectionReq(nickname, MoveDirection.UP))
       case MoveCommandTypeHolder(MoveCommandType.DOWN) =>
-        Some(Engine.ChangeDirectionReq(actRef, MoveDirection.DOWN))
+        Some(Engine.ChangeDirectionReq(nickname, MoveDirection.DOWN))
       case MoveCommandTypeHolder(MoveCommandType.LEFT) =>
-        Some(Engine.ChangeDirectionReq(actRef, MoveDirection.LEFT))
+        Some(Engine.ChangeDirectionReq(nickname, MoveDirection.LEFT))
       case MoveCommandTypeHolder(MoveCommandType.RIGHT) =>
-        Some(Engine.ChangeDirectionReq(actRef, MoveDirection.RIGHT))
+        Some(Engine.ChangeDirectionReq(nickname, MoveDirection.RIGHT))
       case MoveCommandTypeHolder(MoveCommandType.NONE) =>
-        Some(Engine.ChangeDirectionCur(actRef))
+        Some(Engine.ChangeDirectionCur(nickname))
       case _ => None
     }
 }

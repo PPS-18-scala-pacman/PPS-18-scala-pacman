@@ -5,7 +5,6 @@ import akka.actor.typed.scaladsl.{ActorContext, Behaviors}
 import it.unibo.scalapacman.common.{GameCharacter, UpdateModelDTO}
 import it.unibo.scalapacman.lib.ai.GhostAI
 import it.unibo.scalapacman.lib.model.Direction.Direction
-import it.unibo.scalapacman.lib.model.GhostType.GhostType
 import it.unibo.scalapacman.lib.model.{GameState, LevelState}
 import it.unibo.scalapacman.server.core.Engine.{ChangeDirectionCur, ChangeDirectionReq}
 import it.unibo.scalapacman.server.core.GhostAct.{Model, Setup}
@@ -21,20 +20,21 @@ object GhostAct {
   private case class Setup(gameId: String,
                            context: ActorContext[Engine.UpdateCommand],
                            engine: ActorRef[Engine.EngineCommand],
-                           ghostType: GhostType)
+                           nickname: String,
+                          )
 
   private case class Model(state: GameState, desMove: Option[MoveDirection])
 
-  def apply(id: String, engine: ActorRef[Engine.EngineCommand], ghostType: GhostType): Behavior[Engine.UpdateCommand] =
+  def apply(id: String, engine: ActorRef[Engine.EngineCommand], nickname: String): Behavior[Engine.UpdateCommand] =
     Behaviors.setup { context =>
-      new GhostAct(Setup(id, context, engine, ghostType)).coreRoutine(Model(GameState(0), None))
+      new GhostAct(Setup(id, context, engine, nickname: String)).coreRoutine(Model(GameState(0), None))
     }
 }
 
 private class GhostAct(setup: Setup) {
 
-  setup.context.log.info(s"GhostAct avviato, fantasma: ${setup.ghostType}")
-  setup.engine ! Engine.RegisterGhost(setup.context.self, setup.ghostType)
+  setup.context.log.info(s"GhostAct avviato, fantasma: ${setup.nickname}")
+  setup.engine ! Engine.RegisterWatcher(setup.context.self)
 
   /**
    * Behavior principale
@@ -55,7 +55,7 @@ private class GhostAct(setup: Setup) {
   private def handleEngineUpdate(model: UpdateModelDTO, myModel: Model): Behavior[Engine.UpdateCommand] ={
     setup.context.log.debug("Ricevuto update: " + model)
     val gameState: GameState = model.state
-    val selfDTO = model.gameEntities.find(_.gameCharacterHolder.gameChar == GameCharacter.ghostTypeToGameCharacter(setup.ghostType))
+    val selfDTO = model.gameEntities.find(_.id == setup.nickname)
     val pacmanList = model.gameEntities
       .filter(_.gameCharacterHolder.gameChar == GameCharacter.PACMAN)
       .map(_.toPacman.get)
@@ -65,7 +65,7 @@ private class GhostAct(setup: Setup) {
       Behaviors.stopped
     } else if(selfDTO.exists(_.isDead)) {
       setup.context.log.debug("Sono morto non posso muovermi")
-      if (myModel.desMove.isDefined) setup.engine ! ChangeDirectionCur(setup.context.self)
+      if (myModel.desMove.isDefined) setup.engine ! ChangeDirectionCur(setup.nickname)
       coreRoutine(Model(gameState, None))
     } else if (selfDTO.isDefined && pacmanList.nonEmpty) {
       setup.context.log.debug("Inizio calcolo percorso")
@@ -76,7 +76,7 @@ private class GhostAct(setup: Setup) {
       //val direction = GhostAI.desiredDirection(selfDTO.get.toGhost.get, pacmanDTO.get.toPacman.get)(prologEngine, updatedMap)
 
       if (direction.isDefined) {
-        if (!myModel.desMove.contains(direction.get)) setup.engine ! ChangeDirectionReq(setup.context.self, direction.get)
+        if (!myModel.desMove.contains(direction.get)) setup.engine ! ChangeDirectionReq(setup.nickname, direction.get)
         coreRoutine(Model(gameState, Some(direction.get)))
       } else {
         setup.context.log.debug("Cambio di direzione non necessario")

@@ -1,25 +1,21 @@
 package it.unibo.scalapacman.server.core
 
-import akka.actor.typed.scaladsl.TimerScheduler
 import akka.actor.typed.{ActorRef, Behavior}
 import akka.actor.typed.scaladsl.{ActorContext, Behaviors}
 import it.unibo.scalapacman.common.DotDTO.rawToDotDTO
 import it.unibo.scalapacman.common.FruitDTO.rawToFruitDTO
-import it.unibo.scalapacman.common.GameCharacter.{GameCharacter, PACMAN}
 import it.unibo.scalapacman.common.{DotDTO, FruitDTO, GameEntityDTO, UpdateModelDTO}
 import it.unibo.scalapacman.lib.engine.{GameMovement, GameTick}
 import it.unibo.scalapacman.lib.engine.GameHelpers.MapHelper
 import it.unibo.scalapacman.lib.model.Direction.Direction
-import it.unibo.scalapacman.lib.model.{Character, GameObject, GhostType, Level, LevelState, Map, PacmanType}
-import it.unibo.scalapacman.server.core.Engine.{ActorRecovery, ChangeDirectionCur, ChangeDirectionReq, EngineCommand,
-  Pause, RegisterGhost, RegisterPlayer, Resume, Setup, UpdateCommand, UpdateMsg, WakeUp}
+import it.unibo.scalapacman.lib.model.GhostType.GhostType
+import it.unibo.scalapacman.lib.model.PacmanType.PacmanType
+import it.unibo.scalapacman.lib.model.{Character, GameObject, Level, LevelState, Map}
+import it.unibo.scalapacman.server.core.Engine.{ChangeDirectionCur, ChangeDirectionReq, EngineCommand, Model, Pause,
+  RegisterWatcher, Run, Setup, UpdateCommand, UpdateMsg, WakeUp}
 import it.unibo.scalapacman.server.model.GameParticipant.gameParticipantToGameEntity
 import it.unibo.scalapacman.server.model.MoveDirection.MoveDirection
-import it.unibo.scalapacman.server.model.{EngineModel, GameParticipant, Players, RegistrationModel}
-import it.unibo.scalapacman.server.config.Settings
-import it.unibo.scalapacman.server.util.{RecoveryHelper, RegistrationHelper}
-
-import scala.concurrent.duration.FiniteDuration
+import it.unibo.scalapacman.server.model.{GameData, GameEntity, GameParameter, GameParticipant}
 
 /**
  * Attore che si occupa, per ogni partita, di effettuare l’elaborazione dello stato di avanzamento del gioco.
@@ -36,23 +32,23 @@ object Engine {
 
   case class WakeUp() extends EngineCommand
   case class Pause() extends EngineCommand
-  case class Resume() extends EngineCommand
-  case class ActorRecovery(entityFailed: GameCharacter) extends EngineCommand
-  case class ChangeDirectionReq(id: ActorRef[UpdateCommand], direction: MoveDirection) extends EngineCommand
-  case class ChangeDirectionCur(id: ActorRef[UpdateCommand]) extends EngineCommand
-
-  case class RegisterGhost(actor: ActorRef[UpdateCommand], ghostType: GhostType.GhostType) extends EngineCommand
-  case class RegisterPlayer(actor: ActorRef[UpdateCommand]) extends EngineCommand
+  case class Run() extends EngineCommand
+  case class ChangeDirectionReq(nickname: String, direction: MoveDirection) extends EngineCommand
+  case class ChangeDirectionCur(nickname: String) extends EngineCommand
+  case class RegisterWatcher(actor: ActorRef[UpdateCommand]) extends EngineCommand
+  case class UnRegisterWatcher(actor: ActorRef[UpdateCommand]) extends EngineCommand
 
   // Messaggi inviati agli osservatori
   sealed trait UpdateCommand
   case class UpdateMsg(model: UpdateModelDTO) extends UpdateCommand
 
-  private case class Setup(gameId: String, context: ActorContext[EngineCommand], gameRefreshRate: FiniteDuration, pauseRefreshRate: FiniteDuration, level: Int)
+  private case class Setup(gameId: String, context: ActorContext[EngineCommand], info: GameParameter)
 
-  def apply(gameId: String, level: Int): Behavior[EngineCommand] =
+  private case class Model(watcher: Set[ActorRef[UpdateCommand]], data: GameData)
+
+  def apply(gameId: String, entities: List[GameEntity], level: Int): Behavior[EngineCommand] =
     Behaviors.setup { context =>
-      new Engine(Setup(gameId, context, Settings.gameRefreshRate, Settings.pauseRefreshRate, level)).idleRoutine(RegistrationModel())
+      new Engine(Setup(gameId, context, GameParameter(entities, level))).initRoutine(Set())
     }
 }
 
@@ -61,37 +57,11 @@ private class Engine(setup: Setup) {
   /**
    * Behavior iniziale, gestisce la prima registrazione da parte degli attori partecipanti alla partita
    */
-  private def idleRoutine(model: RegistrationModel): Behavior[EngineCommand] =
+  private def initRoutine(watcher: Set[ActorRef[UpdateCommand]]): Behavior[EngineCommand] =
     Behaviors.receiveMessage {
 
-      case RegisterGhost(actor, ghostType) => handleRegistration(model, ghostType, actor)
-
-      case RegisterPlayer(actor) => handleRegistration(model, PACMAN, actor)
-
-      case ActorRecovery(charType) =>
-        val upModel = RegistrationHelper.unRegisterPartecipant(model, charType)
-        idleRoutine(upModel)
-
-      case _ => unhandledMsg()
-    }
-
-  /**
-   * Behavior predisposto alla gestione di eventuali guasti da parte degli attori che partecipano alla partita
-   */
-  private def recoveryRoutine(regModel: RegistrationModel, engModel:EngineModel): Behavior[EngineCommand] =
-    Behaviors.receiveMessage {
-      case RegisterGhost(actor, ghostType) =>
-        val (upRegModel, upEngModel) = RecoveryHelper.replacePartecipant(regModel, engModel, ghostType, actor)
-        if(upRegModel.isFull) pauseRoutine(upEngModel) else recoveryRoutine(upRegModel, upEngModel)
-
-      case RegisterPlayer(actor) =>
-        val (upRegModel, upEngModel) = RecoveryHelper.replacePartecipant(regModel, engModel, PACMAN, actor)
-        if(upRegModel.isFull) pauseRoutine(upEngModel) else recoveryRoutine(upRegModel, upEngModel)
-
-      case ActorRecovery(charType) =>
-        val upModel = RegistrationHelper.unRegisterPartecipant(regModel, charType)
-        recoveryRoutine(upModel, engModel)
-
+      case RegisterWatcher(actor) => initRoutine(watcher = watcher + actor)
+      case Run() => mainRoutine(initEngineModel(watcher))
       case _ => unhandledMsg()
     }
 
@@ -99,22 +69,21 @@ private class Engine(setup: Setup) {
    * Behavior utilizzato nel caso in cui il gioco venga messo in pausa, esegue l'invio di aggiornamenti
    * senza procedere all'aggiornamento dello stato della partita
    */
-  private def pauseRoutine(model: EngineModel): Behavior[EngineCommand] = {
+  private def pauseRoutine(model: Model): Behavior[EngineCommand] = {
     Behaviors.withTimers { timers =>
-      timers.startTimerWithFixedDelay(WakeUp(), WakeUp(), setup.pauseRefreshRate)
+      timers.startTimerWithFixedDelay(WakeUp(), WakeUp(), setup.info.pauseRefreshRate)
 
       Behaviors.receiveMessage {
         case WakeUp() =>
           updateWatcher(model)
           Behaviors.same
-        case Resume() =>
+        case Run() =>
           setup.context.log.info("Resume id: " + setup.gameId)
           timers.cancel(WakeUp())
           mainRoutine(model)
         case Pause() => Behaviors.same
-        case ChangeDirectionCur(actRef) => clearDesiredDir(model, actRef, pauseRoutine)
-        case ChangeDirectionReq(actRef, dir) => changeDesiredDir(model, actRef, dir, pauseRoutine)
-        case ActorRecovery(charType) => prepareRecovery(model, charType, timers)
+        case ChangeDirectionCur(nickname) => clearDesiredDir(model, nickname, pauseRoutine)
+        case ChangeDirectionReq(nickname, dir) => changeDesiredDir(model, nickname, dir, pauseRoutine)
         case _ => unhandledMsg()
       }
     }
@@ -124,43 +93,21 @@ private class Engine(setup: Setup) {
    * Behavior utilizzato durante il corso della partita, effettua il ricalcolo periodico dello stato della
    * partita e si occupa di aggiornare gli osservatori, gestisce le richieste di pausa e cambio direzione
    */
-  private def mainRoutine(model: EngineModel): Behavior[EngineCommand] =
+  private def mainRoutine(model: Model): Behavior[EngineCommand] =
     Behaviors.withTimers { timers =>
-      timers.startTimerWithFixedDelay(WakeUp(), WakeUp(), setup.gameRefreshRate)
+      timers.startTimerWithFixedDelay(WakeUp(), WakeUp(), setup.info.gameRefreshRate)
 
       Behaviors.receiveMessage {
-        case WakeUp() =>
-          updateGame(model)
+        case WakeUp() => updateGame(model)
         case Pause() =>
           setup.context.log.info("Pause id: " + setup.gameId)
           timers.cancel(WakeUp())
           pauseRoutine(model)
-        case ChangeDirectionCur(actRef) => clearDesiredDir(model, actRef, mainRoutine)
-        case ChangeDirectionReq(actRef, dir) => changeDesiredDir(model, actRef, dir, mainRoutine)
-        case ActorRecovery(charType) => prepareRecovery(model, charType, timers)
+        case ChangeDirectionCur(nickname) => clearDesiredDir(model, nickname, mainRoutine)
+        case ChangeDirectionReq(nickname, dir) => changeDesiredDir(model, nickname, dir, mainRoutine)
         case _ => unhandledMsg()
       }
     }
-
-  private def handleRegistration(registrationModel: RegistrationModel,
-                                 charType: GameCharacter,
-                                 actor: ActorRef[UpdateCommand]): Behavior[EngineCommand] = {
-    val upModel = RegistrationHelper.registerPartecipant(registrationModel, charType, actor)
-    if(upModel.isFull) {
-      val engModel = initEngineModel(upModel)
-      updateWatcher(engModel)
-      pauseRoutine(engModel)
-    } else {
-      idleRoutine(upModel)
-    }
-  }
-
-  private def prepareRecovery(engineModel: EngineModel,
-                              charType: GameCharacter,
-                              timers: TimerScheduler[EngineCommand]): Behavior[EngineCommand] = {
-    timers.cancel(WakeUp())
-    recoveryRoutine(RecoveryHelper.createRecoveryModel(charType, engineModel), engineModel)
-  }
 
   /**
    * Crea il dto contentente lo stato della partita a partire dal modello di gioco
@@ -168,67 +115,60 @@ private class Engine(setup: Setup) {
    * @param model  modello contenente lo stato corrente del gioco
    * @return       dto per aggiornamento osservatori
    */
-  private def elaborateUpdateModel(model: EngineModel): UpdateModelDTO = {
+  private def elaborateUpdateModel(model: GameData): UpdateModelDTO = {
 
-    val gameEntities: Set[GameEntityDTO] = model.players.toSet.map(gameParticipantToGameEntity)
+    val gameEntities: Set[GameEntityDTO] = model.participants.toSet.map(gameParticipantToGameEntity)
     val dots: Set[DotDTO]                = model.map.dots.map(rawToDotDTO).toSet
     val fruit: Option[FruitDTO]          = model.map.fruit.map(rawToFruitDTO)
 
     UpdateModelDTO(gameEntities, model.state, dots, fruit)
   }
 
-  private def initEngineModel(startMod: RegistrationModel) = {
-
-    val classicFactory = Level.Classic(setup.level)
-    val players = Players(
-      pacman = GameParticipant(classicFactory.pacman(PacmanType.PACMAN), startMod.pacman.get.actor),
-      blinky = GameParticipant(classicFactory.ghost(GhostType.BLINKY), startMod.blinky.get.actor),
-      clyde  = GameParticipant(classicFactory.ghost(GhostType.CLYDE), startMod.clyde.get.actor),
-      inky   = GameParticipant(classicFactory.ghost(GhostType.INKY), startMod.inky.get.actor),
-      pinky  = GameParticipant(classicFactory.ghost(GhostType.PINKY), startMod.pinky.get.actor),
-    )
-
-    EngineModel(players, classicFactory.map, classicFactory.gameState, classicFactory.gameEvents)
+  private def initEngineModel(watcher: Set[ActorRef[UpdateCommand]]): Model = {
+    val classicFactory = Level.Classic(setup.info.level)
+    val participants: List[GameParticipant] = setup.info.players.map(char => char.charType match {
+        case typ: GhostType   => GameParticipant(char.nickname, classicFactory.ghost(typ))
+        case typ: PacmanType  => GameParticipant(char.nickname, classicFactory.pacman(typ))
+      })
+    Model(watcher, GameData(participants, classicFactory.map, classicFactory.gameState, classicFactory.gameEvents))
   }
 
-  private def updateWatcher(model: EngineModel): Unit =
-    model.players.toSet.foreach( _.actRef ! UpdateMsg(elaborateUpdateModel(model)) )
+  private def updateWatcher(model: Model): Unit =
+    model.watcher.foreach( _ ! UpdateMsg(elaborateUpdateModel(model.data)) )
 
   /**
    * Calcolo del nuovo stato di gioco a partire dal precedente
    */
-  private def updateGame(oldModel: EngineModel) : Behavior[EngineCommand] = {
+  private def updateGame(model: Model) : Behavior[EngineCommand] = {
     setup.context.log.debug("updateGame id: " + setup.gameId)
-    implicit val map: Map = oldModel.map
-
-    val pacman  = updateChar(oldModel.players.pacman)
-    val pinky   = updateChar(oldModel.players.pinky)
-    val inky    = updateChar(oldModel.players.inky)
-    val clyde   = updateChar(oldModel.players.clyde)
-    val blinky  = updateChar(oldModel.players.blinky)
-    implicit var players: Players = Players(pacman = pacman, pinky = pinky, inky = inky, clyde = clyde, blinky = blinky)
-
+    implicit val map: Map = model.data.map
+    implicit var players: List[Character] = model.data.participants.map(_.character)
     implicit val collisions: List[(Character, GameObject)] = GameTick.collisions(players)
 
     var newMap = GameTick.calculateMap(map)
-    var state = GameTick.calculateGameState(oldModel.state)
+    var state = GameTick.calculateGameState(model.data.state)
     players = GameTick.calculateDeaths(players, state)
-    players = GameTick.calculateSpeeds(players, setup.level, state)
-    state = GameTick.calculateLevelState(state, players, oldModel.map)
+    players = GameTick.calculateSpeeds(players, setup.info.level, state)
+    state = GameTick.calculateLevelState(state, players, map)
 
-    var gameEvents = oldModel.gameEvents
-    gameEvents = GameTick.consumeTimeOfGameEvents(gameEvents, setup.gameRefreshRate)
+    var gameEvents = model.data.gameEvents
+    gameEvents = GameTick.consumeTimeOfGameEvents(gameEvents, setup.info.gameRefreshRate)
     gameEvents = GameTick.updateEvents(gameEvents, state, collisions)
     players = GameTick.handleEvents(gameEvents, players)
     newMap = GameTick.handleEvents(gameEvents, newMap)
     state = GameTick.handleEvents(gameEvents, state)
     gameEvents = GameTick.removeTimedOutGameEvents(gameEvents)
 
-    val model: EngineModel = EngineModel(players, newMap, state, gameEvents)
-    updateWatcher(model)
+    val updatePlayers = model.data.participants.flatMap(par =>
+      players.find(_.characterType == par.character.characterType).map(c => par.copy(character = c))
+    )
 
-    if (state.levelState == LevelState.ONGOING) {
-      mainRoutine(model)
+    val gameData: GameData = GameData(updatePlayers, newMap, state, gameEvents)
+    val updateModel = model.copy(data = gameData)
+    updateWatcher(updateModel)
+
+    if(state.levelState == LevelState.ONGOING) {
+      mainRoutine(updateModel)
     } else {
       setup.context.log.info("Partita terminata spegnimento")
       Behaviors.stopped
@@ -236,44 +176,37 @@ private class Engine(setup: Setup) {
   }
 
   private def updateChar(participant: GameParticipant)(implicit map: Map): GameParticipant = {
-    val newChar = GameMovement.move(participant.character, setup.gameRefreshRate, participant.desiredDir)
+    val newChar = GameMovement.move(participant.character, setup.info.gameRefreshRate, participant.desiredDir)
     participant.copy(character = newChar)
   }
 
   /**
    * Gestione aggiornamento direzione
    *
-   * @param model   modello corrente
-   * @param actRef  attore coinvolto
-   * @param dir     nuova direzione
-   * @param routine meotdo per creazione prossimo Behavior
-   * @return        Behavior futuro
+   * @param model     modello corrente
+   * @param nickname  attore coinvolto
+   * @param dir       nuova direzione
+   * @param routine   metodo per creazione prossimo Behavior
+   * @return          Behavior futuro
    */
-  private def updateDesDir(model:EngineModel,
-                           actRef:ActorRef[UpdateCommand],
-                           dir:Option[Direction],
-                           routine: EngineModel => Behavior[EngineCommand]): Behavior[EngineCommand] = {
-    val players = model.players
-    val updatePl:Players = actRef match {
-      case players.pacman.actRef  => players.copy(pacman  = players.pacman.copy(desiredDir = dir))
-      case players.blinky.actRef  => players.copy(blinky  = players.blinky.copy(desiredDir = dir))
-      case players.pinky.actRef   => players.copy(pinky   = players.pinky.copy(desiredDir = dir))
-      case players.inky.actRef    => players.copy(inky    = players.inky.copy(desiredDir = dir))
-      case players.clyde.actRef   => players.copy(clyde   = players.clyde.copy(desiredDir = dir))
-    }
-    routine(model.copy(players = updatePl))
+  private def updateDesDir(model: Model,
+                           nickname: String,
+                           dir: Option[Direction],
+                           routine: Model => Behavior[EngineCommand]): Behavior[EngineCommand] = {
+    val updatePar = model.data.participants.map( par => if(par.nickname == nickname) par.copy(desiredDir = dir) else par )
+    routine(model.copy(data = model.data.copy(participants = updatePar)))
   }
 
-  private def clearDesiredDir(model:EngineModel,
-                              actRef:ActorRef[UpdateCommand],
-                              routine: EngineModel => Behavior[EngineCommand]): Behavior[EngineCommand] =
-    updateDesDir(model, actRef, None, routine)
+  private def clearDesiredDir(model:Model,
+                              nickname: String,
+                              routine: Model => Behavior[EngineCommand]): Behavior[EngineCommand] =
+    updateDesDir(model, nickname, None, routine)
 
-  private def changeDesiredDir(model:EngineModel,
-                               actRef:ActorRef[UpdateCommand],
+  private def changeDesiredDir(model:Model,
+                               nickname: String,
                                move:MoveDirection,
-                               routine: EngineModel => Behavior[EngineCommand]): Behavior[EngineCommand] =
-    updateDesDir(model, actRef, Some(move), routine)
+                               routine: Model => Behavior[EngineCommand]): Behavior[EngineCommand] =
+    updateDesDir(model, nickname, Some(move), routine)
 
   /**
    * Procedura per messaggi non gestiti nel Behaviour corrente

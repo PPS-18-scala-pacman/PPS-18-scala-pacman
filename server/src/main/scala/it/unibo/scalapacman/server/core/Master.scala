@@ -3,6 +3,7 @@ package it.unibo.scalapacman.server.core
 import akka.actor.typed.receptionist.{Receptionist, ServiceKey}
 import akka.actor.typed.scaladsl.{ActorContext, Behaviors}
 import akka.actor.typed.{ActorRef, Behavior}
+import it.unibo.scalapacman.server.model.GameComponent
 
 /**
  * Attore il cui suo scopo è di elaborare le richieste di avvio di nuove partite provvedendo a creare per
@@ -12,7 +13,7 @@ object Master {
 
   // Messaggi gestiti dall'attore
   sealed trait MasterCommand
-  case class CreateGame(replyTo: ActorRef[GameCreated], playersNumber: Int) extends MasterCommand
+  case class CreateGame(replyTo: ActorRef[GameCreated], components: List[GameComponent]) extends MasterCommand
 
   // Messaggio di notifica gioco creato
   case class GameCreated(gameId: String)
@@ -31,10 +32,10 @@ object Master {
 
   private def master(setup: Setup, gameCounter: Int): Behavior[MasterCommand] =
     Behaviors.receiveMessage {
-      case CreateGame(replyTo, playersNumber) =>
+      case CreateGame(replyTo, components) =>
         val newCounter = gameCounter + 1
         val gameId = gameIdPrefix format newCounter
-        setup.context.spawn(Game(gameId, playersNumber), gameId + gameCounter)
+        setup.context.spawn(Game(gameId, components), gameId + gameCounter)
         if(replyTo != null) replyTo ! GameCreated(gameId)
         master(setup, newCounter)
     }
