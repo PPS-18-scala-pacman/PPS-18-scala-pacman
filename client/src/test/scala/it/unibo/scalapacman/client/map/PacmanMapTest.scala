@@ -75,11 +75,11 @@ class PacmanMapTest
       )
 
       val gameEntities: Set[GameEntityDTO] = Set(
-        GameEntityDTO(GameCharacterHolder(GameCharacter.PACMAN), Point2D(0, 9), 1, isDead = false, DirectionHolder(Direction.NORTH)),
-        GameEntityDTO(GameCharacterHolder(GameCharacter.BLINKY), Point2D(9, 9), 1, isDead = false, DirectionHolder(Direction.NORTH)),
-        GameEntityDTO(GameCharacterHolder(GameCharacter.PINKY), Point2D(18, 9), 1, isDead = false, DirectionHolder(Direction.NORTH)),
-        GameEntityDTO(GameCharacterHolder(GameCharacter.INKY), Point2D(27, 9), 1, isDead = false, DirectionHolder(Direction.NORTH)),
-        GameEntityDTO(GameCharacterHolder(GameCharacter.CLYDE), Point2D(36, 9), 1, isDead = false, DirectionHolder(Direction.NORTH))
+        GameEntityDTO("1", GameCharacterHolder(GameCharacter.PACMAN), Point2D(0, 9), 1, isDead = false, DirectionHolder(Direction.NORTH)),
+        GameEntityDTO("2", GameCharacterHolder(GameCharacter.BLINKY), Point2D(9, 9), 1, isDead = false, DirectionHolder(Direction.NORTH)),
+        GameEntityDTO("3", GameCharacterHolder(GameCharacter.PINKY), Point2D(18, 9), 1, isDead = false, DirectionHolder(Direction.NORTH)),
+        GameEntityDTO("4", GameCharacterHolder(GameCharacter.INKY), Point2D(27, 9), 1, isDead = false, DirectionHolder(Direction.NORTH)),
+        GameEntityDTO("5", GameCharacterHolder(GameCharacter.CLYDE), Point2D(36, 9), 1, isDead = false, DirectionHolder(Direction.NORTH))
       )
 
       PacmanMap.createWithCharacters(map, gameEntities) shouldEqual expectedMap
