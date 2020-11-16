@@ -18,7 +18,7 @@ object JsonSupport extends SprayJsonSupport with DefaultJsonProtocol {
 //TODO L da rimuovere
 object RequestMockUp {
   def getComponentDefault(playerNumber: Int): List[GameComponent] = playerNumber match {
-    case 1 => List(GameComponent("pacman", PACMAN))
+    case 1 => List(GameComponent("GioL", PACMAN))
     case 2 => List(GameComponent("pacman", PACMAN), GameComponent("pacmina", MS_PACMAN))
     case 3 => List(GameComponent("pacman", PACMAN), GameComponent("pacmina", MS_PACMAN), GameComponent("rapman", RAPMAN))
     case 4 => List(GameComponent("pacman", PACMAN), GameComponent("pacmina", MS_PACMAN), GameComponent("rapman", RAPMAN), GameComponent("capman", CAPMAN))

@@ -83,6 +83,7 @@ private class Game(setup: Setup) {
         setup.context.log.info("RegisterPlayer ricevuto")
 
         if(!setup.components.exists(_.nickname == nickname) || model.players.exists(_._2.nickname == nickname)) {
+          setup.context.log.error(s"Nickname non valido: $nickname")
           replyTo ! RegistrationRejected("Giocatore non valido")
           prepareBehavior(idleRoutine, model)
         } else {

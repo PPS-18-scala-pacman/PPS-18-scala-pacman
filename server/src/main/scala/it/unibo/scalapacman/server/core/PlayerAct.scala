@@ -70,6 +70,10 @@ class PlayerAct(setup: Setup) {
         act ! ConnectionAck()
         Game.NotifyPlayerReady(nickname)
         mainRoutine(sourceAct, nickname)
+      case WrapRespMessage(ConnectionFailed(ex)) =>
+        setup.context.log.error("Ricevuto messaggio connessione fallita: " + ex.getMessage)
+        setup.context.log.debug(ex.getStackTrace.toString)
+        throw ex
       case _ =>
         setup.context.log.warn("Ricevuto messaggio non gestito")
         Behaviors.same
