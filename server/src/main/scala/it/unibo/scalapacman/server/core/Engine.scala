@@ -12,7 +12,7 @@ import it.unibo.scalapacman.lib.model.GhostType.GhostType
 import it.unibo.scalapacman.lib.model.PacmanType.PacmanType
 import it.unibo.scalapacman.lib.model.{Character, GameObject, Level, LevelState, Map}
 import it.unibo.scalapacman.server.core.Engine.{ChangeDirectionCur, ChangeDirectionReq, EngineCommand, Model, Pause,
-  RegisterWatcher, Run, Setup, UpdateCommand, UpdateMsg, WakeUp}
+  RegisterWatcher, Run, Setup, UnRegisterWatcher, UpdateCommand, UpdateMsg, WakeUp}
 import it.unibo.scalapacman.server.model.GameParticipant.gameParticipantToGameEntity
 import it.unibo.scalapacman.server.model.MoveDirection.MoveDirection
 import it.unibo.scalapacman.server.model.{GameData, GameEntity, GameParameter, GameParticipant}
@@ -44,7 +44,7 @@ object Engine {
 
   private case class Setup(gameId: String, context: ActorContext[EngineCommand], info: GameParameter)
 
-  private case class Model(watcher: Set[ActorRef[UpdateCommand]], data: GameData)
+  private case class Model(watchers: Set[ActorRef[UpdateCommand]], data: GameData)
 
   def apply(gameId: String, entities: List[GameEntity], level: Int): Behavior[EngineCommand] =
     Behaviors.setup { context =>
@@ -61,7 +61,10 @@ private class Engine(setup: Setup) {
     Behaviors.receiveMessage {
 
       case RegisterWatcher(actor) => initRoutine(watcher = watcher + actor)
-      case Run() => mainRoutine(initEngineModel(watcher))
+      case UnRegisterWatcher(actor) => initRoutine(watcher = watcher - actor)
+      case Run() =>
+        setup.context.log.info("Run id: " + setup.gameId)
+        mainRoutine(initEngineModel(watcher))
       case _ => unhandledMsg()
     }
 
@@ -74,11 +77,13 @@ private class Engine(setup: Setup) {
       timers.startTimerWithFixedDelay(WakeUp(), WakeUp(), setup.info.pauseRefreshRate)
 
       Behaviors.receiveMessage {
+        case RegisterWatcher(act) => pauseRoutine(addWatcher(model, act))
+        case UnRegisterWatcher(act) => pauseRoutine(removeWatcher(model, act))
         case WakeUp() =>
-          updateWatcher(model)
+          updateWatchers(model)
           Behaviors.same
         case Run() =>
-          setup.context.log.info("Resume id: " + setup.gameId)
+          setup.context.log.info("Run id: " + setup.gameId)
           timers.cancel(WakeUp())
           mainRoutine(model)
         case Pause() => Behaviors.same
@@ -98,6 +103,8 @@ private class Engine(setup: Setup) {
       timers.startTimerWithFixedDelay(WakeUp(), WakeUp(), setup.info.gameRefreshRate)
 
       Behaviors.receiveMessage {
+        case RegisterWatcher(act) => mainRoutine(addWatcher(model, act))
+        case UnRegisterWatcher(act) => mainRoutine(removeWatcher(model, act))
         case WakeUp() => updateGame(model)
         case Pause() =>
           setup.context.log.info("Pause id: " + setup.gameId)
@@ -133,8 +140,14 @@ private class Engine(setup: Setup) {
     Model(watcher, GameData(participants, classicFactory.map, classicFactory.gameState, classicFactory.gameEvents))
   }
 
-  private def updateWatcher(model: Model): Unit =
-    model.watcher.foreach( _ ! UpdateMsg(elaborateUpdateModel(model.data)) )
+  private def updateWatchers(model: Model): Unit =
+    model.watchers.foreach( _ ! UpdateMsg(elaborateUpdateModel(model.data)) )
+
+  private def addWatcher(model: Model, watcher: ActorRef[UpdateCommand]): Model =
+    model.copy(watchers = model.watchers + watcher)
+
+  private def removeWatcher(model: Model, watcher: ActorRef[UpdateCommand]): Model =
+    model.copy(watchers = model.watchers - watcher)
 
   /**
    * Calcolo del nuovo stato di gioco a partire dal precedente
@@ -142,7 +155,7 @@ private class Engine(setup: Setup) {
   private def updateGame(model: Model) : Behavior[EngineCommand] = {
     setup.context.log.debug("updateGame id: " + setup.gameId)
     implicit val map: Map = model.data.map
-    implicit var players: List[Character] = model.data.participants.map(_.character)
+    implicit var players: List[Character] = model.data.participants.map(updateChar).map(_.character)
     implicit val collisions: List[(Character, GameObject)] = GameTick.collisions(players)
 
     var newMap = GameTick.calculateMap(map)
@@ -165,7 +178,7 @@ private class Engine(setup: Setup) {
 
     val gameData: GameData = GameData(updatePlayers, newMap, state, gameEvents)
     val updateModel = model.copy(data = gameData)
-    updateWatcher(updateModel)
+    updateWatchers(updateModel)
 
     if(state.levelState == LevelState.ONGOING) {
       mainRoutine(updateModel)
