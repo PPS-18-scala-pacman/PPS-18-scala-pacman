@@ -35,7 +35,7 @@ class PlayerUpdateTest extends ScalaTestWithActorTestKit with AnyWordSpecLike {
 
     testModel = UpdateModelDTO(gameEntities, GameState(score = 2), dots, fruit)
 
-    testModelJSON = "{\"gameEntities\":[{\"id\":" + playerId + ",\"gameCharacterHolder\":{\"gameChar\":\"PACMAN\"},\"position\":" +
+    testModelJSON = "{\"gameEntities\":[{\"id\":\"" + playerId + "\",\"gameCharacterHolder\":{\"gameChar\":\"PACMAN\"},\"position\":" +
       "{\"x\":1.0,\"y\":2.0},\"speed\":1.0,\"isDead\":false,\"dir\":{\"direction\":\"NORTH\"}},{\"id\":\"2\",\"gameCharacterHolder\":{\"gameChar\":\"" +
       "BLINKY\"},\"position\":{\"x\":3.0,\"y\":4.0},\"speed\":1.0,\"isDead\":false,\"dir\":{\"direction\":\"NORTH\"}},{\"id\":\"3\",\"" +
       "gameCharacterHolder\":{\"gameChar\":\"CLYDE\"},\"position\":{\"x\":5.0,\"y\":6.0},\"speed\":1.0,\"isDead\":false,\"" +

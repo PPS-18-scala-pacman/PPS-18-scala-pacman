@@ -5,7 +5,7 @@ import akka.actor.testkit.typed.scaladsl.{ActorTestKit, TestProbe}
 import akka.actor.typed.{ActorRef, ActorSystem}
 import akka.actor.typed.scaladsl.Behaviors
 import akka.http.scaladsl.model.ws.{BinaryMessage, Message}
-import akka.http.scaladsl.model.{ContentTypes, StatusCodes}
+import akka.http.scaladsl.model.{ContentTypes, HttpEntity, StatusCodes}
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.testkit.{ScalatestRouteTest, WSProbe}
 import akka.stream.scaladsl.Flow
@@ -76,15 +76,16 @@ class RouteTest extends AnyWordSpec with ScalatestRouteTest with Matchers {
     }
 
     "return a new game for POST requests to the games path" in {
-      Post("/games") ~> routes ~> check {
-        status shouldEqual StatusCodes.Created
-        contentType shouldEqual ContentTypes.`text/plain(UTF-8)`
-        responseAs[String] shouldEqual testGameId
-      }
-      probeRoutesHandler.receiveMessage() match {
-        case ServiceRoutes.CreateGame(_, _) =>
-        case _ => fail()
-      }
+      Post("/games", HttpEntity(ContentTypes.`application/json`, """{ "playersNumber": 2}""")) ~>
+        routes ~> check {
+          status shouldEqual StatusCodes.Created
+          contentType shouldEqual ContentTypes.`text/plain(UTF-8)`
+          responseAs[String] shouldEqual testGameId
+        }
+        probeRoutesHandler.receiveMessage() match {
+          case ServiceRoutes.CreateGame(_, _) =>
+          case _ => fail()
+        }
     }
 
     "delete a game for DELETE requests to the games path" in {
@@ -98,7 +99,7 @@ class RouteTest extends AnyWordSpec with ScalatestRouteTest with Matchers {
     }
 
     "accept ws connection" in {
-      WS(s"/connection-management/games/$testGameId", probeWSClient.flow) ~> routes ~> check {
+      WS(s"/connection-management/games/$testGameId?playerName=fooId", probeWSClient.flow) ~> routes ~> check {
         isWebSocketUpgrade shouldEqual true
 
         probeWSClient.sendMessage("echo")
@@ -110,7 +111,7 @@ class RouteTest extends AnyWordSpec with ScalatestRouteTest with Matchers {
     }
 
     "decline ws connection" in {
-      WS(s"/connection-management/games/$failureTestGameId", probeWSClient.flow) ~> routes ~> check {
+      WS(s"/connection-management/games/$failureTestGameId?playerName=fooId", probeWSClient.flow) ~> routes ~> check {
         isWebSocketUpgrade shouldEqual false
 
         status shouldEqual StatusCodes.InternalServerError
