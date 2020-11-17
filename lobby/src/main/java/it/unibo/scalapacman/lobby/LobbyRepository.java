@@ -66,10 +66,10 @@ public class LobbyRepository {
       });
   }
 
-  Single<Lobby> update(Lobby lobby) {
+  Single<Lobby> update(Integer id, Lobby lobby) {
     return dbClient
       .preparedQuery("UPDATE lobby SET description = $2 WHERE id=$1 RETURNING *")
-      .rxExecute(Tuple.of(lobby.getId(), lobby.getDescription()))
+      .rxExecute(Tuple.of(id, lobby.getDescription()))
       .map(rows -> {
         logger.debug("Got " + rows.size() + " rows ");
         return StreamSupport.stream(rows.spliterator(), false)
