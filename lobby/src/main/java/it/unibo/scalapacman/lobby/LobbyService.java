@@ -1,5 +1,6 @@
 package it.unibo.scalapacman.lobby;
 
+import it.unibo.scalapacman.lobby.dao.Dao;
 import rx.Observable;
 import rx.Single;
 import rx.subjects.BehaviorSubject;
@@ -7,11 +8,11 @@ import rx.subjects.BehaviorSubject;
 import java.util.*;
 
 public class LobbyService {
-  private final LobbyRepository repository;
+  private final Dao<Lobby> repository;
   private final BehaviorSubject<List<Lobby>> getAllSubject = BehaviorSubject.create(new ArrayList<>());
   private final Map<Integer, BehaviorSubject<Lobby>> getByIdSubject = new HashMap<>();
 
-  public LobbyService(LobbyRepository repository) {
+  public LobbyService(Dao<Lobby> repository) {
     this.repository = repository;
     this.initStreams();
   }

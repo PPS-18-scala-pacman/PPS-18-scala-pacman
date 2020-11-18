@@ -14,6 +14,8 @@ import io.vertx.rxjava.ext.web.handler.BodyHandler;
 import io.vertx.rxjava.ext.web.handler.CorsHandler;
 import io.vertx.rxjava.pgclient.PgPool;
 import io.vertx.sqlclient.PoolOptions;
+import it.unibo.scalapacman.lobby.dao.Dao;
+import it.unibo.scalapacman.lobby.dao.LobbyDao;
 import it.unibo.scalapacman.lobby.util.exception.APIException;
 import rx.Completable;
 import rx.Single;
@@ -43,11 +45,11 @@ public class MainVerticle extends AbstractVerticle {
     return ConfigRetriever.create(vertx).rxGetConfig();
   }
 
-  private Single<LobbyRepository> initRepository(PgPool dbClient) {
-    return Single.just(new LobbyRepository(dbClient));
+  private Single<Dao<Lobby>> initRepository(PgPool dbClient) {
+    return Single.just(new LobbyDao(dbClient));
   }
 
-  private Single<LobbyService> initService(LobbyRepository repository) {
+  private Single<LobbyService> initService(Dao<Lobby> repository) {
     return Single.just(new LobbyService(repository));
   }
 
