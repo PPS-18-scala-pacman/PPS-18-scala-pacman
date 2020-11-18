@@ -5,9 +5,8 @@ import java.awt.{BorderLayout, GridLayout}
 import it.unibo.scalapacman.client.controller.Action.{JOIN_GAME, START_GAME}
 import it.unibo.scalapacman.client.controller.Controller
 import it.unibo.scalapacman.client.gui.View.{MENU, PLAY}
-import it.unibo.scalapacman.client.model.{CreateGameData, JoinGameData}
-import javax.swing.{BorderFactory, Box, BoxLayout, DefaultListModel, JButton, JLabel, JList, JScrollPane, JSeparator,
-  JSpinner, JTextField, ListSelectionModel, SwingConstants}
+import it.unibo.scalapacman.client.model.{CreateGameData, JoinGameData, Lobby}
+import javax.swing.{BorderFactory, Box, BoxLayout, DefaultListModel, JButton, JLabel, JScrollPane, JSeparator, JSpinner, JTextField, SwingConstants}
 
 object SetupGameView {
   def apply()(implicit controller: Controller, viewChanger: ViewChanger): SetupGameView = new SetupGameView()
@@ -88,14 +87,9 @@ class SetupGameView(implicit controller: Controller, viewChanger: ViewChanger) e
     SUB_SL_EMPTY_BORDER_X_AXIS
   )
 
-  private val listModel = new DefaultListModel[String]()
-  listModel addElement "Jane Doe"
-  listModel addElement "John Smith"
-  listModel addElement "Kathy Green"
-
-  private val lobbyList = new JList(listModel)
-  lobbyList setSelectionMode ListSelectionModel.SINGLE_SELECTION
-  private val listScrollPane = new JScrollPane(lobbyList)
+  private val lobbyList = new DefaultListModel[Lobby]()
+  private val lobbyJList = createJList(lobbyList)
+  private val listScrollPane = new JScrollPane(lobbyJList)
 
   joinGamePanel setLayout new BorderLayout(0, SUB_SL_V_GAP)
   joinGamePanel add(listScrollPane, BorderLayout.CENTER)
@@ -130,7 +124,11 @@ class SetupGameView(implicit controller: Controller, viewChanger: ViewChanger) e
   }
 
   private def handleJoinGameButton(): Unit = if (checkNickName()) {
-    controller.handleAction(JOIN_GAME, Some(JoinGameData(nicknameTextField.getText(), gameIdTextField.getText)))
+    val lobby: Lobby = lobbyJList.getSelectedValue
+
+    if (lobby != null) {
+      controller.handleAction(JOIN_GAME, Some(JoinGameData(nicknameTextField.getText(), lobby.id)))
+    }
 //    viewChanger.changeView(View.LOBBY)
   }
 

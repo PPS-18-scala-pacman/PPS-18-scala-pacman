@@ -2,7 +2,8 @@ package it.unibo.scalapacman.client.gui
 
 import java.awt.{Cursor, Font}
 
-import javax.swing.{JButton, JLabel, JPanel, JSpinner, JTextField, SpinnerModel, SpinnerNumberModel}
+import javax.swing.{DefaultListCellRenderer, JButton, JLabel, JList, JPanel, JSpinner, JTextField, ListModel,
+  ListSelectionModel, SpinnerModel, SpinnerNumberModel, SwingConstants}
 
 sealed trait Panel {
   def createLabel(text: String): JLabel
@@ -17,6 +18,8 @@ sealed trait Panel {
 
   def createJSpinner(model: SpinnerModel): JSpinner
   def createNumericJSpinner(value: Int, min: Int, max: Int): JSpinner
+
+  def createJList[A](model: ListModel[A]): JList[A]
 }
 
 object PanelImpl {
@@ -62,6 +65,7 @@ class PanelImpl extends JPanel with Panel {
    */
   override def createLabel(text: String): JLabel = new JLabel(text) {
     setForeground(DEFAULT_TEXT_COLOR)
+    setFont(new Font(MAIN_FONT_NAME, Font.PLAIN, LABELS_FONT_SIZE))
   }
 
   /**
@@ -103,14 +107,18 @@ class PanelImpl extends JPanel with Panel {
    * Crae un campo di testo generico
    * @return la JTextField
    */
-  override def createTextField(): JTextField = new JTextField()
+  override def createTextField(): JTextField = new JTextField() {
+    setFont(new Font(MAIN_FONT_NAME, Font.PLAIN, LABELS_FONT_SIZE))
+  }
 
   /**
    * Crea uno spinner generico
    * @param model il modello da utilizzare
    * @return  lo spinner
    */
-  override def createJSpinner(model: SpinnerModel): JSpinner = new JSpinner(model)
+  override def createJSpinner(model: SpinnerModel): JSpinner = new JSpinner(model) {
+    setFont(new Font(MAIN_FONT_NAME, Font.PLAIN, LABELS_FONT_SIZE))
+  }
 
   /**
    * Crea uno spinner numerico
@@ -120,4 +128,10 @@ class PanelImpl extends JPanel with Panel {
    * @return  lo spinner numerico
    */
   override def createNumericJSpinner(value: Int, min: Int, max: Int): JSpinner = createJSpinner(new SpinnerNumberModel(value, min, max, 1))
+
+  override def createJList[A](model: ListModel[A]): JList[A] = new JList(model) {
+    setSelectionMode(ListSelectionModel.SINGLE_SELECTION)
+    setFont(new Font(MAIN_FONT_NAME, Font.PLAIN, LIST_ITEM_FONT_SIZE))
+    getCellRenderer.asInstanceOf[DefaultListCellRenderer] setHorizontalAlignment SwingConstants.RIGHT
+  }
 }

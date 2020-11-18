@@ -10,6 +10,8 @@ package object gui {
   val BUTTON_FONT_SIZE = 24
   val MAIN_TITLE_LABELS_FONT_SIZE = 86
   val TITLE_LABELS_FONT_SIZE = 56
+  val LABELS_FONT_SIZE = 18
+  val LIST_ITEM_FONT_SIZE = 22
   val MAIN_FONT_NAME = "Arial"
 
   val BACKGROUND_COLOR: Color = Color.BLACK
