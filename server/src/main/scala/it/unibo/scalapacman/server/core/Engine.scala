@@ -77,7 +77,9 @@ private class Engine(setup: Setup) {
       timers.startTimerWithFixedDelay(WakeUp(), WakeUp(), setup.info.pauseRefreshRate)
 
       Behaviors.receiveMessage {
-        case RegisterWatcher(act) => pauseRoutine(addWatcher(model, act))
+        case RegisterWatcher(act) =>
+          setup.context.watchWith(act, UnRegisterWatcher(act))
+          pauseRoutine(addWatcher(model, act))
         case UnRegisterWatcher(act) => pauseRoutine(removeWatcher(model, act))
         case WakeUp() =>
           updateWatchers(model)
@@ -143,8 +145,10 @@ private class Engine(setup: Setup) {
   private def updateWatchers(model: Model): Unit =
     model.watchers.foreach( _ ! UpdateMsg(elaborateUpdateModel(model.data)) )
 
-  private def addWatcher(model: Model, watcher: ActorRef[UpdateCommand]): Model =
+  private def addWatcher(model: Model, watcher: ActorRef[UpdateCommand]): Model = {
+    setup.context.watchWith(watcher, UnRegisterWatcher(watcher))
     model.copy(watchers = model.watchers + watcher)
+  }
 
   private def removeWatcher(model: Model, watcher: ActorRef[UpdateCommand]): Model =
     model.copy(watchers = model.watchers - watcher)

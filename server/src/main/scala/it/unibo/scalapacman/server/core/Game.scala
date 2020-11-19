@@ -28,6 +28,7 @@ object Game {
   case class NotifyPlayerReady(nickname: String) extends GameCommand
 
   private case class PlayerData(nickname: String, isReady: Boolean)
+  private case class GhostData(nickname: String, ghostType: GhostType)
 
   private case class Setup( id: String,
                             context: ActorContext[GameCommand],
@@ -35,7 +36,7 @@ object Game {
                             components: List[GameComponent])
 
   private case class Model( players: Map[ActorRef[PlayerAct.PlayerCommand], PlayerData],
-                            ghosts: Map[ActorRef[Engine.UpdateCommand], GhostType])
+                            ghosts: Map[ActorRef[Engine.UpdateCommand], GhostData])
 
   def apply(id: String, components: List[GameComponent], visible: Boolean = true): Behavior[GameCommand] = {
     require(components.nonEmpty || components.size <= Settings.maxPlayersNumber, "Numero di giocatori errato")
@@ -56,7 +57,7 @@ object Game {
 
       val props = MailboxSelector.fromConfig("ghost-mailbox")
       val ghosts = entityList.filter(_.charType.isInstanceOf[GhostType]).map(gt =>
-        context.spawn( GhostAct(id, engine, gt.nickname), gt.charType + "Actor", props) -> gt.charType.asInstanceOf[GhostType]
+        context.spawn( GhostAct(id, engine, gt.nickname), gt.charType + "Actor", props) -> GhostData(gt.nickname, gt.charType.asInstanceOf[GhostType])
       ).toMap
 
       (Set(engine) ++ ghosts.keySet).foreach(context.watch(_))
@@ -144,29 +145,29 @@ private class Game(setup: Setup) {
                               model: Model): Behavior[Game.GameCommand] =
     recBe(model).receiveSignal {
       case (context, ChildFailed(act@setup.engine, _)) =>
-        context.log.error(s"$act crashed")
-        Behaviors.stopped/*
-      case (context, ChildFailed(act@model.player, _)) =>
-        //TODO togliere il player dalla set andare in initRout con numRegPl--
-        context.log.error(s"$act stopped")
-        setup.engine ! Engine.ActorRecovery(GameCharacter.PACMAN)
-        val player = context.spawn(Player(setup.id, setup.engine), "PlayerActor")
-        prepareBehavior(initRoutine, model.copy(player = player))
+        context.log.error(s"$act engine crashed")
+        Behaviors.stopped
+      case (context, ChildFailed(act, _)) if act.isInstanceOf[ActorRef[PlayerAct.PlayerCommand]] =>
+        context.log.error(s"$act player crashed")
+        val playerAct = act.asInstanceOf[ActorRef[PlayerAct.PlayerCommand]]
+        if(model.players.contains(playerAct)) setup.engine ! Engine.Pause()
+        val updatedModel = model.copy(players = model.players - playerAct)
+        prepareBehavior(idleRoutine, updatedModel)
       case (context, ChildFailed(act, _)) if act.isInstanceOf[ActorRef[Engine.UpdateCommand]] =>
-        context.log.error(s"$act stopped")
+        context.log.error(s"$act ghost stopped")
         val ghostAct = act.asInstanceOf[ActorRef[Engine.UpdateCommand]]
-        val ghostType = model.ghosts.get(ghostAct)
-        if(ghostType.isDefined) {
+        val ghostData = model.ghosts.get(ghostAct)
+        if(ghostData.isDefined) {
           setup.engine ! Engine.Pause()
 
           val props = MailboxSelector.fromConfig("ghost-mailbox")
-          val ghost = context.spawn(GhostAct(setup.id, setup.engine, ghostType.get), s"${ghostType.get}Actor", props)
-          val updatedGhosts = (model.ghosts - ghostAct) + (ghost -> ghostType.get)
+          val ghost = context.spawn(GhostAct(setup.id, setup.engine, ghostData.get.nickname), ghostAct.path.name, props)
+          val updatedGhosts = (model.ghosts - ghostAct) + (ghost -> ghostData.get)
           prepareBehavior(recBe, model.copy(ghosts = updatedGhosts))
         } else {
-          context.log.error(s"$ghostAct non è un attore noto")
+          context.log.error(s"$ghostAct non è un attore giocante")
           prepareBehavior(recBe, model)
-        }*/
+        }
       case (context, Terminated(ref)) =>
         context.log.info(s"Attore terminato: $ref")
         Behaviors.same

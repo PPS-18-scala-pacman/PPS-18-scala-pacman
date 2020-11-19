@@ -100,6 +100,7 @@ class PlayerAct(setup: Setup) {
         Behaviors.same
       case WrapRespMessage(ConnectionEnded()) =>
         setup.context.log.info("Ricevuto messaggio connessione chiusa")
+        setup.engine ! Engine.UnRegisterWatcher(updateMsgAdapter)
         Behaviors.stopped
       case WrapRespMessage(ConnectionFailed(ex)) =>
         setup.context.log.error(s"Ricevuto messaggio connessione fallita ${ex.getMessage}")
