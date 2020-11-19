@@ -16,11 +16,14 @@ object JsonSupport extends SprayJsonSupport with DefaultJsonProtocol {
 }
 
 //TODO L da rimuovere
+//scalastyle: off
 object RequestMockUp {
   def getComponentDefault(playerNumber: Int): List[GameComponent] = playerNumber match {
     case 1 => List(GameComponent("GioL", PACMAN))
-    case 2 => List(GameComponent("pacman", PACMAN), GameComponent("pacmina", MS_PACMAN))
+    case 2 => List(GameComponent("pacman2", PACMAN), GameComponent("pacmina2", MS_PACMAN))
     case 3 => List(GameComponent("pacman", PACMAN), GameComponent("pacmina", MS_PACMAN), GameComponent("rapman", RAPMAN))
-    case 4 => List(GameComponent("pacman", PACMAN), GameComponent("pacmina", MS_PACMAN), GameComponent("rapman", RAPMAN), GameComponent("capman", CAPMAN))
+    case 4 => List(GameComponent("pacman4", PACMAN), GameComponent("pacmina4", MS_PACMAN), GameComponent("rapman4", RAPMAN),
+      GameComponent("capman4", CAPMAN))
   }
 }
+//scalastyle: on
