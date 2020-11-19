@@ -65,11 +65,9 @@ class GameTest extends ScalaTestWithActorTestKit(ConfLoader.akkaConf) with AnyWo
       val testKit = BehaviorTestKit(Game(fakeGameId, List(GameComponent(testId, PACMAN)), visible = false))
 
       testKit.expectEffectType[Spawned[Engine]]
-      testKit.expectEffectType[Spawned[PlayerAct]]
       GhostType.values.foreach(_ => testKit.expectEffectType[Spawned[GhostAct]])
 
       testKit.expectEffectType[Watched[Engine]]
-      testKit.expectEffectType[Watched[PlayerAct]]
       GhostType.values.foreach(_ => testKit.expectEffectType[Watched[GhostAct]])
     }
 
