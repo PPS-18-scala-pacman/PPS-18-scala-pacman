@@ -12,9 +12,7 @@ plugins {
 
 buildscript {
   repositories {
-    maven {
-      url = uri("https://plugins.gradle.org/m2/")
-    }
+    maven { url = uri("https://plugins.gradle.org/m2/") }
   }
   dependencies {
     classpath("com.github.alisiikh:gradle-scalastyle-plugin:3.4.0")
@@ -77,10 +75,10 @@ allprojects {
   }
 }
 
-subprojects {
-}
+//subprojects {
+//}
 
-tasks.register("release") {
+//tasks.register("release") {
 //  dependsOn(tasks.test)
 //  dependsOn(tasks.scalatest)
-}
+//}

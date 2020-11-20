@@ -1,0 +1,149 @@
+package it.unibo.scalapacman.lobby;
+
+import io.vertx.core.json.Json;
+import io.vertx.core.json.JsonArray;
+import io.vertx.core.json.JsonObject;
+import io.vertx.core.logging.Logger;
+import io.vertx.core.logging.LoggerFactory;
+import io.vertx.rxjava.ext.web.Router;
+import io.vertx.rxjava.ext.web.RoutingContext;
+import it.unibo.scalapacman.lobby.util.JsonCollector;
+import it.unibo.scalapacman.lobby.util.ResourceUtil;
+import it.unibo.scalapacman.lobby.util.SSE;
+
+import java.util.Optional;
+
+public class LobbyResource {
+  private static final Logger logger = LoggerFactory.getLogger(LobbyResource.class);
+
+  private final LobbyService service;
+
+  LobbyResource(Router router, LobbyService service) {
+    this.service = service;
+
+    router.get("/api/lobby").handler(rc -> {
+      if (rc.parsedHeaders().contentType().value().equals("text/event-stream")) this.handleGetAllStream(rc);
+      else this.handleGetAll(rc);
+    });
+    router.get("/api/lobby/:id").handler(rc -> {
+      if (rc.parsedHeaders().contentType().value().equals("text/event-stream")) this.handleGetByIdStream(rc);
+      else this.handleGetById(rc);
+    });
+    router.post("/api/lobby").handler(this::handleCreate);
+    router.put("/api/lobby/:id").handler(this::handleUpdate);
+    router.delete("/api/lobby/:id").handler(this::handleDelete);
+  }
+
+  private void handleGetAll(final RoutingContext routingContext) {
+    this.service.getAll().subscribe(
+      lobbies -> {
+        final JsonArray array = lobbies.stream()
+          .map(Lobby::toJson)
+          .collect(JsonCollector.toJsonArray());
+
+        routingContext.response()
+          .putHeader(C.HTTP.HeaderElement.CONTENT_TYPE, C.HTTP.HeaderElement.ContentType.APPLICATION_JSON)
+          .setStatusCode(C.HTTP.ResponseCode.OK)
+          .end(array.toString());
+      },
+      ResourceUtil.onError(routingContext)
+    );
+  }
+
+  private void handleGetAllStream(final RoutingContext routingContext) {
+    routingContext.response()
+      .setChunked(true)
+      .putHeader("Content-Type", "text/event-stream")
+      .putHeader("Connection", "keep-alive")
+      .putHeader("Cache-Control", "no-cache");
+
+    String template = "data: %s\n\n";
+
+    this.service.getAllStream().subscribe(
+      lobbies -> {
+        final JsonArray array = lobbies.stream()
+          .map(Lobby::toJson)
+          .collect(JsonCollector.toJsonArray());
+
+        routingContext.response()
+          .write(String.format(template, array.toString()));
+      },
+      ResourceUtil.onError(routingContext),
+      () -> SSE.close(routingContext)
+    );
+  }
+
+  private void handleGetById(final RoutingContext routingContext) {
+    final Integer id = Integer.valueOf(routingContext.request().getParam("id"));
+
+    this.service.get(id).subscribe(
+        result ->
+          routingContext.response()
+            .putHeader(C.HTTP.HeaderElement.CONTENT_TYPE, C.HTTP.HeaderElement.ContentType.APPLICATION_JSON)
+            .setStatusCode(C.HTTP.ResponseCode.OK)
+            .end(result.toJson().toString()),
+        ResourceUtil.onError(routingContext)
+      );
+  }
+
+  private void handleGetByIdStream(final RoutingContext routingContext) {
+    final Integer id = Integer.valueOf(routingContext.request().getParam("id"));
+
+    routingContext.response()
+      .setChunked(true)
+      .putHeader("Content-Type", "text/event-stream")
+      .putHeader("Connection", "keep-alive")
+      .putHeader("Cache-Control", "no-cache");
+
+    String template = "data: %s\n\n";
+
+    this.service.getStream(id).subscribe(
+      result -> {
+        Optional<Lobby> lobbyOpt = Optional.ofNullable(result);
+        routingContext.response()
+          .write(String.format(template, lobbyOpt.map(lobby -> lobby.toJson().toString()).orElse("null")));
+      },
+      ResourceUtil.onError(routingContext),
+      () -> SSE.close(routingContext)
+    );
+  }
+
+  private void handleCreate(final RoutingContext routingContext) {
+    final Lobby lobby = new Lobby((JsonObject) Json.decodeValue(routingContext.getBodyAsString()));
+
+    this.service.create(lobby).subscribe(
+        result ->
+          routingContext.response().setStatusCode(C.HTTP.ResponseCode.CREATED)
+            .putHeader(C.HTTP.HeaderElement.CONTENT_TYPE, C.HTTP.HeaderElement.ContentType.APPLICATION_JSON)
+            .end(result.toJson().toString()),
+        ResourceUtil.onError(routingContext)
+      );
+  }
+
+  private void handleUpdate(final RoutingContext routingContext) {
+    final Integer id = Integer.valueOf(routingContext.request().getParam("id"));
+    final Lobby newLobby = new Lobby((JsonObject) Json.decodeValue(routingContext.getBodyAsString()));
+
+    this.service.update(id, newLobby).subscribe(
+      result ->
+        routingContext.response()
+          .setStatusCode(C.HTTP.ResponseCode.OK)
+          .putHeader(C.HTTP.HeaderElement.CONTENT_TYPE, C.HTTP.HeaderElement.ContentType.APPLICATION_JSON)
+          .end(result.toJson().toString()),
+      ResourceUtil.onError(routingContext)
+    );
+  }
+
+  private void handleDelete(final RoutingContext routingContext) {
+    final Integer id = Integer.valueOf(routingContext.request().getParam("id"));
+
+    this.service.delete(id).subscribe(
+      result ->
+        routingContext.response()
+          .setStatusCode(C.HTTP.ResponseCode.OK)
+          .putHeader(C.HTTP.HeaderElement.CONTENT_TYPE, C.HTTP.HeaderElement.ContentType.APPLICATION_JSON)
+          .end(result.toJson().toString()),
+      ResourceUtil.onError(routingContext)
+    );
+  }
+}
