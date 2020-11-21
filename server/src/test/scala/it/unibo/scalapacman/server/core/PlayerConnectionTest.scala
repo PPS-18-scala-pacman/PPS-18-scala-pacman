@@ -6,6 +6,7 @@ import akka.actor.typed.ActorRef
 import akka.http.scaladsl.model.ws.Message
 import it.unibo.scalapacman.server.communication.ConnectionProtocol.{Ack, ConnectionAck, ConnectionEnded, ConnectionFailed, ConnectionInit, ConnectionMsg}
 import it.unibo.scalapacman.server.core.Engine.EngineCommand
+import it.unibo.scalapacman.server.core.Game.GameCommand
 import it.unibo.scalapacman.server.core.PlayerAct.PlayerCommand
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.wordspec.AnyWordSpecLike
@@ -27,10 +28,9 @@ class PlayerConnectionTest extends ScalaTestWithActorTestKit with AnyWordSpecLik
     val fakeGameId = "fakeCreateGameId"
     val regReqSender = createTestProbe[PlayerAct.PlayerRegistration]()
     val clientProbe = createTestProbe[Message]()
-    playerActor = spawn(PlayerAct(fakeGameId, engineProbe.ref))
+    playerActor = spawn(PlayerAct(fakeGameId, engineProbe.ref, createTestProbe[GameCommand]().ref))
 
     playerActor ! PlayerAct.RegisterUser(regReqSender.ref, clientProbe.ref, "playerId")
-    engineProbe.expectMessageType[Engine.RegisterWatcher]
 
     regReqSender.receiveMessage() match {
       case PlayerAct.RegistrationAccepted(ref) => playerCmdAdapter = ref

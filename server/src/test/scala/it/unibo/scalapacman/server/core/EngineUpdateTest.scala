@@ -31,7 +31,7 @@ class EngineUpdateTest extends ScalaTestWithActorTestKit with AnyWordSpecLike {
     "update watcher after registration" in {
       engineActor ! Engine.RegisterWatcher(watcherPlayerProbe.ref)
 
-      engineActor ! Engine.Run()
+      engineActor ! Engine.Start()
 
       watcherPlayerProbe.expectMessageType[Engine.UpdateMsg](waitTime)
     }

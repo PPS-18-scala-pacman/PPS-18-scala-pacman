@@ -36,7 +36,7 @@ class EngineCommandTest extends ScalaTestWithActorTestKit with AnyWordSpecLike {
       GameCharacter.ghostTypeToGameCharacter(gt.asInstanceOf[GhostType.GhostType]) -> curProbe
     }).toMap
 
-    engineActor ! Engine.Run()
+    engineActor ! Engine.Start()
 
     watcherMap = ghostMap + (PACMAN -> watcherPlayerProbe)
   }
@@ -64,7 +64,7 @@ class EngineCommandTest extends ScalaTestWithActorTestKit with AnyWordSpecLike {
       //attendo che il gioco sia messo in pausa
       Thread.sleep(waitTime.toMillis)
 
-      engineActor ! Engine.Run()
+      engineActor ! Engine.Resume()
       watcherPlayerProbe.expectMessageType[Engine.UpdateMsg](waitTime)
     }
 

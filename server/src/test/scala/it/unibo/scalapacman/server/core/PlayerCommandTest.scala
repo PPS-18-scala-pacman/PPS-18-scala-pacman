@@ -5,6 +5,7 @@ import akka.actor.typed.ActorRef
 import akka.http.scaladsl.model.ws.{Message, TextMessage}
 import it.unibo.scalapacman.server.communication.ConnectionProtocol.{Ack, ConnectionAck, ConnectionData, ConnectionInit, ConnectionMsg}
 import it.unibo.scalapacman.server.core.Engine.{EngineCommand, UpdateCommand}
+import it.unibo.scalapacman.server.core.Game.GameCommand
 import it.unibo.scalapacman.server.model.MoveDirection
 import org.scalatest.wordspec.AnyWordSpecLike
 
@@ -32,7 +33,7 @@ class PlayerCommandTest extends ScalaTestWithActorTestKit with AnyWordSpecLike {
     ackProbe = createTestProbe[Ack]()
     engineProbe = createTestProbe[EngineCommand]()
     val fakeGameId = "fakeCreateGameId"
-    val playerActor = spawn(PlayerAct(fakeGameId, engineProbe.ref))
+    val playerActor = spawn(PlayerAct(fakeGameId, engineProbe.ref, createTestProbe[GameCommand]().ref))
     val regReqSender = createTestProbe[PlayerAct.PlayerRegistration]()
     val clientProbe = createTestProbe[Message]()
 
@@ -71,7 +72,7 @@ class PlayerCommandTest extends ScalaTestWithActorTestKit with AnyWordSpecLike {
 
     "handle Resume command" in {
       playerCmdAdapter ! ConnectionData(ackProbe.ref, TextMessage(testCommandResumeJSON))
-      engineProbe.expectMessageType[Engine.Run]
+      engineProbe.expectMessageType[Engine.Resume]
       receiveAck()
     }
 

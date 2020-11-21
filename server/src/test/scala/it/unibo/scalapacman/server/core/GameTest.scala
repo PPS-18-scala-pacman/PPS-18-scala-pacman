@@ -1,10 +1,9 @@
 package it.unibo.scalapacman.server.core
 
-import akka.actor.InvalidActorNameException
 import akka.actor.testkit.typed.Effect.{Spawned, Watched}
 import akka.actor.testkit.typed.TestException
 import akka.actor.testkit.typed.scaladsl.{BehaviorTestKit, ScalaTestWithActorTestKit, TestProbe}
-import akka.actor.typed.{ActorRef, ChildFailed}
+import akka.actor.typed.ActorRef
 import akka.http.scaladsl.model.ws.Message
 import it.unibo.scalapacman.lib.model.GhostType
 import it.unibo.scalapacman.lib.model.PacmanType.PACMAN
@@ -50,15 +49,6 @@ class GameTest extends ScalaTestWithActorTestKit(ConfLoader.akkaConf) with AnyWo
 
       gameActor ! RegisterPlayer(testProbe.ref, fooProbe.ref, testId)
       testProbe.expectMessageType[RegistrationAccepted](waitTime)
-    }
-
-    "create a new ghost" when {
-      "ghost child fails" in {
-        val testKit = BehaviorTestKit(Game(fakeGameId, List(GameComponent(testId, PACMAN)), visible = false))
-        val blinkyAct = testKit.childInbox("BLINKYActor").ref
-
-        assertThrows[InvalidActorNameException](testKit.signal(ChildFailed(blinkyAct, TestException("testException"))))
-      }
     }
 
     "create actor for game" in {
