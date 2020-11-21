@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: 'bitnami/postgresql:11.9.0'
+    volumes:
+      - 'postgresdata:/bitnami/postgresql'
+      - './lobby/src/main/resources/conf/sql:/docker-entrypoint-initdb.d'
+    environment:
+      - POSTGRESQL_USERNAME=postgres
+      - POSTGRESQL_PASSWORD=postgres
+      - POSTGRESQL_DATABASE=lobby
+    ports:
+      - '5432:5432'
+
+volumes:
+  postgresdata:
