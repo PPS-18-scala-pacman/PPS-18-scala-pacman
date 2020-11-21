@@ -21,17 +21,13 @@ public class LobbyResource {
   LobbyResource(Router router, LobbyService service) {
     this.service = service;
 
-    router.get("/api/lobby").handler(rc -> {
-      if (rc.parsedHeaders().contentType().value().equals("text/event-stream")) this.handleGetAllStream(rc);
-      else this.handleGetAll(rc);
-    });
-    router.get("/api/lobby/:id").handler(rc -> {
-      if (rc.parsedHeaders().contentType().value().equals("text/event-stream")) this.handleGetByIdStream(rc);
-      else this.handleGetById(rc);
-    });
-    router.post("/api/lobby").handler(this::handleCreate);
-    router.put("/api/lobby/:id").handler(this::handleUpdate);
-    router.delete("/api/lobby/:id").handler(this::handleDelete);
+    router.get("/api/lobby").produces("application/json").handler(this::handleGetAll);
+    router.get("/api/lobby").produces("text/event-stream").handler(this::handleGetAllStream);
+    router.get("/api/lobby/:id").produces("application/json").handler(this::handleGetById);
+    router.get("/api/lobby/:id").produces("text/event-stream").handler(this::handleGetByIdStream);
+    router.post("/api/lobby").produces("application/json").handler(this::handleCreate);
+    router.put("/api/lobby/:id").produces("application/json").handler(this::handleUpdate);
+    router.delete("/api/lobby/:id").produces("application/json").handler(this::handleDelete);
   }
 
   private void handleGetAll(final RoutingContext routingContext) {
