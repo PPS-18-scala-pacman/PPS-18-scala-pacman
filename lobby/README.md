@@ -1,5 +1,29 @@
 # Lobby microservice
 
+## Avvio
+
+### Requisiti
+
+Postgresql avviato in localhost sulla porta 5432.
+
+È possibile avviarlo con docker lanciando `docker-compose up` dalla root del progetto.
+
+### Avvio con Gradle
+
+```
+./gradlew :lobby:run
+```
+
+### Configurazione di avvio Intellij
+
+Creare una configurazione di avvio di tipo "Application" con le seguenti configurazioni:
+
+```
+Main class: io.vertx.core.Launcher
+Program arguments: run it.unibo.scalapacman.lobby.MainVerticle
+Use classpath of module: scalapacman.lobby.main
+```
+
 ## Test
 
 ### SSE
