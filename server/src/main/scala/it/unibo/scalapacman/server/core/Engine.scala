@@ -12,7 +12,7 @@ import it.unibo.scalapacman.lib.model.GhostType.GhostType
 import it.unibo.scalapacman.lib.model.PacmanType.PacmanType
 import it.unibo.scalapacman.lib.model.{Character, GameObject, Level, LevelState, Map}
 import it.unibo.scalapacman.server.core.Engine.{ChangeDirectionCur, ChangeDirectionReq, EngineCommand, Model, Pause,
-  RegisterWatcher, Run, Setup, UnRegisterWatcher, UpdateCommand, UpdateMsg, WakeUp}
+  RegisterWatcher, Resume, Setup, Start, UnRegisterWatcher, UpdateCommand, UpdateMsg, WakeUp}
 import it.unibo.scalapacman.server.model.GameParticipant.gameParticipantToGameEntity
 import it.unibo.scalapacman.server.model.MoveDirection.MoveDirection
 import it.unibo.scalapacman.server.model.{GameData, GameEntity, GameParameter, GameParticipant}
@@ -32,7 +32,8 @@ object Engine {
 
   case class WakeUp() extends EngineCommand
   case class Pause() extends EngineCommand
-  case class Run() extends EngineCommand
+  case class Start() extends EngineCommand
+  case class Resume() extends EngineCommand
   case class ChangeDirectionReq(nickname: String, direction: MoveDirection) extends EngineCommand
   case class ChangeDirectionCur(nickname: String) extends EngineCommand
   case class RegisterWatcher(actor: ActorRef[UpdateCommand]) extends EngineCommand
@@ -62,9 +63,9 @@ private class Engine(setup: Setup) {
 
       case RegisterWatcher(actor) => initRoutine(watcher = watcher + actor)
       case UnRegisterWatcher(actor) => initRoutine(watcher = watcher - actor)
-      case Run() =>
+      case Start() =>
         setup.context.log.info("Run id: " + setup.gameId)
-        mainRoutine(initEngineModel(watcher))
+        pauseRoutine(initEngineModel(watcher))
       case _ => unhandledMsg()
     }
 
@@ -84,7 +85,7 @@ private class Engine(setup: Setup) {
         case WakeUp() =>
           updateWatchers(model)
           Behaviors.same
-        case Run() =>
+        case Resume() =>
           setup.context.log.info("Run id: " + setup.gameId)
           timers.cancel(WakeUp())
           mainRoutine(model)

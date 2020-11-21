@@ -5,7 +5,7 @@ import akka.actor.typed.receptionist.{Receptionist, ServiceKey}
 import akka.actor.typed.scaladsl.{ActorContext, Behaviors}
 import akka.http.scaladsl.model.ws.Message
 import it.unibo.scalapacman.lib.model.GhostType.{BLINKY, CLYDE, GhostType, INKY, PINKY}
-import it.unibo.scalapacman.server.core.Engine.{EngineCommand, Run}
+import it.unibo.scalapacman.server.core.Engine.{EngineCommand, Start}
 import it.unibo.scalapacman.server.core.Game.{CloseCommand, GameCommand, Model, NotifyPlayerReady, PlayerData, RegisterPlayer, Setup}
 import it.unibo.scalapacman.server.config.Settings
 import it.unibo.scalapacman.server.core.PlayerAct.{PlayerRegistration, RegistrationRejected}
@@ -84,12 +84,13 @@ private class Game(setup: Setup) {
         setup.context.log.info("RegisterPlayer ricevuto")
 
         if(!setup.components.exists(_.nickname == nickname) || model.players.exists(_._2.nickname == nickname)) {
-          setup.context.log.error(s"Nickname non valido: $nickname")
+          setup.context.log.error(s"Nickname: $nickname, non valido")
           replyTo ! RegistrationRejected("Giocatore non valido")
           prepareBehavior(idleRoutine, model)
         } else {
 
-          val player = setup.context.spawn(PlayerAct(setup.id, setup.engine), s"${nickname}Actor")
+          val player = setup.context.spawn(PlayerAct(setup.id, setup.engine, setup.context.self), s"${nickname}Actor")
+          setup.context.watch(player)
           player ! PlayerAct.RegisterUser(replyTo, source, nickname)
           val updatedPlayers = model.players + (player -> PlayerData(nickname, isReady = false))
           prepareBehavior(idleRoutine, model.copy(players = updatedPlayers))
@@ -102,7 +103,7 @@ private class Game(setup: Setup) {
         } else {
           val updatedPlayers = model.players + (elem.get._1 -> elem.get._2.copy(isReady = true))
           if(setup.components.size == updatedPlayers.count(_._2.isReady)) {
-            setup.engine ! Run()
+            setup.engine ! Start()
             prepareBehavior(runRoutine, model.copy(players = updatedPlayers))
           } else {
             prepareBehavior(idleRoutine, model.copy(players = updatedPlayers))
@@ -162,6 +163,7 @@ private class Game(setup: Setup) {
 
           val props = MailboxSelector.fromConfig("ghost-mailbox")
           val ghost = context.spawn(GhostAct(setup.id, setup.engine, ghostData.get.nickname), ghostAct.path.name, props)
+          context.watch(ghost)
           val updatedGhosts = (model.ghosts - ghostAct) + (ghost -> ghostData.get)
           prepareBehavior(recBe, model.copy(ghosts = updatedGhosts))
         } else {
@@ -170,6 +172,9 @@ private class Game(setup: Setup) {
         }
       case (context, Terminated(ref)) =>
         context.log.info(s"Attore terminato: $ref")
-        Behaviors.same
+        prepareBehavior(recBe, model)
+      case (context, sign) =>
+        context.log.debug(s"Ricevuto signal non gestita: $sign")
+        prepareBehavior(recBe, model)
     }
 }
