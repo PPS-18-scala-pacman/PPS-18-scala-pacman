@@ -30,11 +30,12 @@ object PlayerAct {
 
   private case class Setup(gameId: String,
                            context: ActorContext[PlayerCommand],
-                           engine: ActorRef[Engine.EngineCommand])
+                           engine: ActorRef[Engine.EngineCommand],
+                           game: ActorRef[Game.GameCommand])
 
-  def apply(gameId: String, engine: ActorRef[Engine.EngineCommand]): Behavior[PlayerCommand] =
+  def apply(gameId: String, engine: ActorRef[Engine.EngineCommand], game: ActorRef[Game.GameCommand]): Behavior[PlayerCommand] =
     Behaviors.setup { context =>
-      new PlayerAct(Setup(gameId, context, engine)).initRoutine()
+      new PlayerAct(Setup(gameId, context, engine, game)).initRoutine()
     }
 }
 
@@ -68,7 +69,7 @@ class PlayerAct(setup: Setup) {
       case WrapRespMessage(ConnectionInit(act)) =>
         setup.context.log.info("Ricevuto messaggio connessione instaurata")
         act ! ConnectionAck()
-        Game.NotifyPlayerReady(nickname)
+        setup.game ! Game.NotifyPlayerReady(nickname)
         mainRoutine(sourceAct, nickname)
       case WrapRespMessage(ConnectionFailed(ex)) =>
         setup.context.log.error("Ricevuto messaggio connessione fallita: " + ex.getMessage)
@@ -100,6 +101,7 @@ class PlayerAct(setup: Setup) {
         Behaviors.same
       case WrapRespMessage(ConnectionEnded()) =>
         setup.context.log.info("Ricevuto messaggio connessione chiusa")
+        setup.engine ! Engine.UnRegisterWatcher(updateMsgAdapter)
         Behaviors.stopped
       case WrapRespMessage(ConnectionFailed(ex)) =>
         setup.context.log.error(s"Ricevuto messaggio connessione fallita ${ex.getMessage}")
@@ -119,7 +121,7 @@ class PlayerAct(setup: Setup) {
    */
   private def parseClientCommand(clientCommand: Command, nickname: String): Option[Engine.EngineCommand] = clientCommand match {
     case Command(CommandTypeHolder(CommandType.PAUSE), None) => Some(Engine.Pause())
-    case Command(CommandTypeHolder(CommandType.RESUME), None) => Some(Engine.Run())
+    case Command(CommandTypeHolder(CommandType.RESUME), None) => Some(Engine.Resume())
     case Command(CommandTypeHolder(CommandType.MOVE), Some(data)) =>
       JSONConverter.fromJSON[MoveCommandTypeHolder](data) flatMap (parseClientMoveCommand(_, nickname))
     case _ => None

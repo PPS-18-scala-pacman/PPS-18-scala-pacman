@@ -62,6 +62,7 @@ private class GhostAct(setup: Setup) {
 
     if(gameState.levelState != LevelState.ONGOING) {
       setup.context.log.info("Partita terminata spegnimento")
+      setup.engine ! Engine.UnRegisterWatcher(setup.context.self)
       Behaviors.stopped
     } else if(selfDTO.exists(_.isDead)) {
       setup.context.log.debug("Sono morto non posso muovermi")

@@ -1,5 +1,5 @@
 package it.unibo.scalapacman.server.communication
-
+//scalastyle:off
 import akka.actor.typed.receptionist.Receptionist
 import akka.actor.typed.scaladsl.AskPattern.{Askable, schedulerFromActorSystem}
 import akka.actor.typed.{ActorRef, ActorSystem}
@@ -8,12 +8,12 @@ import akka.http.scaladsl.model.ws.Message
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import akka.stream.scaladsl.Flow
-import it.unibo.scalapacman.server.config.Settings
-import it.unibo.scalapacman.server.config.Settings.askTimeout
+import it.unibo.scalapacman.server.config.Settings.{askTimeout, maxPlayersNumber}
 import spray.json.DefaultJsonProtocol
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import it.unibo.scalapacman.server.model.{GameComponent, RequestMockUp}
 import spray.json._
+//scalastyle:on
 
 import scala.concurrent.Future
 
@@ -55,7 +55,7 @@ object ServiceRoutes {
           pathEnd {
             post {
               entity(as[CreateGameRequest]) { req =>
-                if(req.playersNumber < 1 || req.playersNumber > Settings.maxPlayersNumber) {
+                if(req.playersNumber < 1 || req.playersNumber > maxPlayersNumber) {
                   complete(StatusCodes.UnprocessableEntity -> "Numero di giocatori non valido")
                 } else {
                   val operationPerformed: Future[ResponseCreateGame] = handler.ask(CreateGame(_, RequestMockUp.getComponentDefault(req.playersNumber)))

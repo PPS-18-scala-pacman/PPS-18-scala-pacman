@@ -24,14 +24,14 @@ class EngineUpdateTest extends ScalaTestWithActorTestKit with AnyWordSpecLike {
     engineActor = spawn(Engine(fakeGameId, gameEntities, 1))
     watcherPlayerProbe = createTestProbe[Engine.UpdateCommand]()
     val watcherFooProbe = createTestProbe[Engine.UpdateCommand]()
-    GhostType.values.foreach(gt => engineActor ! Engine.RegisterWatcher(watcherFooProbe.ref))
+    GhostType.values.foreach(_ => engineActor ! Engine.RegisterWatcher(watcherFooProbe.ref))
   }
 
   "An Engine actor" must {
     "update watcher after registration" in {
       engineActor ! Engine.RegisterWatcher(watcherPlayerProbe.ref)
 
-      engineActor ! Engine.Run()
+      engineActor ! Engine.Start()
 
       watcherPlayerProbe.expectMessageType[Engine.UpdateMsg](waitTime)
     }

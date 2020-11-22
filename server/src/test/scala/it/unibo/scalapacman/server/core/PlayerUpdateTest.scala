@@ -7,6 +7,7 @@ import it.unibo.scalapacman.common.{DotDTO, FruitDTO, GameEntityDTO, UpdateModel
 import it.unibo.scalapacman.lib.math.Point2D
 import it.unibo.scalapacman.lib.model.{Direction, Dot, Fruit, GameState}
 import it.unibo.scalapacman.server.communication.ConnectionProtocol.{Ack, ConnectionAck, ConnectionInit}
+import it.unibo.scalapacman.server.core.Game.GameCommand
 import org.scalatest.wordspec.AnyWordSpecLike
 
 class PlayerUpdateTest extends ScalaTestWithActorTestKit with AnyWordSpecLike {
@@ -49,7 +50,7 @@ class PlayerUpdateTest extends ScalaTestWithActorTestKit with AnyWordSpecLike {
 
     "handle updateModel message" in {
       val engineProbe = createTestProbe[Engine.EngineCommand]()
-      val playerActor = spawn(PlayerAct(fakeGameId, engineProbe.ref))
+      val playerActor = spawn(PlayerAct(fakeGameId, engineProbe.ref, createTestProbe[GameCommand]().ref))
       val regReqSender = createTestProbe[PlayerAct.PlayerRegistration]()
       val clientProbe = createTestProbe[Message]()
       val ackProbe = createTestProbe[Ack]()
