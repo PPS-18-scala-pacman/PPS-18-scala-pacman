@@ -59,7 +59,7 @@ public class ParticipantDao implements Dao<Participant, String> {
   public Single<Participant> create(Participant participant) {
     return dbClient
       .preparedQuery("INSERT INTO participant (username, host, pacman_type, lobby_id) VALUES ($1, $2, $3, $4) RETURNING *")
-      .rxExecute(Tuple.of(participant.getUsername(), participant.getHost(), participant.getPacmanType(), participant.getLobbyId()))
+      .rxExecute(Tuple.of(participant.getUsername(), participant.getHost(), participant.getPacmanTypeAsInteger(), participant.getLobbyId()))
       .map(rows -> {
         logger.debug("Got " + rows.size() + " rows ");
         return StreamSupport.stream(rows.spliterator(), false)
@@ -72,7 +72,7 @@ public class ParticipantDao implements Dao<Participant, String> {
   public Single<Participant> update(String username, Participant participant) {
     return dbClient
       .preparedQuery("UPDATE participant SET host = $2, pacman_type = $3 WHERE username=$1 RETURNING *")
-      .rxExecute(Tuple.of(username, participant.getHost(), participant.getPacmanType()))
+      .rxExecute(Tuple.of(username, participant.getHost(), participant.getPacmanTypeAsInteger()))
       .map(rows -> {
         logger.debug("Got " + rows.size() + " rows ");
         return StreamSupport.stream(rows.spliterator(), false)

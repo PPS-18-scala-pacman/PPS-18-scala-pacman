@@ -26,13 +26,15 @@ public class Lobby {
     this.participants = participants;
   }
 
-  public Lobby(JsonObject json) {
-    this.id = json.getLong("id");
-    this.description = json.getString("description");
-    this.size = json.getInteger("size");
-    this.participants = json.getJsonArray("participants").stream()
-      .map(jsonObj -> new Participant((JsonObject) jsonObj))
-      .collect(Collectors.toList());
+  public Lobby(final JsonObject json) {
+    this(
+      json.getLong("id"),
+      json.getString("description"),
+      json.getInteger("size"),
+      json.getJsonArray("participants").stream()
+        .map(jsonObj -> new Participant((JsonObject) jsonObj))
+        .collect(Collectors.toList())
+    );
   }
 
   public Long getId() {

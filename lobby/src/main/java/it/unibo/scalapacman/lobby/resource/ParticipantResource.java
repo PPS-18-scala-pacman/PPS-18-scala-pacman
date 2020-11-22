@@ -45,7 +45,7 @@ public class ParticipantResource {
   }
 
   private void handleGetById(final RoutingContext routingContext) {
-    final String id = routingContext.request().getParam("id");
+    final String id = routingContext.request().getParam("username");
 
     this.service.get(id).subscribe(
         result ->

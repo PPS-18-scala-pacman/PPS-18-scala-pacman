@@ -20,8 +20,8 @@ public class Participant {
     this.lobbyId = lobbyId;
   }
 
-  public Participant(JsonObject json) {
-    this (
+  public Participant(final JsonObject json) {
+    this(
       json.getString("username"),
       json.getBoolean("host"),
       json.getInteger("pacmanType"),
@@ -47,6 +47,10 @@ public class Participant {
 
   public PacmanType.PacmanType getPacmanType() {
     return pacmanType;
+  }
+
+  public Integer getPacmanTypeAsInteger() {
+    return PacmanType.playerTypeValToIndex(pacmanType);
   }
 
   public void setPacmanType(PacmanType.PacmanType pacmanType) {
