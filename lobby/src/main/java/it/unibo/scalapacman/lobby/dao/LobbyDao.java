@@ -13,7 +13,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
-public class LobbyDao implements Dao<Lobby> {
+public class LobbyDao implements Dao<Lobby, Long> {
   private final Logger logger = LoggerFactory.getLogger(LobbyDao.class);
 
   private final PgPool dbClient;
@@ -24,10 +24,9 @@ public class LobbyDao implements Dao<Lobby> {
 
   private static Lobby toEntity(Row row) {
     return new Lobby(
-      row.getInteger("id"),
+      row.getLong("id"),
       row.getString("description"),
       row.getInteger("size")
-      // TODO non inserisco i participants, si troveranno su più righe
     );
   }
 
@@ -43,7 +42,7 @@ public class LobbyDao implements Dao<Lobby> {
       });
   }
 
-  public Single<Lobby> get(Integer id) {
+  public Single<Lobby> get(Long id) {
     return dbClient
       .preparedQuery("SELECT * FROM lobby WHERE id=$1")
       .rxExecute(Tuple.of(id))
@@ -69,7 +68,7 @@ public class LobbyDao implements Dao<Lobby> {
       });
   }
 
-  public Single<Lobby> update(Integer id, Lobby lobby) {
+  public Single<Lobby> update(Long id, Lobby lobby) {
     return dbClient
       .preparedQuery("UPDATE lobby SET description = $2, size = $3 WHERE id=$1 RETURNING *")
       .rxExecute(Tuple.of(id, lobby.getDescription(), lobby.getSize()))
@@ -82,7 +81,7 @@ public class LobbyDao implements Dao<Lobby> {
       });
   }
 
-  public Single<Lobby> delete(Integer id) {
+  public Single<Lobby> delete(Long id) {
     return dbClient
       .preparedQuery("DELETE FROM lobby WHERE id=$1 RETURNING *")
       .rxExecute(Tuple.of(id))

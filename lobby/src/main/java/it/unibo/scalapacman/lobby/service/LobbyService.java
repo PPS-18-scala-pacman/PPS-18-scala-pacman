@@ -2,74 +2,36 @@ package it.unibo.scalapacman.lobby.service;
 
 import it.unibo.scalapacman.lobby.model.Lobby;
 import it.unibo.scalapacman.lobby.dao.Dao;
-import rx.Observable;
 import rx.Single;
-import rx.subjects.BehaviorSubject;
 
 import java.util.*;
 
 public class LobbyService {
-  private final Dao<Lobby> repository;
-  private final BehaviorSubject<List<Lobby>> getAllSubject = BehaviorSubject.create(new ArrayList<>());
-  private final Map<Integer, BehaviorSubject<Lobby>> getByIdSubject = new HashMap<>();
+  private final Dao<Lobby, Long> repository;
+  private final LobbyStreamService streamService;
 
-  public LobbyService(Dao<Lobby> repository) {
+  public LobbyService(final Dao<Lobby, Long> repository, final LobbyStreamService streamService) {
     this.repository = repository;
-    this.initStreams();
-  }
-
-  private void initStreams() {
-    this.getAll().subscribe(getAllSubject::onNext);
+    this.streamService = streamService;
   }
 
   public Single<List<Lobby>> getAll() {
     return this.repository.getAll();
   }
 
-  public Observable<List<Lobby>> getAllStream() {
-    return getAllSubject;
-  }
-
-  public Single<Lobby> get(Integer id) {
+  public Single<Lobby> get(Long id) {
     return this.repository.get(id);
   }
 
-  public Observable<Lobby> getStream(Integer id) {
-    if (!getByIdSubject.containsKey(id)) {
-      BehaviorSubject<Lobby> subject = BehaviorSubject.create();
-      this.get(id).subscribe(subject::onNext);
-      getByIdSubject.put(id, subject);
-    }
-
-    return getByIdSubject.get(id);
-  }
-
   public Single<Lobby> create(Lobby lobby) {
-    return this.repository.create(lobby).doOnSuccess(this::updateStreams);
+    return this.repository.create(lobby).doOnSuccess(this.streamService::updateStreams);
   }
 
-  public Single<Lobby> update(Integer id, Lobby lobby) {
-    return this.repository.update(id, lobby).doOnSuccess(this::updateStreams);
+  public Single<Lobby> update(Long id, Lobby lobby) {
+    return this.repository.update(id, lobby).doOnSuccess(this.streamService::updateStreams);
   }
 
-  public Single<Lobby> delete(Integer id) {
-    return this.repository.delete(id).doOnSuccess(entity -> updateStreams(entity, true));
-  }
-
-  private void updateStreams(Lobby entity) {
-    this.updateStreams(entity, false);
-  }
-
-  private void updateStreams(Lobby entity, boolean delete) {
-    this.repository.getAll().subscribe(getAllSubject::onNext);
-    if (delete) {
-      Optional.ofNullable(this.getByIdSubject.get(entity.getId())).ifPresent(subject -> {
-        subject.onNext(null);
-        subject.onCompleted();
-      });
-      this.getByIdSubject.remove(entity.getId());
-    } else {
-      Optional.ofNullable(this.getByIdSubject.get(entity.getId())).ifPresent(subject -> subject.onNext(entity));
-    }
+  public Single<Lobby> delete(Long id) {
+    return this.repository.delete(id).doOnSuccess(entity -> this.streamService.updateStreams(entity, true));
   }
 }

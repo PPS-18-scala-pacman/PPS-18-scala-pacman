@@ -7,17 +7,26 @@ public class Participant {
   private String username;
   private Boolean host;
   private PacmanType.PacmanType pacmanType;
+  private Long lobbyId;
 
-  public Participant(final String username, final Boolean host, final PacmanType.PacmanType pacmanType) {
+  public Participant(final String username, final Boolean host, final Integer pacmanType, final Long lobbyId) {
+    this(username, host, PacmanType.indexToPlayerTypeVal(pacmanType), lobbyId);
+  }
+
+  public Participant(final String username, final Boolean host, final PacmanType.PacmanType pacmanType, final Long lobbyId) {
     this.username = username;
     this.host = host;
     this.pacmanType = pacmanType;
+    this.lobbyId = lobbyId;
   }
 
   public Participant(JsonObject json) {
-    this.username = json.getString("username");
-    this.host = json.getBoolean("host");
-    this.pacmanType = PacmanType.indexToPlayerTypeVal(json.getInteger("pacmanType"));
+    this (
+      json.getString("username"),
+      json.getBoolean("host"),
+      json.getInteger("pacmanType"),
+      json.getLong("lobbyId")
+    );
   }
 
   public String getUsername() {
@@ -44,20 +53,30 @@ public class Participant {
     this.pacmanType = pacmanType;
   }
 
+  public Long getLobbyId() {
+    return lobbyId;
+  }
+
+  public void setLobbyId(Long lobbyId) {
+    this.lobbyId = lobbyId;
+  }
+
   public JsonObject toJson() {
     return new JsonObject()
       .put("username", this.username)
       .put("host", this.host)
-      .put("pacmanType", PacmanType.playerTypeValToIndex(this.pacmanType));
+      .put("pacmanType", PacmanType.playerTypeValToIndex(this.pacmanType))
+      .put("lobbyId", this.lobbyId);
   }
 
   @Override
   public int hashCode() {
-    final int prime = 31;
+    final int prime = 17;
     int result = 1;
     result = prime * result + ((host == null) ? 0 : host.hashCode());
     result = prime * result + ((username == null) ? 0 : username.hashCode());
     result = prime * result + ((pacmanType == null) ? 0 : pacmanType.hashCode());
+    result = prime * result + ((lobbyId == null) ? 0 : lobbyId.hashCode());
     return result;
   }
 
@@ -68,7 +87,8 @@ public class Participant {
 
       return this.username.equals(other.username)
         && this.host.equals(other.host)
-        && this.pacmanType.equals(other.pacmanType);
+        && this.pacmanType.equals(other.pacmanType)
+        && this.lobbyId.equals(other.lobbyId);
     }
 
     return false;

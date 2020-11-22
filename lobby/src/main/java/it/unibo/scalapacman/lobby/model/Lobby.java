@@ -9,16 +9,16 @@ import java.util.stream.Collectors;
 
 public class Lobby {
 
-  private final Integer id;
+  private final Long id;
   private String description;
   private Integer size;
   private List<Participant> participants;
 
-  public Lobby(final Integer id, final String description, Integer size) {
+  public Lobby(final Long id, final String description, Integer size) {
     this(id, description, size, new ArrayList<>(size));
   }
 
-  public Lobby(final Integer id, final String description, Integer size, List<Participant> participants) {
+  public Lobby(final Long id, final String description, Integer size, List<Participant> participants) {
     if (participants.size() > size) throw new IllegalArgumentException("participants can't have more elements than size value");
     this.id = id;
     this.description = description;
@@ -27,7 +27,7 @@ public class Lobby {
   }
 
   public Lobby(JsonObject json) {
-    this.id = json.getInteger("id");
+    this.id = json.getLong("id");
     this.description = json.getString("description");
     this.size = json.getInteger("size");
     this.participants = json.getJsonArray("participants").stream()
@@ -35,7 +35,7 @@ public class Lobby {
       .collect(Collectors.toList());
   }
 
-  public Integer getId() {
+  public Long getId() {
     return id;
   }
 

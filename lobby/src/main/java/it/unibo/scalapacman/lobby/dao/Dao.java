@@ -4,15 +4,15 @@ import rx.Single;
 
 import java.util.List;
 
-public interface Dao<T> {
+public interface Dao<T, ID> {
 
-  Single<T> get(Integer id);
+  Single<T> get(ID id);
 
   Single<List<T>> getAll();
 
   Single<T> create(T t);
 
-  Single<T> update(Integer id, T t);
+  Single<T> update(ID id, T t);
 
-  Single<T> delete(Integer id);
+  Single<T> delete(ID id);
 }
