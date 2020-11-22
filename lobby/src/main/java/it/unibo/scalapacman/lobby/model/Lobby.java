@@ -1,31 +1,37 @@
-package it.unibo.scalapacman.lobby;
+package it.unibo.scalapacman.lobby.model;
 
 import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonObject;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class LobbyTemp {
+public class Lobby {
 
-  private Integer id;
+  private final Integer id;
   private String description;
   private Integer size;
-  private List<AttendeeTemp> attendees;
+  private List<Attendee> attendees;
 
-  public LobbyTemp(final Integer id, final String description, Integer size, List<AttendeeTemp> attendees) {
+  public Lobby(final Integer id, final String description, Integer size) {
+    this(id, description, size, new ArrayList<>(size));
+  }
+
+  public Lobby(final Integer id, final String description, Integer size, List<Attendee> attendees) {
+    if (attendees.size() > size) throw new IllegalArgumentException("attendees can't have more elements than size value");
     this.id = id;
     this.description = description;
     this.size = size;
     this.attendees = attendees;
   }
 
-  public LobbyTemp(JsonObject json) {
+  public Lobby(JsonObject json) {
     this.id = json.getInteger("id");
     this.description = json.getString("description");
     this.size = json.getInteger("size");
     this.attendees = json.getJsonArray("attendees").stream()
-      .map(jsonObj -> new AttendeeTemp((JsonObject) jsonObj))
+      .map(jsonObj -> new Attendee((JsonObject) jsonObj))
       .collect(Collectors.toList());
   }
 
@@ -49,11 +55,11 @@ public class LobbyTemp {
     this.size = size;
   }
 
-  public List<AttendeeTemp> getAttendees() {
+  public List<Attendee> getAttendees() {
     return attendees;
   }
 
-  public void setAttendees(List<AttendeeTemp> attendees) {
+  public void setAttendees(List<Attendee> attendees) {
     this.attendees = attendees;
   }
 
@@ -80,8 +86,8 @@ public class LobbyTemp {
 
   @Override
   public boolean equals(final Object obj) {
-    if(obj instanceof LobbyTemp) {
-      final LobbyTemp other = (LobbyTemp) obj;
+    if(obj instanceof Lobby) {
+      final Lobby other = (Lobby) obj;
 
       return this.id.equals(other.id)
         && this.description.equals(other.getDescription());
@@ -90,4 +96,3 @@ public class LobbyTemp {
     return false;
   }
 }
-

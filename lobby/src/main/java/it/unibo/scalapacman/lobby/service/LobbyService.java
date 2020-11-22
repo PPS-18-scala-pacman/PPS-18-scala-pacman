@@ -1,5 +1,6 @@
-package it.unibo.scalapacman.lobby;
+package it.unibo.scalapacman.lobby.service;
 
+import it.unibo.scalapacman.lobby.model.Lobby;
 import it.unibo.scalapacman.lobby.dao.Dao;
 import rx.Observable;
 import rx.Single;

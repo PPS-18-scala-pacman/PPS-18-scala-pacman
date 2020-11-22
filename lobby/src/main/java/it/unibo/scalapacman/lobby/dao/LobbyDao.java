@@ -5,7 +5,7 @@ import io.vertx.core.logging.LoggerFactory;
 import io.vertx.rxjava.pgclient.PgPool;
 import io.vertx.rxjava.sqlclient.Row;
 import io.vertx.rxjava.sqlclient.Tuple;
-import it.unibo.scalapacman.lobby.Lobby;
+import it.unibo.scalapacman.lobby.model.Lobby;
 import it.unibo.scalapacman.lobby.util.exception.NotFoundException;
 import rx.Single;
 
@@ -25,7 +25,9 @@ public class LobbyDao implements Dao<Lobby> {
   private static Lobby toEntity(Row row) {
     return new Lobby(
       row.getInteger("id"),
-      row.getString("description")
+      row.getString("description"),
+      row.getInteger("size")
+      // TODO non inserisco gli attendee, si troveranno su più righe
     );
   }
 
@@ -56,8 +58,8 @@ public class LobbyDao implements Dao<Lobby> {
 
   public Single<Lobby> create(Lobby lobby) {
     return dbClient
-      .preparedQuery("INSERT INTO lobby (description) VALUES ($1) RETURNING *")
-      .rxExecute(Tuple.of(lobby.getDescription()))
+      .preparedQuery("INSERT INTO lobby (description, size) VALUES ($1, $2) RETURNING *")
+      .rxExecute(Tuple.of(lobby.getDescription(), lobby.getSize()))
       .map(rows -> {
         logger.debug("Got " + rows.size() + " rows ");
         return StreamSupport.stream(rows.spliterator(), false)
@@ -69,8 +71,8 @@ public class LobbyDao implements Dao<Lobby> {
 
   public Single<Lobby> update(Integer id, Lobby lobby) {
     return dbClient
-      .preparedQuery("UPDATE lobby SET description = $2 WHERE id=$1 RETURNING *")
-      .rxExecute(Tuple.of(id, lobby.getDescription()))
+      .preparedQuery("UPDATE lobby SET description = $2, size = $3 WHERE id=$1 RETURNING *")
+      .rxExecute(Tuple.of(id, lobby.getDescription(), lobby.getSize()))
       .map(rows -> {
         logger.debug("Got " + rows.size() + " rows ");
         return StreamSupport.stream(rows.spliterator(), false)

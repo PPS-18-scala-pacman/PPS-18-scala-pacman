@@ -1,4 +1,4 @@
-package it.unibo.scalapacman.lobby;
+package it.unibo.scalapacman.lobby.resource;
 
 import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonArray;
@@ -7,6 +7,9 @@ import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 import io.vertx.rxjava.ext.web.Router;
 import io.vertx.rxjava.ext.web.RoutingContext;
+import it.unibo.scalapacman.lobby.C;
+import it.unibo.scalapacman.lobby.model.Lobby;
+import it.unibo.scalapacman.lobby.service.LobbyService;
 import it.unibo.scalapacman.lobby.util.JsonCollector;
 import it.unibo.scalapacman.lobby.util.ResourceUtil;
 import it.unibo.scalapacman.lobby.util.SSE;
@@ -18,7 +21,7 @@ public class LobbyResource {
 
   private final LobbyService service;
 
-  LobbyResource(Router router, LobbyService service) {
+  public LobbyResource(Router router, LobbyService service) {
     this.service = service;
 
     router.get("/api/lobby").produces("application/json").handler(this::handleGetAll);

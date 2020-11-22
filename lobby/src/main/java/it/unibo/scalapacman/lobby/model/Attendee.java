@@ -1,19 +1,23 @@
-package it.unibo.scalapacman.lobby;
+package it.unibo.scalapacman.lobby.model;
 
 import io.vertx.core.json.JsonObject;
+import it.unibo.scalapacman.lib.model.PacmanType;
 
-public class AttendeeTemp {
+public class Attendee {
   private String username;
   private Boolean host;
+  private PacmanType.PacmanType pacmanType;
 
-  public AttendeeTemp(final String username, final Boolean host) {
+  public Attendee(final String username, final Boolean host, final PacmanType.PacmanType pacmanType) {
     this.username = username;
     this.host = host;
+    this.pacmanType = pacmanType;
   }
 
-  public AttendeeTemp(JsonObject json) {
+  public Attendee(JsonObject json) {
     this.username = json.getString("username");
     this.host = json.getBoolean("host");
+    this.pacmanType = PacmanType.indexToPlayerTypeVal(json.getInteger("pacmanType"));
   }
 
   public String getUsername() {
@@ -32,10 +36,19 @@ public class AttendeeTemp {
     this.host = host;
   }
 
+  public PacmanType.PacmanType getPacmanType() {
+    return pacmanType;
+  }
+
+  public void setPacmanType(PacmanType.PacmanType pacmanType) {
+    this.pacmanType = pacmanType;
+  }
+
   public JsonObject toJson() {
     return new JsonObject()
       .put("username", this.username)
-      .put("host", this.host);
+      .put("host", this.host)
+      .put("pacmanType", PacmanType.playerTypeValToIndex(this.pacmanType));
   }
 
   @Override
@@ -44,16 +57,18 @@ public class AttendeeTemp {
     int result = 1;
     result = prime * result + ((host == null) ? 0 : host.hashCode());
     result = prime * result + ((username == null) ? 0 : username.hashCode());
+    result = prime * result + ((pacmanType == null) ? 0 : pacmanType.hashCode());
     return result;
   }
 
   @Override
   public boolean equals(final Object obj) {
-    if(obj instanceof AttendeeTemp) {
-      final AttendeeTemp other = (AttendeeTemp) obj;
+    if(obj instanceof Attendee) {
+      final Attendee other = (Attendee) obj;
 
       return this.username.equals(other.username)
-        && this.host.equals(other.host);
+        && this.host.equals(other.host)
+        && this.pacmanType.equals(other.pacmanType);
     }
 
     return false;
