@@ -24,7 +24,7 @@ public class LobbyDao implements Dao<Lobby, Long> {
 
   private static Lobby toEntity(Row row) {
     return new Lobby(
-      row.getLong("id"),
+      row.getLong("lobby_id"),
       row.getString("description"),
       row.getInteger("size")
     );
@@ -70,7 +70,7 @@ public class LobbyDao implements Dao<Lobby, Long> {
 
   public Single<Lobby> update(Long id, Lobby lobby) {
     return dbClient
-      .preparedQuery("UPDATE lobby SET description = $2, size = $3 WHERE id=$1 RETURNING *")
+      .preparedQuery("UPDATE lobby SET description = $2, size = $3 WHERE lobby_id=$1 RETURNING *")
       .rxExecute(Tuple.of(id, lobby.getDescription(), lobby.getSize()))
       .map(rows -> {
         logger.debug("Got " + rows.size() + " rows ");
@@ -83,7 +83,7 @@ public class LobbyDao implements Dao<Lobby, Long> {
 
   public Single<Lobby> delete(Long id) {
     return dbClient
-      .preparedQuery("DELETE FROM lobby WHERE id=$1 RETURNING *")
+      .preparedQuery("DELETE FROM lobby WHERE lobby_id=$1 RETURNING *")
       .rxExecute(Tuple.of(id))
       .map(rows -> {
         logger.debug("Got " + rows.size() + " rows ");
