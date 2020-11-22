@@ -22,7 +22,7 @@ public class ParticipantDao implements Dao<Participant, String> {
     this.dbClient = dbClient;
   }
 
-  private static Participant toEntity(Row row) {
+  public static Participant toEntity(Row row) {
     return new Participant(
       row.getString("username"),
       row.getBoolean("host"),

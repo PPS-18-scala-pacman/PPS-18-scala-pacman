@@ -74,7 +74,7 @@ public class Lobby {
       .put("id", this.id)
       .put("description", this.description)
       .put("size", this.size)
-      .put("participants", this.participants);
+      .put("participants", this.participants.stream().map(Participant::toJson).collect(Collectors.toList()));
   }
 
   @Override

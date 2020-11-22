@@ -22,42 +22,60 @@ public class LobbyDao implements Dao<Lobby, Long> {
     this.dbClient = dbClient;
   }
 
-  private static Lobby toEntity(Row row) {
+  public static Lobby toEntity(Row row) {
     return new Lobby(
       row.getLong("lobby_id"),
       row.getString("description"),
-      row.getInteger("size")
+      row.getInteger("lobby_size")
+    );
+  }
+
+  private static Lobby toEntity(List<Row> rows) {
+    if (rows.size() == 0) return null;
+    return new Lobby(
+      rows.get(0).getLong("lobby_id"),
+      rows.get(0).getString("description"),
+      rows.get(0).getInteger("lobby_size"),
+      rows.stream().map(ParticipantDao::toEntity).collect(Collectors.toList())
     );
   }
 
   public Single<List<Lobby>> getAll() {
     return dbClient
-      .query("SELECT * FROM lobby")
+      .query("SELECT * FROM lobby LEFT OUTER JOIN participant ON (lobby.lobby_id = participant.lobby_id)")
       .rxExecute()
       .map(rows -> {
         logger.debug("Got " + rows.size() + " rows ");
         return StreamSupport.stream(rows.spliterator(), false)
+          .collect(Collectors.groupingBy(LobbyDao::toEntity));
+      })
+      .map(hmap ->
+        hmap.values().stream()
           .map(LobbyDao::toEntity)
-          .collect(Collectors.toList());
-      });
+          .collect(Collectors.toList())
+      );
   }
 
   public Single<Lobby> get(Long id) {
     return dbClient
-      .preparedQuery("SELECT * FROM lobby WHERE id=$1")
+      .preparedQuery("SELECT * FROM lobby WHERE id=$1 LEFT OUTER JOIN participant ON (lobby.lobby_id = participant.lobby_id)")
       .rxExecute(Tuple.of(id))
       .map(rows -> {
         logger.debug("Got " + rows.size() + " rows ");
         return StreamSupport.stream(rows.spliterator(), false)
+          .collect(Collectors.groupingBy(LobbyDao::toEntity));
+      })
+      .map(hmap ->
+        hmap.values().stream()
           .map(LobbyDao::toEntity)
           .findFirst()
-          .orElseThrow(NotFoundException::new);
-      });
+          .orElseThrow(NotFoundException::new)
+      );
   }
 
   public Single<Lobby> create(Lobby lobby) {
     return dbClient
-      .preparedQuery("INSERT INTO lobby (description, size) VALUES ($1, $2) RETURNING *")
+      .preparedQuery("INSERT INTO lobby (description, lobby_size) VALUES ($1, $2) RETURNING *")
       .rxExecute(Tuple.of(lobby.getDescription(), lobby.getSize()))
       .map(rows -> {
         logger.debug("Got " + rows.size() + " rows ");
@@ -70,7 +88,7 @@ public class LobbyDao implements Dao<Lobby, Long> {
 
   public Single<Lobby> update(Long id, Lobby lobby) {
     return dbClient
-      .preparedQuery("UPDATE lobby SET description = $2, size = $3 WHERE lobby_id=$1 RETURNING *")
+      .preparedQuery("UPDATE lobby SET description = $2, lobby_size = $3 WHERE lobby_id=$1 RETURNING *")
       .rxExecute(Tuple.of(id, lobby.getDescription(), lobby.getSize()))
       .map(rows -> {
         logger.debug("Got " + rows.size() + " rows ");
