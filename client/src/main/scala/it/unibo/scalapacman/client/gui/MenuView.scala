@@ -38,7 +38,6 @@ class MenuView(implicit controller: Controller, viewChanger: ViewChanger) extend
   titleLabel setHorizontalAlignment SwingConstants.CENTER
 
   playButton setAlignmentX Component.CENTER_ALIGNMENT
-//  multiButton setAlignmentX Component.CENTER_ALIGNMENT
   optionsButton setAlignmentX Component.CENTER_ALIGNMENT
   statsButton setAlignmentX Component.CENTER_ALIGNMENT
   exitButton setAlignmentX Component.CENTER_ALIGNMENT

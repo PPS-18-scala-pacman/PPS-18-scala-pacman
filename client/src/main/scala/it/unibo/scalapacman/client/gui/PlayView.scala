@@ -4,7 +4,7 @@ import java.awt.{BorderLayout, Color, Font, GridLayout}
 import java.util.{Timer, TimerTask}
 
 import it.unibo.scalapacman.client.controller.Action.{END_GAME, PAUSE_RESUME, SUBSCRIBE_TO_EVENTS}
-import it.unibo.scalapacman.client.controller.{Action, Controller}
+import it.unibo.scalapacman.client.controller.Controller
 import it.unibo.scalapacman.client.event.{GamePaused, GameStarted, GameUpdate, NetworkIssue, NewKeyMap, PacmanEvent, PacmanSubscriber}
 import it.unibo.scalapacman.client.input.{KeyMap, UserInput}
 import it.unibo.scalapacman.client.gui.View.MENU
@@ -27,7 +27,7 @@ object PlayView {
  * @param controller il riferimento al componente Controller
  * @param viewChanger il riferimento al componente che gestisce il cambio schermata
  */
-class PlayView(implicit controller: Controller, viewChanger: ViewChanger) extends PanelImpl {
+class PlayView(implicit controller: Controller, viewChanger: ViewChanger) extends PanelImpl with AskToController {
   private val SCORE_LABEL: String = "Punteggio"
   private val LIVES_LABEL: String = "Vite"
   private val END_GAME_BUTTON_LABEL: String = "Fine partita"
@@ -157,7 +157,7 @@ class PlayView(implicit controller: Controller, viewChanger: ViewChanger) extend
     _gameState = None
     userMessage setText GOOD_LUCK_MESSAGE
     updateGameView(PacmanMap.toPacmanMap(Map.create(MapType.CLASSIC)), GameState(0), gameCanvas, scoreCount)
-    delayedResume()
+//    delayedResume() // Il gioco non parte più in pausa
   }
 
   /**
@@ -271,18 +271,6 @@ class PlayView(implicit controller: Controller, viewChanger: ViewChanger) extend
     case NetworkIssue(true, info) => userMessage setText s"$GAME_END_MESSAGE $info"
     case _ => Unit
   }
-
-  /**
-   * Informa il controller di un'azione dell'utente
-   * Effettuata all'interno di un Thread per non bloccare l'interfaccia
-   *
-   * @param action azione da notificare al controller
-   * @param param eventuale parametro
-   */
-  private def askToController(action: Action, param: Option[Any]): Unit =
-    new Thread() {
-      override def run(): Unit = controller.handleAction(action, param)
-    } start()
 }
 
 // scalastyle:on multiple.string.literals

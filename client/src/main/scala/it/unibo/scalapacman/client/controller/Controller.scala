@@ -5,19 +5,22 @@ import java.util.{Timer, TimerTask}
 import grizzled.slf4j.Logging
 import it.unibo.scalapacman.client.communication.PacmanRestClient
 import Action.{END_GAME, EXIT_APP, JOIN_GAME, MOVEMENT, PAUSE_RESUME, RESET_KEY_MAP, SAVE_KEY_MAP, START_GAME, SUBSCRIBE_TO_EVENTS}
-import it.unibo.scalapacman.client.event.{GamePaused, GameStarted, GameUpdate, NetworkIssue, NewKeyMap, PacmanPublisher, PacmanSubscriber}
+import it.unibo.scalapacman.client.event.{GamePaused, GameStarted, GameUpdate, LobbiesUpdate, NetworkIssue, NewKeyMap, PacmanPublisher, PacmanSubscriber}
 import it.unibo.scalapacman.client.gui.{LOBBIES_RECONNECTION_TIME_DELAY, WS_RECONNECTION_TIME_DELAY}
 import it.unibo.scalapacman.client.input.JavaKeyBinding.DefaultJavaKeyBinding
 import it.unibo.scalapacman.client.input.KeyMap
 import it.unibo.scalapacman.client.map.PacmanMap
-import it.unibo.scalapacman.client.model.{CreateGameData, GameModel, JoinGameData}
+import it.unibo.scalapacman.client.model.LobbyJsonProtocol.lobbyFormat
+import it.unibo.scalapacman.client.model.{CreateGameData, GameModel, JoinGameData, LobbyTemp}
 import it.unibo.scalapacman.common.CommandType.CommandType
 import it.unibo.scalapacman.common.MoveCommandType.MoveCommandType
 import it.unibo.scalapacman.common.{Command, CommandType, CommandTypeHolder, JSONConverter, MapUpdater, MoveCommandTypeHolder, UpdateModelDTO}
 import it.unibo.scalapacman.lib.model.{Map, MapType}
+import spray.json.DefaultJsonProtocol.listFormat
 
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor}
 import scala.util.{Failure, Success}
+import spray.json._
 
 // scalastyle:off multiple.string.literals
 
@@ -286,13 +289,23 @@ private case class ControllerImpl(pacmanRestClient: PacmanRestClient) extends Co
     _publisher.notifySubscribers(NetworkIssue(serverError = true, "Errore comunicazione col server"))
   }
 
-  def connectToLobbies(): Unit = pacmanRestClient.watchLobbies(handleLobbiesUpdate, handleLobbiesConnectionError) onComplete {
+  private def connectToLobbies(): Unit = pacmanRestClient.watchLobbies(handleLobbiesUpdate, handleLobbiesConnectionError) onComplete {
     case Failure(exception) => info(s"Errore connessione SSE: ${exception.getMessage}"); handleLobbiesConnectionError()
     case _ => Unit
   }
 
-  private def handleLobbiesUpdate(lobbies: String): Unit = info(lobbies)
+  /**
+   * Gestisce i messaggi ricevuti sul canale SSE delle lobby
+   * @param jsonStr i dati in formato JSON
+   */
+  private def handleLobbiesUpdate(jsonStr: String): Unit = {
+    info(jsonStr)
+    _publisher.notifySubscribers(LobbiesUpdate(jsonStr.parseJson.convertTo[List[LobbyTemp]]))
+  }
 
+  /**
+   * Gestisce l'interruzione al canale SSE delle lobby per un problema di rete
+   */
   private def handleLobbiesConnectionError(): Unit = {
     info(s"Nuovo tentativo connessione servizio lobby tra ${LOBBIES_RECONNECTION_TIME_DELAY/1000} secondi")
     val t = new Timer
