@@ -8,12 +8,12 @@ import rx.subjects.BehaviorSubject;
 import java.util.*;
 
 public class LobbyStreamService {
-  private final Dao<Lobby, Long> repository;
+  private final Dao<Lobby, Long> dao;
   private final BehaviorSubject<List<Lobby>> getAllSubject = BehaviorSubject.create(new ArrayList<>());
   private final Map<Long, BehaviorSubject<Lobby>> getByIdSubject = new HashMap<>();
 
-  public LobbyStreamService(Dao<Lobby, Long> repository) {
-    this.repository = repository;
+  public LobbyStreamService(Dao<Lobby, Long> dao) {
+    this.dao = dao;
     this.initStreams();
   }
 
@@ -28,7 +28,7 @@ public class LobbyStreamService {
   public Observable<Lobby> getStreamById(Long id) {
     if (!getByIdSubject.containsKey(id)) {
       BehaviorSubject<Lobby> subject = BehaviorSubject.create();
-      this.repository.get(id).subscribe(subject::onNext);
+      this.dao.get(id).subscribe(subject::onNext);
       getByIdSubject.put(id, subject);
     }
 
@@ -39,7 +39,7 @@ public class LobbyStreamService {
     this.updateStreams(entityId, false);
   }
   public void updateStreams(Long entityId, boolean delete) {
-    this.repository.get(entityId).subscribe(entity -> this.updateStreams(entity, delete));
+    this.dao.get(entityId).subscribe(entity -> this.updateStreams(entity, delete));
   }
 
   public void updateStreams(Lobby entity) {
@@ -52,7 +52,7 @@ public class LobbyStreamService {
   }
 
   private void updateStreamAll() {
-    this.repository.getAll().subscribe(getAllSubject::onNext);
+    this.dao.getAll().subscribe(getAllSubject::onNext);
   }
 
   private void updateStreamById(Lobby entity, boolean delete) {

@@ -7,31 +7,31 @@ import rx.Single;
 import java.util.*;
 
 public class ParticipantService {
-  private final Dao<Participant, String> repository;
+  private final Dao<Participant, String> dao;
   private final LobbyStreamService streamService;
 
-  public ParticipantService(final Dao<Participant, String> repository, final LobbyStreamService streamService) {
-    this.repository = repository;
+  public ParticipantService(final Dao<Participant, String> dao, final LobbyStreamService streamService) {
+    this.dao = dao;
     this.streamService = streamService;
   }
 
   public Single<List<Participant>> getAll() {
-    return this.repository.getAll();
+    return this.dao.getAll();
   }
 
   public Single<Participant> get(String id) {
-    return this.repository.get(id);
+    return this.dao.get(id);
   }
 
   public Single<Participant> create(Participant participant) {
-    return this.repository.create(participant).doOnSuccess(entity -> this.streamService.updateStreams(entity.getLobbyId()));
+    return this.dao.create(participant).doOnSuccess(entity -> this.streamService.updateStreams(entity.getLobbyId()));
   }
 
   public Single<Participant> update(String id, Participant participant) {
-    return this.repository.update(id, participant).doOnSuccess(entity -> this.streamService.updateStreams(entity.getLobbyId()));
+    return this.dao.update(id, participant).doOnSuccess(entity -> this.streamService.updateStreams(entity.getLobbyId()));
   }
 
   public Single<Participant> delete(String id) {
-    return this.repository.delete(id).doOnSuccess(entity -> this.streamService.updateStreams(entity.getLobbyId()));
+    return this.dao.delete(id).doOnSuccess(entity -> this.streamService.updateStreams(entity.getLobbyId()));
   }
 }

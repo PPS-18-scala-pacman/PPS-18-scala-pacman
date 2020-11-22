@@ -7,31 +7,31 @@ import rx.Single;
 import java.util.*;
 
 public class LobbyService {
-  private final Dao<Lobby, Long> repository;
+  private final Dao<Lobby, Long> dao;
   private final LobbyStreamService streamService;
 
-  public LobbyService(final Dao<Lobby, Long> repository, final LobbyStreamService streamService) {
-    this.repository = repository;
+  public LobbyService(final Dao<Lobby, Long> dao, final LobbyStreamService streamService) {
+    this.dao = dao;
     this.streamService = streamService;
   }
 
   public Single<List<Lobby>> getAll() {
-    return this.repository.getAll();
+    return this.dao.getAll();
   }
 
   public Single<Lobby> get(Long id) {
-    return this.repository.get(id);
+    return this.dao.get(id);
   }
 
   public Single<Lobby> create(Lobby lobby) {
-    return this.repository.create(lobby).doOnSuccess(this.streamService::updateStreams);
+    return this.dao.create(lobby).doOnSuccess(this.streamService::updateStreams);
   }
 
   public Single<Lobby> update(Long id, Lobby lobby) {
-    return this.repository.update(id, lobby).doOnSuccess(this.streamService::updateStreams);
+    return this.dao.update(id, lobby).doOnSuccess(this.streamService::updateStreams);
   }
 
   public Single<Lobby> delete(Long id) {
-    return this.repository.delete(id).doOnSuccess(entity -> this.streamService.updateStreams(entity, true));
+    return this.dao.delete(id).doOnSuccess(entity -> this.streamService.updateStreams(entity, true));
   }
 }
