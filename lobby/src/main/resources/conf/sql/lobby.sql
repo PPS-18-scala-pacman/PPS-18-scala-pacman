@@ -1,5 +1,11 @@
 CREATE TABLE lobby (
     id SERIAL PRIMARY KEY,
+    description varchar(255),
+    size smallint,
+);
+
+CREATE TABLE participant (
+    id SERIAL PRIMARY KEY,
     description varchar(255)
 );
 

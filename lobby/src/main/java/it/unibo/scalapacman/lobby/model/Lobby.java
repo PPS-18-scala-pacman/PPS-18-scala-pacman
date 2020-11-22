@@ -12,26 +12,26 @@ public class Lobby {
   private final Integer id;
   private String description;
   private Integer size;
-  private List<Attendee> attendees;
+  private List<Participant> participants;
 
   public Lobby(final Integer id, final String description, Integer size) {
     this(id, description, size, new ArrayList<>(size));
   }
 
-  public Lobby(final Integer id, final String description, Integer size, List<Attendee> attendees) {
-    if (attendees.size() > size) throw new IllegalArgumentException("attendees can't have more elements than size value");
+  public Lobby(final Integer id, final String description, Integer size, List<Participant> participants) {
+    if (participants.size() > size) throw new IllegalArgumentException("participants can't have more elements than size value");
     this.id = id;
     this.description = description;
     this.size = size;
-    this.attendees = attendees;
+    this.participants = participants;
   }
 
   public Lobby(JsonObject json) {
     this.id = json.getInteger("id");
     this.description = json.getString("description");
     this.size = json.getInteger("size");
-    this.attendees = json.getJsonArray("attendees").stream()
-      .map(jsonObj -> new Attendee((JsonObject) jsonObj))
+    this.participants = json.getJsonArray("participants").stream()
+      .map(jsonObj -> new Participant((JsonObject) jsonObj))
       .collect(Collectors.toList());
   }
 
@@ -55,12 +55,12 @@ public class Lobby {
     this.size = size;
   }
 
-  public List<Attendee> getAttendees() {
-    return attendees;
+  public List<Participant> getAttendees() {
+    return participants;
   }
 
-  public void setAttendees(List<Attendee> attendees) {
-    this.attendees = attendees;
+  public void setAttendees(List<Participant> participants) {
+    this.participants = participants;
   }
 
   public String toString() {
@@ -72,7 +72,7 @@ public class Lobby {
       .put("id", this.id)
       .put("description", this.description)
       .put("size", this.size)
-      .put("attendees", this.attendees);
+      .put("participants", this.participants);
   }
 
   @Override

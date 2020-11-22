@@ -3,18 +3,18 @@ package it.unibo.scalapacman.lobby.model;
 import io.vertx.core.json.JsonObject;
 import it.unibo.scalapacman.lib.model.PacmanType;
 
-public class Attendee {
+public class Participant {
   private String username;
   private Boolean host;
   private PacmanType.PacmanType pacmanType;
 
-  public Attendee(final String username, final Boolean host, final PacmanType.PacmanType pacmanType) {
+  public Participant(final String username, final Boolean host, final PacmanType.PacmanType pacmanType) {
     this.username = username;
     this.host = host;
     this.pacmanType = pacmanType;
   }
 
-  public Attendee(JsonObject json) {
+  public Participant(JsonObject json) {
     this.username = json.getString("username");
     this.host = json.getBoolean("host");
     this.pacmanType = PacmanType.indexToPlayerTypeVal(json.getInteger("pacmanType"));
@@ -63,8 +63,8 @@ public class Attendee {
 
   @Override
   public boolean equals(final Object obj) {
-    if(obj instanceof Attendee) {
-      final Attendee other = (Attendee) obj;
+    if(obj instanceof Participant) {
+      final Participant other = (Participant) obj;
 
       return this.username.equals(other.username)
         && this.host.equals(other.host)

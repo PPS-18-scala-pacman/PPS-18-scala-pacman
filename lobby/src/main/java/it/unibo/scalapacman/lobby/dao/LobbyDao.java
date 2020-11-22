@@ -27,7 +27,7 @@ public class LobbyDao implements Dao<Lobby> {
       row.getInteger("id"),
       row.getString("description"),
       row.getInteger("size")
-      // TODO non inserisco gli attendee, si troveranno su più righe
+      // TODO non inserisco i participants, si troveranno su più righe
     );
   }
 
