@@ -2,11 +2,13 @@ package it.unibo.scalapacman.client.communication
 
 import java.io.IOException
 
-import akka.Done
+import akka.{Done, NotUsed}
 import akka.actor.{ActorRef, ActorSystem}
-import akka.http.scaladsl.client.RequestBuilding.Delete
+import akka.http.scaladsl.client.RequestBuilding.{Delete, Get, Post}
+import akka.http.scaladsl.model.headers.RawHeader
+import akka.http.scaladsl.model.sse.ServerSentEvent
 import akka.http.scaladsl.model.ws.{Message, TextMessage, WebSocketRequest}
-import akka.http.scaladsl.model.{ContentTypes, HttpEntity, HttpMethods, HttpRequest, HttpResponse, StatusCodes}
+import akka.http.scaladsl.model.{ContentTypes, HttpEntity, HttpRequest, HttpResponse, StatusCodes}
 import akka.http.scaladsl.unmarshalling.Unmarshal
 import akka.stream.{CompletionStrategy, OverflowStrategy}
 import akka.stream.scaladsl.{Keep, Sink, Source}
@@ -18,6 +20,7 @@ import spray.json.enrichAny
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContextExecutor, Future}
 import scala.util.{Failure, Success}
+import akka.http.scaladsl.unmarshalling.sse.EventStreamUnmarshalling._ // scalastyle:ignore
 
 // scalastyle:off multiple.string.literals
 
@@ -36,16 +39,59 @@ trait PacmanRestClient extends Logging { this: HttpClient =>
   var _webSocketSpeaker: Option[ActorRef] = None
 
   /**
+   * Si connette al canale SSE per il recupero della lista di lobby attualmente attive
+   * e di loro aggiornamenti
+   * @param messageHandler  callback a cui vengono passati i dati delle lobby
+   * @param connectionErrorHandler  callback per errore di connessione al servizio
+   */
+  def watchLobbies(
+                    messageHandler: String => Unit,
+                    connectionErrorHandler: () => Unit,
+                  ): Future[Any] = {
+    val request = Get(PacmanRestClient.LOBBY_URL).withHeaders(
+      RawHeader("Accept", "text/event-stream")
+    )
+
+    sendRequest(request) flatMap { response =>
+      response.status match {
+        case StatusCodes.OK =>
+          Unmarshal(response.entity).to[Source[ServerSentEvent, NotUsed]].foreach(
+            _.runForeach(elem => messageHandler(elem.getData())) onComplete {
+              case Success(_) => info("SSE chiusa correttamente")
+              case Failure(exception) =>
+                info(s"Connessione SSE interrotta ${exception.getMessage}")
+                connectionErrorHandler()
+            }
+          )
+          Future.successful("OK")
+        case _ => Unmarshal(response.entity).to[String] flatMap { body =>
+          Future.failed(new IOException(s"Errore connessione: $body"))
+        }
+      }
+    }
+  }
+
+  /**
+   * Si connette al canale SSE per il recupero della lobby e dei suoi aggiornamenti
+   * @param id  identificativo della lobby
+   * @param messageHandler  callback a cui vengono passati i dati della lobby
+   * @param connectionErrorHandler  callback per errore di connessione al servizio
+   */
+  def watchLobby(
+                  id: String,
+                  messageHandler: String => Unit,
+                  connectionErrorHandler: () => Unit
+                ): Future[Any] = ??? //TODO implementare
+
+  /**
    * Invia richiesta nuova partita
    * @param players il numero di giocatori per questa partita
    * @return l'id della nuova partita
    */
   def startGame(players: Int): Future[String] = {
     // Come passare un JSON https://stackoverflow.com/a/56569369/4328569
-    val request = HttpRequest(
-      method = HttpMethods.POST,
-      uri = PacmanRestClient.GAMES_URL,
-      entity = HttpEntity(ContentTypes.`application/json`, Map("playersNumber" -> players).toJson.toString())
+    val request = Post(PacmanRestClient.GAMES_URL).withEntity(
+      HttpEntity(ContentTypes.`application/json`, Map("playersNumber" -> players).toJson.toString())
     )
     sendRequest(request) flatMap { response =>
       response.status match {
@@ -184,4 +230,8 @@ case object PacmanRestClient {
    * Indirizzo per canale WebSocket
    */
   val GAMES_WS_URL = s"ws://$serverURL/connection-management/games"
+  /**
+   * Indirizzo per lobby
+   */
+  val LOBBY_URL = s"http://$serverURL/api/lobby"
 }

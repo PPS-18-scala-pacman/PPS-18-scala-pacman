@@ -6,7 +6,7 @@ import grizzled.slf4j.Logging
 import it.unibo.scalapacman.client.communication.PacmanRestClient
 import Action.{END_GAME, EXIT_APP, JOIN_GAME, MOVEMENT, PAUSE_RESUME, RESET_KEY_MAP, SAVE_KEY_MAP, START_GAME, SUBSCRIBE_TO_EVENTS}
 import it.unibo.scalapacman.client.event.{GamePaused, GameStarted, GameUpdate, NetworkIssue, NewKeyMap, PacmanPublisher, PacmanSubscriber}
-import it.unibo.scalapacman.client.gui.{GAME_RESUME_TIME_DELAY, WS_RECONNECTION_TIME_DELAY}
+import it.unibo.scalapacman.client.gui.{LOBBIES_RECONNECTION_TIME_DELAY, WS_RECONNECTION_TIME_DELAY}
 import it.unibo.scalapacman.client.input.JavaKeyBinding.DefaultJavaKeyBinding
 import it.unibo.scalapacman.client.input.KeyMap
 import it.unibo.scalapacman.client.map.PacmanMap
@@ -64,6 +64,8 @@ private case class ControllerImpl(pacmanRestClient: PacmanRestClient) extends Co
   val _webSocketRunnable = new WebSocketConsumer(updateFromServer)
   var model: GameModel = GameModel(keyMap = _defaultKeyMap, map = Map.create(MapType.CLASSIC))
 
+  connectToLobbies()
+
   // scalastyle:off cyclomatic.complexity
   def handleAction(action: Action, param: Option[Any]): Unit = action match {
     case START_GAME => evalStartGame(model.gameId, param.asInstanceOf[Option[CreateGameData]])
@@ -104,13 +106,15 @@ private case class ControllerImpl(pacmanRestClient: PacmanRestClient) extends Co
   private def startGame(cgd: CreateGameData): Unit = pacmanRestClient.startGame(cgd.players) onComplete {
     case Success(value) =>
       info(s"Partita creata con successo: id $value") // scalastyle:ignore multiple.string.literals
-      model = model.copy(gameId = Some(value), paused = true) // Il gioco parte sempre in pausa
+      model = model.copy(gameId = Some(value)/*, paused = true*/) // Il gioco parte sempre in pausa --> NON PIù
       model = model.copy(nickname = cgd.nickname)
       _prevUserAction = None
       new Thread(_webSocketRunnable).start()
       pacmanRestClient.openWS(value, model.nickname, handleWebSocketMessage, handleWSConnectionError)
       _publisher.notifySubscribers(GameStarted())
-    case Failure(exception) => error(s"Errore nella creazione della partita: ${exception.getMessage}") // scalastyle:ignore multiple.string.literals
+    case Failure(exception) =>
+      error(s"Errore nella creazione della partita: ${exception.getMessage}")
+      _publisher.notifySubscribers(NetworkIssue(serverError = true, "Errore comunicazione col server"))
   }
 
   private def evalJoinGameMulti(gameId: Option[String], jgd: Option[JoinGameData]): Unit = gameId match {
@@ -280,6 +284,24 @@ private case class ControllerImpl(pacmanRestClient: PacmanRestClient) extends Co
   } else {
     debug(s"[handleWSConnectionError] Errore nella comunicazione col server, comunicazione tramite WebSocket terminata")
     _publisher.notifySubscribers(NetworkIssue(serverError = true, "Errore comunicazione col server"))
+  }
+
+  def connectToLobbies(): Unit = pacmanRestClient.watchLobbies(handleLobbiesUpdate, handleLobbiesConnectionError) onComplete {
+    case Failure(exception) => info(s"Errore connessione SSE: ${exception.getMessage}"); handleLobbiesConnectionError()
+    case _ => Unit
+  }
+
+  private def handleLobbiesUpdate(lobbies: String): Unit = info(lobbies)
+
+  private def handleLobbiesConnectionError(): Unit = {
+    info(s"Nuovo tentativo connessione servizio lobby tra ${LOBBIES_RECONNECTION_TIME_DELAY/1000} secondi")
+    val t = new Timer
+    t.schedule(new TimerTask() {
+      override def run(): Unit = {
+        connectToLobbies()
+        t.cancel()
+      }
+    }, LOBBIES_RECONNECTION_TIME_DELAY)
   }
 }
 
