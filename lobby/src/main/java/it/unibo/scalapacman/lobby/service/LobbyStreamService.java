@@ -1,5 +1,7 @@
 package it.unibo.scalapacman.lobby.service;
 
+import io.vertx.core.logging.Logger;
+import io.vertx.core.logging.LoggerFactory;
 import it.unibo.scalapacman.lobby.dao.Dao;
 import it.unibo.scalapacman.lobby.model.Lobby;
 import rx.Observable;
@@ -8,6 +10,8 @@ import rx.subjects.BehaviorSubject;
 import java.util.*;
 
 public class LobbyStreamService {
+  private final Logger logger = LoggerFactory.getLogger(LobbyStreamService.class);
+
   private final Dao<Lobby, Long> dao;
   private final BehaviorSubject<List<Lobby>> getAllSubject = BehaviorSubject.create(new ArrayList<>());
   private final Map<Long, BehaviorSubject<Lobby>> getByIdSubject = new HashMap<>();
@@ -28,7 +32,7 @@ public class LobbyStreamService {
   public Observable<Lobby> getStreamById(Long id) {
     if (!getByIdSubject.containsKey(id)) {
       BehaviorSubject<Lobby> subject = BehaviorSubject.create();
-      this.dao.get(id).subscribe(subject::onNext);
+      this.dao.get(id).subscribe(subject::onNext, this::onError);
       getByIdSubject.put(id, subject);
     }
 
@@ -39,7 +43,7 @@ public class LobbyStreamService {
     this.updateStreams(entityId, false);
   }
   public void updateStreams(Long entityId, boolean delete) {
-    this.dao.get(entityId).subscribe(entity -> this.updateStreams(entity, delete));
+    this.dao.get(entityId).subscribe(entity -> this.updateStreams(entity, delete), this::onError);
   }
 
   public void updateStreams(Lobby entity) {
@@ -52,7 +56,7 @@ public class LobbyStreamService {
   }
 
   private void updateStreamAll() {
-    this.dao.getAll().subscribe(getAllSubject::onNext);
+    this.dao.getAll().subscribe(getAllSubject::onNext, this::onError);
   }
 
   private void updateStreamById(Lobby entity, boolean delete) {
@@ -65,5 +69,9 @@ public class LobbyStreamService {
     } else {
       Optional.ofNullable(this.getByIdSubject.get(entity.getId())).ifPresent(subject -> subject.onNext(entity));
     }
+  }
+
+  private void onError(Throwable ex) {
+    this.logger.error(ex.getMessage(), ex);
   }
 }

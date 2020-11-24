@@ -36,7 +36,7 @@ public class LobbyDao implements Dao<Lobby, Long> {
       rows.get(0).getLong("lobby_id"),
       rows.get(0).getString("description"),
       rows.get(0).getInteger("lobby_size"),
-      rows.stream().map(ParticipantDao::toEntity).collect(Collectors.toList())
+      rows.stream().filter(row -> row.getString("username") != null).map(ParticipantDao::toEntity).collect(Collectors.toList())
     );
   }
 
@@ -58,7 +58,7 @@ public class LobbyDao implements Dao<Lobby, Long> {
 
   public Single<Lobby> get(Long id) {
     return dbClient
-      .preparedQuery("SELECT * FROM lobby WHERE id=$1 LEFT OUTER JOIN participant ON (lobby.lobby_id = participant.lobby_id)")
+      .preparedQuery("SELECT * FROM lobby LEFT OUTER JOIN participant ON (lobby.lobby_id = participant.lobby_id) WHERE lobby.lobby_id = $1")
       .rxExecute(Tuple.of(id))
       .map(rows -> {
         logger.debug("Got " + rows.size() + " rows ");
