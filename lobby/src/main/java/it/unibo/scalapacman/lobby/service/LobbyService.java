@@ -32,6 +32,7 @@ public class LobbyService {
   }
 
   public Single<Lobby> delete(Long id) {
+    // TODO eliminiare anche i participants
     return this.dao.delete(id).doOnSuccess(entity -> this.streamService.updateStreams(entity, true));
   }
 }

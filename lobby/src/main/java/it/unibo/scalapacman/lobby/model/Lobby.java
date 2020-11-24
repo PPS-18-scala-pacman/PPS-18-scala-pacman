@@ -1,10 +1,12 @@
 package it.unibo.scalapacman.lobby.model;
 
 import io.vertx.core.json.Json;
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 public class Lobby {
@@ -31,7 +33,7 @@ public class Lobby {
       json.getLong("id"),
       json.getString("description"),
       json.getInteger("size"),
-      json.getJsonArray("participants").stream()
+      Optional.ofNullable(json.getJsonArray("participants")).orElse(new JsonArray()).stream()
         .map(jsonObj -> new Participant((JsonObject) jsonObj))
         .collect(Collectors.toList())
     );
