@@ -16,6 +16,14 @@ import io.vertx.rxjava.pgclient.PgPool;
 import io.vertx.sqlclient.PoolOptions;
 import it.unibo.scalapacman.lobby.dao.Dao;
 import it.unibo.scalapacman.lobby.dao.LobbyDao;
+import it.unibo.scalapacman.lobby.dao.ParticipantDao;
+import it.unibo.scalapacman.lobby.model.Lobby;
+import it.unibo.scalapacman.lobby.model.Participant;
+import it.unibo.scalapacman.lobby.resource.LobbyResource;
+import it.unibo.scalapacman.lobby.resource.ParticipantResource;
+import it.unibo.scalapacman.lobby.service.LobbyService;
+import it.unibo.scalapacman.lobby.service.LobbyStreamService;
+import it.unibo.scalapacman.lobby.service.ParticipantService;
 import it.unibo.scalapacman.lobby.util.exception.APIException;
 import rx.Completable;
 import rx.Single;
@@ -36,34 +44,43 @@ public class MainVerticle extends AbstractVerticle {
 
   public Single<?> start(JsonObject config) {
     return prepareDatabase(config.getJsonObject("DATABASE"))
-      .flatMap(this::initRepository)
-      .flatMap(this::initService)
-      .flatMap(service -> startHttpServer(config, service));
+      .flatMap(this::initDao)
+      .flatMap(this::initServices)
+      .flatMap(services -> startHttpServer(config, services));
   }
 
   private Single<JsonObject> getConfiguration() {
     return ConfigRetriever.create(vertx).rxGetConfig();
   }
 
-  private Single<Dao<Lobby>> initRepository(PgPool dbClient) {
-    return Single.just(new LobbyDao(dbClient));
+  private Single<DaoContainer> initDao(PgPool dbClient) {
+    return Single.just(new DaoContainer(
+      new LobbyDao(dbClient),
+      new ParticipantDao(dbClient)
+    ));
   }
 
-  private Single<LobbyService> initService(Dao<Lobby> repository) {
-    return Single.just(new LobbyService(repository));
+  private Single<ServiceContainer> initServices(DaoContainer dao) {
+    LobbyStreamService lobbyStreamService = new LobbyStreamService(dao.lobby);
+    return Single.just(new ServiceContainer(
+      lobbyStreamService,
+      new LobbyService(dao.lobby, lobbyStreamService),
+      new ParticipantService(dao.participant, lobbyStreamService)
+    ));
   }
 
-  private Single<HttpServer> startHttpServer(JsonObject config, LobbyService service) {
-    return this.startHttpServer(config.getInteger("HTTP_PORT", 8080), service);
+  private Single<HttpServer> startHttpServer(JsonObject config, ServiceContainer services) {
+    return this.startHttpServer(config.getInteger("HTTP_PORT", 8080), services);
   }
 
-  private Single<HttpServer> startHttpServer(Integer localPort, LobbyService service) {
+  private Single<HttpServer> startHttpServer(Integer localPort, ServiceContainer services) {
     final Router router = Router.router(vertx);
 
     router.route().handler(corsHandler());
     router.route().handler(BodyHandler.create());
 
-    new LobbyResource(router, service);
+    new LobbyResource(router, services.lobby, services.lobbyStream);
+    new ParticipantResource(router, services.participant);
 
     //router.route().handler(StaticHandler.create().setWebRoot("webroot/myname").setCachingEnabled(false));
 
@@ -122,5 +139,27 @@ public class MainVerticle extends AbstractVerticle {
     System.setProperty("vertx.logger-delegate-factory-class-name", "io.vertx.core.logging.SLF4JLogDelegateFactory");
     LoggerFactory.initialise();
     return LoggerFactory.getLogger(MainVerticle.class);
+  }
+
+  private static class DaoContainer {
+    final Dao<Lobby, Long> lobby;
+    final Dao<Participant, String> participant;
+
+    DaoContainer(Dao<Lobby, Long> lobby, Dao<Participant, String> participant) {
+      this.lobby = lobby;
+      this.participant = participant;
+    }
+  }
+
+  private static class ServiceContainer {
+    final LobbyStreamService lobbyStream;
+    final LobbyService lobby;
+    final ParticipantService participant;
+
+    ServiceContainer(final LobbyStreamService lobbyStream, final LobbyService lobby, final ParticipantService participant) {
+      this.lobbyStream = lobbyStream;
+      this.lobby = lobby;
+      this.participant = participant;
+    }
   }
 }

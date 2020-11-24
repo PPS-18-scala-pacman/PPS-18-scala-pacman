@@ -1,35 +1,43 @@
-package it.unibo.scalapacman.lobby;
+package it.unibo.scalapacman.lobby.model;
 
 import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonObject;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class LobbyTemp {
+public class Lobby {
 
-  private Integer id;
+  private final Long id;
   private String description;
   private Integer size;
-  private List<AttendeeTemp> attendees;
+  private List<Participant> participants;
 
-  public LobbyTemp(final Integer id, final String description, Integer size, List<AttendeeTemp> attendees) {
+  public Lobby(final Long id, final String description, Integer size) {
+    this(id, description, size, new ArrayList<>(size));
+  }
+
+  public Lobby(final Long id, final String description, Integer size, List<Participant> participants) {
+    if (participants.size() > size) throw new IllegalArgumentException("participants can't have more elements than size value");
     this.id = id;
     this.description = description;
     this.size = size;
-    this.attendees = attendees;
+    this.participants = participants;
   }
 
-  public LobbyTemp(JsonObject json) {
-    this.id = json.getInteger("id");
-    this.description = json.getString("description");
-    this.size = json.getInteger("size");
-    this.attendees = json.getJsonArray("attendees").stream()
-      .map(jsonObj -> new AttendeeTemp((JsonObject) jsonObj))
-      .collect(Collectors.toList());
+  public Lobby(final JsonObject json) {
+    this(
+      json.getLong("id"),
+      json.getString("description"),
+      json.getInteger("size"),
+      json.getJsonArray("participants").stream()
+        .map(jsonObj -> new Participant((JsonObject) jsonObj))
+        .collect(Collectors.toList())
+    );
   }
 
-  public Integer getId() {
+  public Long getId() {
     return id;
   }
 
@@ -49,12 +57,12 @@ public class LobbyTemp {
     this.size = size;
   }
 
-  public List<AttendeeTemp> getAttendees() {
-    return attendees;
+  public List<Participant> getAttendees() {
+    return participants;
   }
 
-  public void setAttendees(List<AttendeeTemp> attendees) {
-    this.attendees = attendees;
+  public void setAttendees(List<Participant> participants) {
+    this.participants = participants;
   }
 
   public String toString() {
@@ -66,7 +74,7 @@ public class LobbyTemp {
       .put("id", this.id)
       .put("description", this.description)
       .put("size", this.size)
-      .put("attendees", this.attendees);
+      .put("participants", this.participants.stream().map(Participant::toJson).collect(Collectors.toList()));
   }
 
   @Override
@@ -80,8 +88,8 @@ public class LobbyTemp {
 
   @Override
   public boolean equals(final Object obj) {
-    if(obj instanceof LobbyTemp) {
-      final LobbyTemp other = (LobbyTemp) obj;
+    if(obj instanceof Lobby) {
+      final Lobby other = (Lobby) obj;
 
       return this.id.equals(other.id)
         && this.description.equals(other.getDescription());
@@ -90,4 +98,3 @@ public class LobbyTemp {
     return false;
   }
 }
-

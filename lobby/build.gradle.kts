@@ -11,6 +11,8 @@ val vertxVersion = "3.9.4"
 val junitVersion = "5.3.2"
 
 dependencies {
+  implementation(project(":pacman-lib"))
+
   implementation(group = "io.vertx", name = "vertx-core", version = vertxVersion)
   implementation(group = "io.vertx", name = "vertx-config", version = vertxVersion)
   implementation(group = "io.vertx", name = "vertx-web", version = vertxVersion)

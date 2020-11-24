@@ -1,4 +1,4 @@
-package it.unibo.scalapacman.lobby;
+package it.unibo.scalapacman.lobby.resource;
 
 import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonArray;
@@ -7,6 +7,10 @@ import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 import io.vertx.rxjava.ext.web.Router;
 import io.vertx.rxjava.ext.web.RoutingContext;
+import it.unibo.scalapacman.lobby.C;
+import it.unibo.scalapacman.lobby.model.Lobby;
+import it.unibo.scalapacman.lobby.service.LobbyService;
+import it.unibo.scalapacman.lobby.service.LobbyStreamService;
 import it.unibo.scalapacman.lobby.util.JsonCollector;
 import it.unibo.scalapacman.lobby.util.ResourceUtil;
 import it.unibo.scalapacman.lobby.util.SSE;
@@ -17,9 +21,11 @@ public class LobbyResource {
   private static final Logger logger = LoggerFactory.getLogger(LobbyResource.class);
 
   private final LobbyService service;
+  private final LobbyStreamService streamService;
 
-  LobbyResource(Router router, LobbyService service) {
+  public LobbyResource(Router router, LobbyService service, LobbyStreamService streamService) {
     this.service = service;
+    this.streamService = streamService;
 
     router.get("/api/lobby").produces("application/json").handler(this::handleGetAll);
     router.get("/api/lobby").produces("text/event-stream").handler(this::handleGetAllStream);
@@ -55,7 +61,7 @@ public class LobbyResource {
 
     String template = "data: %s\n\n";
 
-    this.service.getAllStream().subscribe(
+    this.streamService.getStreamAll().subscribe(
       lobbies -> {
         final JsonArray array = lobbies.stream()
           .map(Lobby::toJson)
@@ -70,7 +76,7 @@ public class LobbyResource {
   }
 
   private void handleGetById(final RoutingContext routingContext) {
-    final Integer id = Integer.valueOf(routingContext.request().getParam("id"));
+    final Long id = Long.valueOf(routingContext.request().getParam("id"));
 
     this.service.get(id).subscribe(
         result ->
@@ -83,7 +89,7 @@ public class LobbyResource {
   }
 
   private void handleGetByIdStream(final RoutingContext routingContext) {
-    final Integer id = Integer.valueOf(routingContext.request().getParam("id"));
+    final Long id = Long.valueOf(routingContext.request().getParam("id"));
 
     routingContext.response()
       .setChunked(true)
@@ -93,7 +99,7 @@ public class LobbyResource {
 
     String template = "data: %s\n\n";
 
-    this.service.getStream(id).subscribe(
+    this.streamService.getStreamById(id).subscribe(
       result -> {
         Optional<Lobby> lobbyOpt = Optional.ofNullable(result);
         routingContext.response()
@@ -117,7 +123,7 @@ public class LobbyResource {
   }
 
   private void handleUpdate(final RoutingContext routingContext) {
-    final Integer id = Integer.valueOf(routingContext.request().getParam("id"));
+    final Long id = Long.valueOf(routingContext.request().getParam("id"));
     final Lobby newLobby = new Lobby((JsonObject) Json.decodeValue(routingContext.getBodyAsString()));
 
     this.service.update(id, newLobby).subscribe(
@@ -131,7 +137,7 @@ public class LobbyResource {
   }
 
   private void handleDelete(final RoutingContext routingContext) {
-    final Integer id = Integer.valueOf(routingContext.request().getParam("id"));
+    final Long id = Long.valueOf(routingContext.request().getParam("id"));
 
     this.service.delete(id).subscribe(
       result ->

@@ -12,6 +12,13 @@ object PacmanType extends Enumeration {
     case 2 => CAPMAN
     case 3 => RAPMAN
   }
+
+  implicit def playerTypeValToIndex(index: PacmanType): Int = index match {
+    case PACMAN => 0
+    case MS_PACMAN => 1
+    case CAPMAN => 2
+    case RAPMAN => 3
+  }
 }
 
 object GhostType extends Enumeration {
