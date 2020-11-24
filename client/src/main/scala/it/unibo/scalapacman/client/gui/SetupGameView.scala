@@ -6,7 +6,7 @@ import it.unibo.scalapacman.client.controller.Action.{JOIN_GAME, START_GAME, SUB
 import it.unibo.scalapacman.client.controller.Controller
 import it.unibo.scalapacman.client.event.{LobbiesUpdate, PacmanEvent, PacmanSubscriber}
 import it.unibo.scalapacman.client.gui.View.{MENU, PLAY}
-import it.unibo.scalapacman.client.model.{CreateGameData, JoinGameData, LobbyTemp}
+import it.unibo.scalapacman.client.model.{CreateGameData, JoinGameData, Lobby}
 import javax.swing.{BorderFactory, Box, BoxLayout, DefaultListModel, JButton, JLabel, JScrollPane, JSeparator, JSpinner, JTextField, SwingConstants}
 
 object SetupGameView {
@@ -88,8 +88,7 @@ class SetupGameView(implicit controller: Controller, viewChanger: ViewChanger) e
     SUB_SL_EMPTY_BORDER_X_AXIS
   )
 
-//  private val lobbyList = new DefaultListModel[Lobby]()
-  private val lobbyList = new DefaultListModel[LobbyTemp]()
+  private val lobbyList = new DefaultListModel[Lobby]()
   private val lobbyJList = createJList(lobbyList)
   private val listScrollPane = new JScrollPane(lobbyJList)
 
@@ -128,8 +127,7 @@ class SetupGameView(implicit controller: Controller, viewChanger: ViewChanger) e
   }
 
   private def handleJoinGameButton(): Unit = if (checkNickName()) {
-//    val lobby: Lobby = lobbyJList.getSelectedValue
-    val lobby: LobbyTemp = lobbyJList.getSelectedValue
+        val lobby: Lobby = lobbyJList.getSelectedValue
 
     if (lobby != null) {
       askToController(JOIN_GAME, Some(JoinGameData(nicknameTextField.getText(), lobby.id.toString)))
@@ -141,7 +139,7 @@ class SetupGameView(implicit controller: Controller, viewChanger: ViewChanger) e
 
   private def checkNickName(): Boolean = !nicknameTextField.getText().equals("")
 
-  private def updateLobbies(lobbyList: DefaultListModel[LobbyTemp], lobbies: List[LobbyTemp]): Unit = {
+  private def updateLobbies(lobbyList: DefaultListModel[Lobby], lobbies: List[Lobby]): Unit = {
     lobbyList clear()
     lobbies foreach { lobbyList.addElement }
   }

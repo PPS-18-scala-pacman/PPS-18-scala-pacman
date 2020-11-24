@@ -2,7 +2,7 @@ package it.unibo.scalapacman.client.event
 
 import it.unibo.scalapacman.client.input.KeyMap
 import it.unibo.scalapacman.client.map.PacmanMap.PacmanMap
-import it.unibo.scalapacman.client.model.LobbyTemp
+import it.unibo.scalapacman.client.model.Lobby
 import it.unibo.scalapacman.lib.model.GameState
 
 trait PacmanEvent
@@ -42,4 +42,4 @@ case class NetworkIssue(serverError: Boolean, info: String) extends PacmanEvent
  * Evento nuove lobby
  * @param lobbies la lista di nuove lobby
  */
-case class LobbiesUpdate(lobbies: List[LobbyTemp]) extends PacmanEvent
+case class LobbiesUpdate(lobbies: List[Lobby]) extends PacmanEvent

@@ -11,7 +11,7 @@ import it.unibo.scalapacman.client.input.JavaKeyBinding.DefaultJavaKeyBinding
 import it.unibo.scalapacman.client.input.KeyMap
 import it.unibo.scalapacman.client.map.PacmanMap
 import it.unibo.scalapacman.client.model.LobbyJsonProtocol.lobbyFormat
-import it.unibo.scalapacman.client.model.{CreateGameData, GameModel, JoinGameData, LobbyTemp}
+import it.unibo.scalapacman.client.model.{CreateGameData, GameModel, JoinGameData, Lobby}
 import it.unibo.scalapacman.common.CommandType.CommandType
 import it.unibo.scalapacman.common.MoveCommandType.MoveCommandType
 import it.unibo.scalapacman.common.{Command, CommandType, CommandTypeHolder, JSONConverter, MapUpdater, MoveCommandTypeHolder, UpdateModelDTO}
@@ -20,7 +20,7 @@ import spray.json.DefaultJsonProtocol.listFormat
 
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor}
 import scala.util.{Failure, Success}
-import spray.json._
+import spray.json._ //scalastyle:ignore
 
 // scalastyle:off multiple.string.literals
 
@@ -300,7 +300,7 @@ private case class ControllerImpl(pacmanRestClient: PacmanRestClient) extends Co
    */
   private def handleLobbiesUpdate(jsonStr: String): Unit = {
     info(jsonStr)
-    _publisher.notifySubscribers(LobbiesUpdate(jsonStr.parseJson.convertTo[List[LobbyTemp]]))
+    _publisher.notifySubscribers(LobbiesUpdate(jsonStr.parseJson.convertTo[List[Lobby]]))
   }
 
   /**
