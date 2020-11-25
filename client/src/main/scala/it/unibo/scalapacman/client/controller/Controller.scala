@@ -5,7 +5,8 @@ import java.util.{Timer, TimerTask}
 import grizzled.slf4j.Logging
 import it.unibo.scalapacman.client.communication.PacmanRestClient
 import Action.{END_GAME, EXIT_APP, JOIN_GAME, MOVEMENT, PAUSE_RESUME, RESET_KEY_MAP, SAVE_KEY_MAP, START_GAME, SUBSCRIBE_TO_EVENTS}
-import it.unibo.scalapacman.client.event.{GamePaused, GameStarted, GameUpdate, LobbiesUpdate, NetworkIssue, NewKeyMap, PacmanPublisher, PacmanSubscriber}
+import it.unibo.scalapacman.client.event.{GamePaused, GameStarted, GameUpdate, LobbiesUpdate, LobbyUpdate, NetworkIssue,
+  NewKeyMap, PacmanPublisher, PacmanSubscriber}
 import it.unibo.scalapacman.client.gui.{LOBBIES_RECONNECTION_TIME_DELAY, WS_RECONNECTION_TIME_DELAY}
 import it.unibo.scalapacman.client.input.JavaKeyBinding.DefaultJavaKeyBinding
 import it.unibo.scalapacman.client.input.KeyMap
@@ -121,7 +122,7 @@ private case class ControllerImpl(pacmanRestClient: PacmanRestClient) extends Co
   }
 
   private def evalJoinGameMulti(gameId: Option[String], jgd: Option[JoinGameData]): Unit = gameId match {
-    case _ => debug(s"Join Game Multi non ancora implementato - ${jgd.get.gameId}")
+    case _ => connectToLobby(jgd.get.lobbyId)
   }
 
   /**
@@ -289,8 +290,11 @@ private case class ControllerImpl(pacmanRestClient: PacmanRestClient) extends Co
     _publisher.notifySubscribers(NetworkIssue(serverError = true, "Errore comunicazione col server"))
   }
 
+  /**
+   * Esegue chiamata connessione a servizio SSE per recupero lista lobby
+   */
   private def connectToLobbies(): Unit = pacmanRestClient.watchLobbies(handleLobbiesUpdate, handleLobbiesConnectionError) onComplete {
-    case Failure(exception) => info(s"Errore connessione SSE: ${exception.getMessage}"); handleLobbiesConnectionError()
+    case Failure(exception) => info(s"Errore connessione SSE lobbies: ${exception.getMessage}"); handleLobbiesConnectionError()
     case _ => Unit
   }
 
@@ -298,20 +302,41 @@ private case class ControllerImpl(pacmanRestClient: PacmanRestClient) extends Co
    * Gestisce i messaggi ricevuti sul canale SSE delle lobby
    * @param jsonStr i dati in formato JSON
    */
-  private def handleLobbiesUpdate(jsonStr: String): Unit = {
-    info(jsonStr)
+  private def handleLobbiesUpdate(jsonStr: String): Unit =
     _publisher.notifySubscribers(LobbiesUpdate(jsonStr.parseJson.convertTo[List[Lobby]]))
-  }
 
   /**
    * Gestisce l'interruzione al canale SSE delle lobby per un problema di rete
    */
   private def handleLobbiesConnectionError(): Unit = {
-    info(s"Nuovo tentativo connessione servizio lobby tra ${LOBBIES_RECONNECTION_TIME_DELAY/1000} secondi")
+    info(s"Nuovo tentativo connessione servizio lobbies tra ${LOBBIES_RECONNECTION_TIME_DELAY/1000} secondi")
     val t = new Timer
     t.schedule(new TimerTask() {
       override def run(): Unit = {
         connectToLobbies()
+        t.cancel()
+      }
+    }, LOBBIES_RECONNECTION_TIME_DELAY)
+  }
+
+  /**
+   * Esegue chiamata connessione a servizio SSE per recupero informazioni specifica lobby
+   * @param lobbyId id della lobby a cui collegarsi
+   */
+  private def connectToLobby(lobbyId: Int): Unit = pacmanRestClient.watchLobby(lobbyId, handleLobbyUpdate, handleLobbyConnectionError(lobbyId)) onComplete {
+    case Failure(exception) => info(s"Errore connessione SSE lobby: ${exception.getMessage}"); handleLobbyConnectionError(lobbyId)()
+    case _ => Unit
+  }
+
+  private def handleLobbyUpdate(jsonStr: String): Unit =
+    _publisher.notifySubscribers(LobbyUpdate(jsonStr.parseJson.convertTo[Lobby]))
+
+  private def handleLobbyConnectionError(lobbyId: Int)(): Unit = {
+    info(s"Nuovo tentativo connessione servizio lobby tra ${LOBBIES_RECONNECTION_TIME_DELAY/1000} secondi")
+    val t = new Timer
+    t.schedule(new TimerTask() {
+      override def run(): Unit = {
+        connectToLobby(lobbyId)
         t.cancel()
       }
     }, LOBBIES_RECONNECTION_TIME_DELAY)

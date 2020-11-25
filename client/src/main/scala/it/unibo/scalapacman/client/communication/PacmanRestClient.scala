@@ -47,8 +47,26 @@ trait PacmanRestClient extends Logging { this: HttpClient =>
   def watchLobbies(
                     messageHandler: String => Unit,
                     connectionErrorHandler: () => Unit,
-                  ): Future[Any] = {
-    val request = Get(PacmanRestClient.LOBBY_URL).withHeaders(
+                  ): Future[Any] = connectSSE(PacmanRestClient.LOBBY_URL, messageHandler, connectionErrorHandler)
+
+  /**
+   * Si connette al canale SSE per il recupero della lobby e dei suoi aggiornamenti
+   * @param id  identificativo della lobby
+   * @param messageHandler  callback a cui vengono passati i dati della lobby
+   * @param connectionErrorHandler  callback per errore di connessione al servizio
+   */
+  def watchLobby(
+                  id: Int,
+                  messageHandler: String => Unit,
+                  connectionErrorHandler: () => Unit
+                ): Future[Any] = connectSSE(s"${PacmanRestClient.LOBBY_URL}/$id", messageHandler, connectionErrorHandler)
+
+  private def connectSSE(
+                           requestUri: String,
+                           messageHandler: String => Unit,
+                           connectionErrorHandler: () => Unit
+                         ): Future[Any] = {
+    val request = Get(requestUri).withHeaders(
       RawHeader("Accept", "text/event-stream")
     )
 
@@ -65,23 +83,11 @@ trait PacmanRestClient extends Logging { this: HttpClient =>
           )
           Future.successful("OK")
         case _ => Unmarshal(response.entity).to[String] flatMap { body =>
-          Future.failed(new IOException(s"Errore connessione: $body"))
+          Future.failed(new IOException(s"Errore connessione SSE: $body"))
         }
       }
     }
   }
-
-  /**
-   * Si connette al canale SSE per il recupero della lobby e dei suoi aggiornamenti
-   * @param id  identificativo della lobby
-   * @param messageHandler  callback a cui vengono passati i dati della lobby
-   * @param connectionErrorHandler  callback per errore di connessione al servizio
-   */
-  def watchLobby(
-                  id: String,
-                  messageHandler: String => Unit,
-                  connectionErrorHandler: () => Unit
-                ): Future[Any] = ??? //TODO implementare
 
   /**
    * Invia richiesta nuova partita

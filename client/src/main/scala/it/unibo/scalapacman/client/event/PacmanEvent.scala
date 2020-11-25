@@ -43,3 +43,9 @@ case class NetworkIssue(serverError: Boolean, info: String) extends PacmanEvent
  * @param lobbies la lista di nuove lobby
  */
 case class LobbiesUpdate(lobbies: List[Lobby]) extends PacmanEvent
+
+/**
+ * Evento aggiornamento singola lobby
+ * @param lobby - le nuove informazioni della lobby
+ */
+case class LobbyUpdate(lobby: Lobby) extends PacmanEvent

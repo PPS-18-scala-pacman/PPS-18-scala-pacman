@@ -3,7 +3,7 @@ package it.unibo.scalapacman.client.gui
 import java.awt.{BorderLayout, CardLayout, Dimension}
 
 import it.unibo.scalapacman.client.controller.Controller
-import it.unibo.scalapacman.client.gui.View.{MENU, SETUP, OPTIONS, PLAY, STATS}
+import it.unibo.scalapacman.client.gui.View.{LOBBY, MENU, OPTIONS, PLAY, SETUP, STATS}
 import javax.swing.{JFrame, JPanel, WindowConstants}
 
 object GUI {
@@ -29,11 +29,13 @@ class GUIImpl(implicit val controller: Controller) extends ViewChanger {
   private val playView: PlayView = PlayView()
   private val optionsView: OptionsView = OptionsView()
   private val statsView: StatsView = StatsView()
-  private val multiView: SetupGameView = SetupGameView()
+  private val setupGameView: SetupGameView = SetupGameView()
+  private val lobbyView: LobbyView = LobbyView()
 
   mainPanel add(menuView, MENU.name)
   mainPanel add(playView, PLAY.name)
-  mainPanel add(multiView, SETUP.name)
+  mainPanel add(setupGameView, SETUP.name)
+  mainPanel add(lobbyView, LOBBY.name)
   mainPanel add(optionsView, OPTIONS.name)
   mainPanel add(statsView, STATS.name)
 

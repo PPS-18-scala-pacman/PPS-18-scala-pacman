@@ -10,6 +10,8 @@ object View {
   case object MENU extends View { val name = "menu" }
   /** Identifica la schermata per la scelta della modalità di gioco */
   case object SETUP extends View { val name = "setup" }
+  /** Identifica la schermata di lobby */
+  case object LOBBY extends View { val name = "lobby" }
   /** Identifica la schermata di gioco, dove l'utente effettivamente può giocare a Pacman */
   case object PLAY extends View { val name = "play" }
   /** Identifica la schermata di configurazione tasti */

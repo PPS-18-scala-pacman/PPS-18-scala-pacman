@@ -6,7 +6,9 @@ case class Lobby(id: Int, description: String, size: Int, participants: List[Par
   override def toString: String = s"$description - (${participants.size}/$size)"
 }
 
-case class Participant(username: String, host: Boolean, pacmanType: Int, lobbyId: Int)
+case class Participant(username: String, host: Boolean, pacmanType: Int, lobbyId: Int) {
+  override def toString: String = username
+}
 
 object LobbyJsonProtocol extends DefaultJsonProtocol {
 

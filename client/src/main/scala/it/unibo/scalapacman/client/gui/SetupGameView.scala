@@ -5,7 +5,7 @@ import java.awt.{BorderLayout, GridLayout}
 import it.unibo.scalapacman.client.controller.Action.{JOIN_GAME, START_GAME, SUBSCRIBE_TO_EVENTS}
 import it.unibo.scalapacman.client.controller.Controller
 import it.unibo.scalapacman.client.event.{LobbiesUpdate, PacmanEvent, PacmanSubscriber}
-import it.unibo.scalapacman.client.gui.View.{MENU, PLAY}
+import it.unibo.scalapacman.client.gui.View.{LOBBY, MENU, PLAY}
 import it.unibo.scalapacman.client.model.{CreateGameData, JoinGameData, Lobby}
 import javax.swing.{BorderFactory, Box, BoxLayout, DefaultListModel, JButton, JLabel, JScrollPane, JSeparator, JSpinner, JTextField, SwingConstants}
 
@@ -127,12 +127,13 @@ class SetupGameView(implicit controller: Controller, viewChanger: ViewChanger) e
   }
 
   private def handleJoinGameButton(): Unit = if (checkNickName()) {
-        val lobby: Lobby = lobbyJList.getSelectedValue
+    val lobby: Lobby = lobbyJList.getSelectedValue
 
     if (lobby != null) {
-      askToController(JOIN_GAME, Some(JoinGameData(nicknameTextField.getText(), lobby.id.toString)))
+      askToController(JOIN_GAME, Some(JoinGameData(nicknameTextField.getText(), lobby.id)))
     }
-//    viewChanger.changeView(View.LOBBY)
+
+    viewChanger.changeView(LOBBY)
   }
 
   private def createNumberPlayersField(): JSpinner = createNumericJSpinner(MIN_PLAYERS, MIN_PLAYERS, MAX_PLAYERS)
