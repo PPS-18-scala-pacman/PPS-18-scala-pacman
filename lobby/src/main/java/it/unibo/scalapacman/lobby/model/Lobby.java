@@ -14,17 +14,19 @@ public class Lobby {
   private final Long id;
   private String description;
   private Integer size;
+  private String hostUsername;
   private List<Participant> participants;
 
-  public Lobby(final Long id, final String description, Integer size) {
-    this(id, description, size, new ArrayList<>(size));
+  public Lobby(final Long id, final String description, Integer size, String hostUsername) {
+    this(id, description, size, hostUsername, new ArrayList<>(size));
   }
 
-  public Lobby(final Long id, final String description, Integer size, List<Participant> participants) {
+  public Lobby(final Long id, final String description, Integer size, String hostUsername, List<Participant> participants) {
     if (participants.size() > size) throw new IllegalArgumentException("participants can't have more elements than size value");
     this.id = id;
     this.description = description;
     this.size = size;
+    this.hostUsername = hostUsername;
     this.participants = participants;
   }
 
@@ -33,6 +35,7 @@ public class Lobby {
       json.getLong("id"),
       json.getString("description"),
       json.getInteger("size"),
+      json.getString("hostUsername"),
       Optional.ofNullable(json.getJsonArray("participants")).orElse(new JsonArray()).stream()
         .map(jsonObj -> new Participant((JsonObject) jsonObj))
         .collect(Collectors.toList())
@@ -59,11 +62,19 @@ public class Lobby {
     this.size = size;
   }
 
-  public List<Participant> getAttendees() {
+  public String getHostUsername() {
+    return hostUsername;
+  }
+
+  public void setHostUsername(String hostUsername) {
+    this.hostUsername = hostUsername;
+  }
+
+  public List<Participant> getParticipants() {
     return participants;
   }
 
-  public void setAttendees(List<Participant> participants) {
+  public void setParticipants(List<Participant> participants) {
     this.participants = participants;
   }
 
@@ -76,6 +87,7 @@ public class Lobby {
       .put("id", this.id)
       .put("description", this.description)
       .put("size", this.size)
+      .put("hostUsername", this.hostUsername)
       .put("participants", this.participants.stream().map(Participant::toJson).collect(Collectors.toList()));
   }
 
@@ -84,6 +96,8 @@ public class Lobby {
     final int prime = 31;
     int result = 1;
     result = prime * result + ((description == null) ? 0 : description.hashCode());
+    result = prime * result + ((size == null) ? 0 : size.hashCode());
+    result = prime * result + ((hostUsername == null) ? 0 : hostUsername.hashCode());
     result = prime * result + ((id == null) ? 0 : id.hashCode());
     return result;
   }
@@ -94,7 +108,9 @@ public class Lobby {
       final Lobby other = (Lobby) obj;
 
       return this.id.equals(other.id)
-        && this.description.equals(other.getDescription());
+        && this.description.equals(other.getDescription())
+        && this.size.equals(other.getSize())
+        && this.hostUsername.equals(other.getHostUsername());
     }
 
     return false;

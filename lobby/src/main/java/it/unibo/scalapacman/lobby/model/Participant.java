@@ -5,17 +5,15 @@ import it.unibo.scalapacman.lib.model.PacmanType;
 
 public class Participant {
   private String username;
-  private Boolean host;
   private PacmanType.PacmanType pacmanType;
   private Long lobbyId;
 
-  public Participant(final String username, final Boolean host, final Integer pacmanType, final Long lobbyId) {
-    this(username, host, PacmanType.indexToPlayerTypeVal(pacmanType), lobbyId);
+  public Participant(final String username, final Integer pacmanType, final Long lobbyId) {
+    this(username, PacmanType.indexToPlayerTypeVal(pacmanType), lobbyId);
   }
 
-  public Participant(final String username, final Boolean host, final PacmanType.PacmanType pacmanType, final Long lobbyId) {
+  public Participant(final String username, final PacmanType.PacmanType pacmanType, final Long lobbyId) {
     this.username = username;
-    this.host = host;
     this.pacmanType = pacmanType;
     this.lobbyId = lobbyId;
   }
@@ -23,7 +21,6 @@ public class Participant {
   public Participant(final JsonObject json) {
     this(
       json.getString("username"),
-      json.getBoolean("host"),
       json.getInteger("pacmanType"),
       json.getLong("lobbyId")
     );
@@ -35,14 +32,6 @@ public class Participant {
 
   public void setUsername(String username) {
     this.username = username;
-  }
-
-  public Boolean getHost() {
-    return host;
-  }
-
-  public void setHost(Boolean host) {
-    this.host = host;
   }
 
   public PacmanType.PacmanType getPacmanType() {
@@ -68,7 +57,6 @@ public class Participant {
   public JsonObject toJson() {
     return new JsonObject()
       .put("username", this.username)
-      .put("host", this.host)
       .put("pacmanType", PacmanType.playerTypeValToIndex(this.pacmanType))
       .put("lobbyId", this.lobbyId);
   }
@@ -77,7 +65,6 @@ public class Participant {
   public int hashCode() {
     final int prime = 17;
     int result = 1;
-    result = prime * result + ((host == null) ? 0 : host.hashCode());
     result = prime * result + ((username == null) ? 0 : username.hashCode());
     result = prime * result + ((pacmanType == null) ? 0 : pacmanType.hashCode());
     result = prime * result + ((lobbyId == null) ? 0 : lobbyId.hashCode());
@@ -90,7 +77,6 @@ public class Participant {
       final Participant other = (Participant) obj;
 
       return this.username.equals(other.username)
-        && this.host.equals(other.host)
         && this.pacmanType.equals(other.pacmanType)
         && this.lobbyId.equals(other.lobbyId);
     }
