@@ -12,6 +12,7 @@ CREATE TABLE participant (
     CONSTRAINT fk_lobby
         FOREIGN KEY(lobby_id)
     	  REFERENCES lobby(lobby_id)
+        ON DELETE CASCADE
 );
 
 INSERT INTO lobby (description, lobby_size)
