@@ -21,6 +21,8 @@ object Settings {
 
   val bufferSizeWS: Int = appConf.getInt("connection.buffer-size")
 
+  val gameDelay: FiniteDuration = FiniteDuration(appConf.getInt("settings.game-delay"),  TimeUnit.SECONDS)
+
   val levelDifficulty = 1
 
   val maxPlayersNumber = 4
