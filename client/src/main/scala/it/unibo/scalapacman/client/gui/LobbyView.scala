@@ -4,7 +4,7 @@ import java.awt.BorderLayout
 
 import it.unibo.scalapacman.client.controller.Action.{LEAVE_LOBBY, SUBSCRIBE_TO_EVENTS}
 import it.unibo.scalapacman.client.controller.Controller
-import it.unibo.scalapacman.client.event.{LobbyUpdate, PacmanEvent, PacmanSubscriber}
+import it.unibo.scalapacman.client.event.{LobbyDeleted, LobbyUpdate, PacmanEvent, PacmanSubscriber}
 import it.unibo.scalapacman.client.gui.View.SETUP
 import it.unibo.scalapacman.client.model.{Lobby, Participant}
 import javax.swing.{BorderFactory, DefaultListModel, JButton, JLabel, JScrollPane, SwingConstants}
@@ -60,6 +60,7 @@ class LobbyView(implicit controller: Controller, viewChanger: ViewChanger) exten
 
   private def handlePacmanEvent(pe: PacmanEvent): Unit = pe match {
     case LobbyUpdate(lobby) => updateLobby(lobby)
+    case LobbyDeleted() => viewChanger.changeView(SETUP)
     case _ => Unit
   }
 

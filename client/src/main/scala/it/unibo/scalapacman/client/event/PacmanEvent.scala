@@ -49,3 +49,8 @@ case class LobbiesUpdate(lobbies: List[Lobby]) extends PacmanEvent
  * @param lobby - le nuove informazioni della lobby
  */
 case class LobbyUpdate(lobby: Lobby) extends PacmanEvent
+
+/**
+ * Evento lobby eliminata
+ */
+case class LobbyDeleted() extends PacmanEvent

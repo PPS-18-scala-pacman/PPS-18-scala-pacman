@@ -47,11 +47,13 @@ trait PacmanRestClient extends Logging { this: HttpClient =>
   def watchLobbies(
                     messageHandler: String => Unit,
                     connectionErrorHandler: () => Unit,
+                    onSSEClose: () => Unit,
                   ): Future[Any] =
     connectSSE(
       PacmanRestClient.LOBBY_URL,
       messageHandler,
       connectionErrorHandler,
+      onSSEClose,
       _ => true
     )
 
@@ -64,12 +66,14 @@ trait PacmanRestClient extends Logging { this: HttpClient =>
   def watchLobby(
                   id: Int,
                   messageHandler: String => Unit,
-                  connectionErrorHandler: () => Unit
+                  connectionErrorHandler: () => Unit,
+                  onSSEClose: () => Unit,
                 ): Future[Any] =
     connectSSE(
       s"${PacmanRestClient.LOBBY_URL}/$id",
       messageHandler,
       connectionErrorHandler,
+      onSSEClose,
       !_.eventType.contains(LobbySSEEventType.LOBBY_DELETE.toString)
     )
 
@@ -77,6 +81,7 @@ trait PacmanRestClient extends Logging { this: HttpClient =>
                            requestUri: String,
                            messageHandler: String => Unit,
                            connectionErrorHandler: () => Unit,
+                           onSSEClose: () => Unit,
                            sseEventTypeStop: ServerSentEvent => Boolean
                          ): Future[Any] = {
     val request = Get(requestUri).withHeaders(
@@ -89,7 +94,9 @@ trait PacmanRestClient extends Logging { this: HttpClient =>
           Unmarshal(response.entity).to[Source[ServerSentEvent, NotUsed]].foreach(
             _.takeWhile(sseEventTypeStop(_))
               .runForeach(sse => messageHandler(sse.getData())) onComplete {
-                case Success(_) => info("SSE chiusa correttamente")
+                case Success(_) =>
+                  info("SSE chiusa correttamente")
+                  onSSEClose()
                 case Failure(exception) =>
                   info(s"Connessione SSE interrotta ${exception.getMessage}")
                   connectionErrorHandler()
