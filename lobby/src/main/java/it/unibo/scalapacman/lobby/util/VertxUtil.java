@@ -9,15 +9,8 @@ import rx.functions.Action1;
 public class VertxUtil {
   private static final Logger logger = LoggerFactory.getLogger(VertxUtil.class);
 
-  public static Action1<Throwable> onRxError(final RoutingContext routingContext) {
-    return (Throwable ex) -> {
-      if (ex instanceof APIException) {
-        logger.info(ex.getMessage());
-      } else {
-        logger.error(ex.getMessage(), ex);
-      }
-      routingContext.fail(ex);
-    };
+  public static Action1<Throwable> onRoutingError(final RoutingContext routingContext) {
+    return routingContext::fail;
   }
 
   public static void onError(final RoutingContext routingContext) {
@@ -25,6 +18,10 @@ public class VertxUtil {
   }
 
   public static void handleException(final Throwable ex) {
-    logger.error(ex.getMessage(), ex);
+    if (ex instanceof APIException) {
+      logger.info(ex.getMessage());
+    } else {
+      logger.error(ex.getMessage(), ex);
+    }
   }
 }

@@ -10,6 +10,8 @@ public interface Dao<T, ID> {
 
   Single<List<T>> getAll();
 
+  Single<List<T>> getAll(T searchParam);
+
   Single<T> create(T t);
 
   Single<T> update(ID id, T t);

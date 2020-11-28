@@ -3,13 +3,15 @@ package it.unibo.scalapacman.lobby.model;
 import io.vertx.core.json.JsonObject;
 import it.unibo.scalapacman.lib.model.PacmanType;
 
+import java.util.Optional;
+
 public class Participant implements Jsonable {
   private String username;
   private PacmanType.PacmanType pacmanType;
   private Long lobbyId;
 
   public Participant(final String username, final Integer pacmanType, final Long lobbyId) {
-    this(username, PacmanType.indexToPlayerTypeVal(pacmanType), lobbyId);
+    this(username, Optional.ofNullable(pacmanType).map(PacmanType::indexToPlayerTypeVal).orElse(null), lobbyId);
   }
 
   public Participant(final String username, final PacmanType.PacmanType pacmanType, final Long lobbyId) {
@@ -39,7 +41,7 @@ public class Participant implements Jsonable {
   }
 
   public Integer getPacmanTypeAsInteger() {
-    return PacmanType.playerTypeValToIndex(pacmanType);
+    return Optional.ofNullable(pacmanType).map(PacmanType::playerTypeValToIndex).orElse(null);
   }
 
   public void setPacmanType(PacmanType.PacmanType pacmanType) {
@@ -57,7 +59,7 @@ public class Participant implements Jsonable {
   public JsonObject toJson() {
     return new JsonObject()
       .put("username", this.username)
-      .put("pacmanType", PacmanType.playerTypeValToIndex(this.pacmanType))
+      .put("pacmanType", this.getPacmanTypeAsInteger())
       .put("lobbyId", this.lobbyId);
   }
 

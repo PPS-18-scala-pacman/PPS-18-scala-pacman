@@ -40,7 +40,7 @@ public class ParticipantResource {
           .setStatusCode(C.HTTP.ResponseCode.OK)
           .end(array.toString());
       },
-      VertxUtil.onRxError(routingContext)
+      VertxUtil.onRoutingError(routingContext)
     );
   }
 
@@ -53,7 +53,7 @@ public class ParticipantResource {
             .putHeader(C.HTTP.HeaderElement.CONTENT_TYPE, C.HTTP.HeaderElement.ContentType.APPLICATION_JSON)
             .setStatusCode(C.HTTP.ResponseCode.OK)
             .end(result.toJson().toString()),
-        VertxUtil.onRxError(routingContext)
+        VertxUtil.onRoutingError(routingContext)
       );
   }
 
@@ -65,7 +65,7 @@ public class ParticipantResource {
           routingContext.response().setStatusCode(C.HTTP.ResponseCode.CREATED)
             .putHeader(C.HTTP.HeaderElement.CONTENT_TYPE, C.HTTP.HeaderElement.ContentType.APPLICATION_JSON)
             .end(result.toJson().toString()),
-        VertxUtil.onRxError(routingContext)
+        VertxUtil.onRoutingError(routingContext)
       );
   }
 
@@ -79,7 +79,7 @@ public class ParticipantResource {
           .setStatusCode(C.HTTP.ResponseCode.OK)
           .putHeader(C.HTTP.HeaderElement.CONTENT_TYPE, C.HTTP.HeaderElement.ContentType.APPLICATION_JSON)
           .end(result.toJson().toString()),
-      VertxUtil.onRxError(routingContext)
+      VertxUtil.onRoutingError(routingContext)
     );
   }
 
@@ -92,7 +92,7 @@ public class ParticipantResource {
           .setStatusCode(C.HTTP.ResponseCode.OK)
           .putHeader(C.HTTP.HeaderElement.CONTENT_TYPE, C.HTTP.HeaderElement.ContentType.APPLICATION_JSON)
           .end(result.toJson().toString()),
-      VertxUtil.onRxError(routingContext)
+      VertxUtil.onRoutingError(routingContext)
     );
   }
 }

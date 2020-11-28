@@ -10,6 +10,7 @@ import it.unibo.scalapacman.lobby.util.exception.NotFoundException;
 import rx.Single;
 
 import java.util.List;
+import java.util.StringJoiner;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
@@ -31,9 +32,34 @@ public class ParticipantDao implements Dao<Participant, String> {
   }
 
   public Single<List<Participant>> getAll() {
+    return this.getAll(null);
+  }
+
+  public Single<List<Participant>> getAll(Participant searchParam) {
+    String query = "SELECT * FROM participant";
+    Tuple tuple = Tuple.tuple();
+
+    // Search filters
+    StringJoiner stringJoiner = new StringJoiner(" AND ", " WHERE ", "").setEmptyValue("");
+    if (searchParam != null) {
+      if (searchParam.getUsername() != null) {
+        tuple.addValue(searchParam.getUsername());
+        stringJoiner.add("username = $" + tuple.size());
+      }
+      if (searchParam.getPacmanTypeAsInteger() != null) {
+        tuple.addValue(searchParam.getPacmanTypeAsInteger());
+        stringJoiner.add("pacman_type = $" + tuple.size());
+      }
+      if (searchParam.getLobbyId() != null) {
+        tuple.addValue(searchParam.getLobbyId());
+        stringJoiner.add("lobby_id = $" + tuple.size());
+      }
+    }
+    query += stringJoiner.toString();
+
     return dbClient
-      .query("SELECT * FROM participant")
-      .rxExecute()
+      .preparedQuery(query)
+      .rxExecute(tuple)
       .map(rows -> {
         logger.debug("Got " + rows.size() + " rows ");
         return StreamSupport.stream(rows.spliterator(), false)

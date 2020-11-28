@@ -12,6 +12,7 @@ import rx.Single;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.StringJoiner;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
@@ -51,9 +52,38 @@ public class LobbyDao implements Dao<Lobby, Long> {
   }
 
   public Single<List<Lobby>> getAll() {
+    return this.getAll(null);
+  }
+
+  public Single<List<Lobby>> getAll(Lobby searchParam) {
+    String query = "SELECT * FROM lobby LEFT OUTER JOIN participant ON (lobby.lobby_id = participant.lobby_id)";
+    Tuple tuple = Tuple.tuple();
+
+    // Search filters
+    StringJoiner stringJoiner = new StringJoiner(" AND ", " WHERE ", "").setEmptyValue("");
+    if (searchParam != null) {
+      if (searchParam.getId() != null) {
+        tuple.addValue(searchParam.getId());
+        stringJoiner.add("lobby.lobby_id = $" + tuple.size());
+      }
+      if (searchParam.getDescription() != null) {
+        tuple.addValue(searchParam.getDescription());
+        stringJoiner.add("lobby.description = $" + tuple.size());
+      }
+      if (searchParam.getSize() != null) {
+        tuple.addValue(searchParam.getSize());
+        stringJoiner.add("lobby.size = $" + tuple.size());
+      }
+      if (searchParam.getHostUsername() != null) {
+        tuple.addValue(searchParam.getHostUsername());
+        stringJoiner.add("lobby.host_username = $" + tuple.size());
+      }
+    }
+    query += stringJoiner.toString();
+
     return dbClient
-      .query("SELECT * FROM lobby LEFT OUTER JOIN participant ON (lobby.lobby_id = participant.lobby_id)")
-      .rxExecute()
+      .preparedQuery(query)
+      .rxExecute(tuple)
       .map(rows -> {
         logger.debug("Got " + rows.size() + " rows ");
         return StreamSupport.stream(rows.spliterator(), false)
