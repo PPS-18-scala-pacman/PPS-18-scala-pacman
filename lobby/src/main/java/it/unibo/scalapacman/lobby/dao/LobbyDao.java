@@ -6,9 +6,11 @@ import io.vertx.rxjava.pgclient.PgPool;
 import io.vertx.rxjava.sqlclient.Row;
 import io.vertx.rxjava.sqlclient.Tuple;
 import it.unibo.scalapacman.lobby.model.Lobby;
+import it.unibo.scalapacman.lobby.model.Participant;
 import it.unibo.scalapacman.lobby.util.exception.NotFoundException;
 import rx.Single;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
@@ -23,11 +25,16 @@ public class LobbyDao implements Dao<Lobby, Long> {
   }
 
   public static Lobby toEntity(Row row) {
+    ArrayList<Participant> participants = new ArrayList<>(1);
+    if (row.getString("username") != null) {
+      participants.add(ParticipantDao.toEntity(row));
+    }
     return new Lobby(
       row.getLong("lobby_id"),
       row.getString("description"),
-      row.getInteger("lobby_size"),
-      row.getString("host_username")
+      row.getShort("lobby_size"),
+      row.getString("host_username"),
+      participants
     );
   }
 
@@ -80,7 +87,7 @@ public class LobbyDao implements Dao<Lobby, Long> {
     return dbClient
       .preparedQuery(
         "WITH data(description, lobby_size, username) AS (" +
-          "   VALUES ($1, $2, $3)" +
+          "   VALUES ($1, $2::smallint, $3)" +
           ")" +
           ", insert_lobby AS (" +
           "   INSERT INTO lobby (description, lobby_size, host_username)" +
@@ -95,9 +102,9 @@ public class LobbyDao implements Dao<Lobby, Long> {
           "   INNER JOIN insert_lobby l ON l.host_username = d.username" +
           "   RETURNING *" +
           ")" +
-          "SELECT l.lobby_id, l.description, l.lobby_size, l.host_username, p.username, p.pacman_type" +
-          "FROM   insert_participant p" +
-          "INNER JOIN insert_lobby l ON l.host_username = p.username"
+          " SELECT l.lobby_id, l.description, l.lobby_size, l.host_username, p.username, p.pacman_type" +
+          " FROM   insert_participant p" +
+          " INNER JOIN insert_lobby l ON l.host_username = p.username"
       )
       .rxExecute(Tuple.of(lobby.getDescription(), lobby.getSize(), lobby.getHostUsername()))
       .map(rows -> {
