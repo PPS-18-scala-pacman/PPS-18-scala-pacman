@@ -78,7 +78,27 @@ public class LobbyDao implements Dao<Lobby, Long> {
 
   public Single<Lobby> create(Lobby lobby) {
     return dbClient
-      .preparedQuery("INSERT INTO lobby (description, lobby_size, host_username) VALUES ($1, $2, $3) RETURNING *")
+      .preparedQuery(
+        "WITH data(description, lobby_size, username) AS (" +
+          "   VALUES ($1, $2, $3)" +
+          ")" +
+          ", insert_lobby AS (" +
+          "   INSERT INTO lobby (description, lobby_size, host_username)" +
+          "   SELECT description, lobby_size, username as host_username" +
+          "   FROM   data" +
+          "   RETURNING *" +
+          ")" +
+          ", insert_participant AS (" +
+          "   INSERT INTO participant (username, lobby_id)" +
+          "   SELECT d.username, l.lobby_id" +
+          "   FROM   data d" +
+          "   INNER JOIN insert_lobby l ON l.host_username = d.username" +
+          "   RETURNING *" +
+          ")" +
+          "SELECT l.lobby_id, l.description, l.lobby_size, l.host_username, p.username, p.pacman_type" +
+          "FROM   insert_participant p" +
+          "INNER JOIN insert_lobby l ON l.host_username = p.username"
+      )
       .rxExecute(Tuple.of(lobby.getDescription(), lobby.getSize(), lobby.getHostUsername()))
       .map(rows -> {
         logger.debug("Got " + rows.size() + " rows ");
