@@ -12,6 +12,7 @@ import rx.Single;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.StringJoiner;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
@@ -27,9 +28,12 @@ public class LobbyDao implements Dao<Lobby, Long> {
 
   public static Lobby toEntity(Row row) {
     ArrayList<Participant> participants = new ArrayList<>(1);
-    if (row.getString("username") != null) {
-      participants.add(ParticipantDao.toEntity(row));
-    }
+    try {
+      if (row.getString("username") != null) {
+        participants.add(ParticipantDao.toEntity(row));
+      }
+    } catch (NoSuchElementException ex) { /* Nothing to do, the column doesn't exists */ }
+
     return new Lobby(
       row.getLong("lobby_id"),
       row.getString("description"),
