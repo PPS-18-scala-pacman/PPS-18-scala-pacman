@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-public class Lobby {
+public class Lobby implements Jsonable {
 
   private final Long id;
   private String description;

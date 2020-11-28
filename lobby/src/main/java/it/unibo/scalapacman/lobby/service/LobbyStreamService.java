@@ -4,7 +4,12 @@ import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 import it.unibo.scalapacman.lobby.dao.Dao;
 import it.unibo.scalapacman.lobby.model.Lobby;
+import it.unibo.scalapacman.lobby.util.ListJsonable;
+import it.unibo.scalapacman.lobby.util.REST;
+import it.unibo.scalapacman.lobby.util.SSE;
+import it.unibo.scalapacman.lobby.util.exception.NotFoundException;
 import rx.Observable;
+import rx.Single;
 import rx.subjects.BehaviorSubject;
 
 import java.util.*;
@@ -13,8 +18,8 @@ public class LobbyStreamService {
   private final Logger logger = LoggerFactory.getLogger(LobbyStreamService.class);
 
   private final Dao<Lobby, Long> dao;
-  private final BehaviorSubject<List<Lobby>> getAllSubject = BehaviorSubject.create(new ArrayList<>());
-  private final Map<Long, BehaviorSubject<Lobby>> getByIdSubject = new HashMap<>();
+  private final BehaviorSubject<SSE.Event<LobbyStreamEventType, ListJsonable<Lobby>>> getAllSubject = BehaviorSubject.create();
+  private final Map<Long, BehaviorSubject<SSE.Event<LobbyStreamEventType, Lobby>>> getByIdSubject = new HashMap<>();
 
   public LobbyStreamService(Dao<Lobby, Long> dao) {
     this.dao = dao;
@@ -22,53 +27,59 @@ public class LobbyStreamService {
   }
 
   private void initStreams() {
-    this.updateStreamAll();
+    this.updateStreamAll(new LobbyStreamEventType(LobbyStreamObject.Lobby, REST.Create));
   }
 
-  public Observable<List<Lobby>> getStreamAll() {
+  public Observable<SSE.Event<LobbyStreamEventType, ListJsonable<Lobby>>> getStreamAll() {
     return getAllSubject;
   }
 
-  public Observable<Lobby> getStreamById(Long id) {
+  public Observable<SSE.Event<LobbyStreamEventType, Lobby>> getStreamById(Long id) {
+    LobbyStreamEventType type = new LobbyStreamEventType(LobbyStreamObject.Lobby, REST.Create);
     if (!getByIdSubject.containsKey(id)) {
-      BehaviorSubject<Lobby> subject = BehaviorSubject.create();
-      this.dao.get(id).subscribe(subject::onNext, this::onError);
+      BehaviorSubject<SSE.Event<LobbyStreamEventType, Lobby>> subject = BehaviorSubject.create();
+      this.dao.get(id)
+        .map(entity -> new SSE.Event<>(type, entity))
+        .subscribe(subject::onNext, this::onError);
       getByIdSubject.put(id, subject);
     }
 
     return getByIdSubject.get(id);
   }
 
-  public void updateStreams(Long entityId) {
-    this.updateStreams(entityId, false);
-  }
-  public void updateStreams(Long entityId, boolean delete) {
-    this.dao.get(entityId).subscribe(entity -> this.updateStreams(entity, delete), this::onError);
-  }
-
-  public void updateStreams(Lobby entity) {
-    this.updateStreams(entity, false);
-  }
-
-  public void updateStreams(Lobby entity, boolean delete) {
-    this.updateStreamAll();
-    this.updateStreamById(entity, delete);
+  public void updateStreams(Long lobbyId, LobbyStreamEventType type) {
+    this.dao.get(lobbyId)
+      .onErrorResumeNext(err -> {
+        if (type.getHttpType().equals(REST.Delete) && err instanceof NotFoundException) {
+          return Single.just(null);
+        }
+        return Single.error(err);
+      })
+      .subscribe(lobby -> this.updateStreams(lobbyId, lobby, type), this::onError);
   }
 
-  private void updateStreamAll() {
-    this.dao.getAll().subscribe(getAllSubject::onNext, this::onError);
+  public void updateStreams(Long lobbyId, Lobby lobby, LobbyStreamEventType type) {
+    this.updateStreamAll(type);
+    this.updateStreamById(lobbyId, lobby, type);
   }
 
-  private void updateStreamById(Lobby entity, boolean delete) {
-    if (delete) {
-      Optional.ofNullable(this.getByIdSubject.get(entity.getId())).ifPresent(subject -> {
-        subject.onNext(null);
-        subject.onCompleted();
+  private void updateStreamAll(LobbyStreamEventType type) {
+    this.dao.getAll()
+      .map(entities -> new SSE.Event<>(type, new ListJsonable<>(entities)))
+      .subscribe(getAllSubject::onNext, this::onError);
+  }
+
+  private void updateStreamById(Long lobbyId, Lobby lobby, LobbyStreamEventType type) {
+    SSE.Event<LobbyStreamEventType, Lobby> event = new SSE.Event<>(type, lobby);
+    Optional.ofNullable(this.getByIdSubject.get(lobbyId))
+      .ifPresent(subject -> {
+        subject.onNext(event);
+
+        if (type.getHttpType().equals(REST.Delete)) {
+          subject.onCompleted();
+          this.getByIdSubject.remove(lobbyId);
+        }
       });
-      this.getByIdSubject.remove(entity.getId());
-    } else {
-      Optional.ofNullable(this.getByIdSubject.get(entity.getId())).ifPresent(subject -> subject.onNext(entity));
-    }
   }
 
   private void onError(Throwable ex) {

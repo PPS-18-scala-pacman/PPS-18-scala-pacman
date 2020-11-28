@@ -10,6 +10,7 @@ import io.vertx.rxjava.ext.web.RoutingContext;
 import it.unibo.scalapacman.lobby.C;
 import it.unibo.scalapacman.lobby.model.Lobby;
 import it.unibo.scalapacman.lobby.service.LobbyService;
+import it.unibo.scalapacman.lobby.service.LobbyStreamEventType;
 import it.unibo.scalapacman.lobby.service.LobbyStreamService;
 import it.unibo.scalapacman.lobby.util.JsonCollector;
 import it.unibo.scalapacman.lobby.util.ResourceUtil;
@@ -59,17 +60,10 @@ public class LobbyResource {
       .putHeader("Connection", "keep-alive")
       .putHeader("Cache-Control", "no-cache");
 
-    String template = "data: %s\n\n";
-
     this.streamService.getStreamAll().subscribe(
-      lobbies -> {
-        final JsonArray array = lobbies.stream()
-          .map(Lobby::toJson)
-          .collect(JsonCollector.toJsonArray());
-
+      event ->
         routingContext.response()
-          .write(String.format(template, array.toString()));
-      },
+          .write(event.toString()),
       ResourceUtil.onError(routingContext),
       () -> SSE.close(routingContext)
     );
@@ -97,13 +91,11 @@ public class LobbyResource {
       .putHeader("Connection", "keep-alive")
       .putHeader("Cache-Control", "no-cache");
 
-    String template = "data: %s\n\n";
-
     this.streamService.getStreamById(id).subscribe(
       result -> {
-        Optional<Lobby> lobbyOpt = Optional.ofNullable(result);
+        Optional<SSE.Event<LobbyStreamEventType, Lobby>> eventOpt = Optional.ofNullable(result);
         routingContext.response()
-          .write(String.format(template, lobbyOpt.map(lobby -> lobby.toJson().toString()).orElse("null")));
+          .write(eventOpt.map(SSE.Event::toString).orElse(""));
       },
       ResourceUtil.onError(routingContext),
       () -> SSE.close(routingContext)

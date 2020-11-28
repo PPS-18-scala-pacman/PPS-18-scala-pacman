@@ -3,7 +3,7 @@ package it.unibo.scalapacman.lobby.model;
 import io.vertx.core.json.JsonObject;
 import it.unibo.scalapacman.lib.model.PacmanType;
 
-public class Participant {
+public class Participant implements Jsonable {
   private String username;
   private PacmanType.PacmanType pacmanType;
   private Long lobbyId;
