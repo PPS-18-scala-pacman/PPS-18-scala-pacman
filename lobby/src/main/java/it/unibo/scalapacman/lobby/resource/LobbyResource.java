@@ -13,7 +13,7 @@ import it.unibo.scalapacman.lobby.service.LobbyService;
 import it.unibo.scalapacman.lobby.service.LobbyStreamEventType;
 import it.unibo.scalapacman.lobby.service.LobbyStreamService;
 import it.unibo.scalapacman.lobby.util.JsonCollector;
-import it.unibo.scalapacman.lobby.util.ResourceUtil;
+import it.unibo.scalapacman.lobby.util.VertxUtil;
 import it.unibo.scalapacman.lobby.util.SSE;
 
 import java.util.Optional;
@@ -49,7 +49,7 @@ public class LobbyResource {
           .setStatusCode(C.HTTP.ResponseCode.OK)
           .end(array.toString());
       },
-      ResourceUtil.onError(routingContext)
+      VertxUtil.onRxError(routingContext)
     );
   }
 
@@ -64,7 +64,7 @@ public class LobbyResource {
       event ->
         routingContext.response()
           .write(event.toString()),
-      ResourceUtil.onError(routingContext),
+      VertxUtil.onRxError(routingContext),
       () -> SSE.close(routingContext)
     );
   }
@@ -78,7 +78,7 @@ public class LobbyResource {
             .putHeader(C.HTTP.HeaderElement.CONTENT_TYPE, C.HTTP.HeaderElement.ContentType.APPLICATION_JSON)
             .setStatusCode(C.HTTP.ResponseCode.OK)
             .end(result.toJson().toString()),
-        ResourceUtil.onError(routingContext)
+        VertxUtil.onRxError(routingContext)
       );
   }
 
@@ -97,7 +97,7 @@ public class LobbyResource {
         routingContext.response()
           .write(eventOpt.map(SSE.Event::toString).orElse(""));
       },
-      ResourceUtil.onError(routingContext),
+      VertxUtil.onRxError(routingContext),
       () -> SSE.close(routingContext)
     );
   }
@@ -110,7 +110,7 @@ public class LobbyResource {
           routingContext.response().setStatusCode(C.HTTP.ResponseCode.CREATED)
             .putHeader(C.HTTP.HeaderElement.CONTENT_TYPE, C.HTTP.HeaderElement.ContentType.APPLICATION_JSON)
             .end(result.toJson().toString()),
-        ResourceUtil.onError(routingContext)
+        VertxUtil.onRxError(routingContext)
       );
   }
 
@@ -124,7 +124,7 @@ public class LobbyResource {
           .setStatusCode(C.HTTP.ResponseCode.OK)
           .putHeader(C.HTTP.HeaderElement.CONTENT_TYPE, C.HTTP.HeaderElement.ContentType.APPLICATION_JSON)
           .end(result.toJson().toString()),
-      ResourceUtil.onError(routingContext)
+      VertxUtil.onRxError(routingContext)
     );
   }
 
@@ -137,7 +137,7 @@ public class LobbyResource {
           .setStatusCode(C.HTTP.ResponseCode.OK)
           .putHeader(C.HTTP.HeaderElement.CONTENT_TYPE, C.HTTP.HeaderElement.ContentType.APPLICATION_JSON)
           .end(result.toJson().toString()),
-      ResourceUtil.onError(routingContext)
+      VertxUtil.onRxError(routingContext)
     );
   }
 }

@@ -11,7 +11,7 @@ import it.unibo.scalapacman.lobby.C;
 import it.unibo.scalapacman.lobby.model.Participant;
 import it.unibo.scalapacman.lobby.service.ParticipantService;
 import it.unibo.scalapacman.lobby.util.JsonCollector;
-import it.unibo.scalapacman.lobby.util.ResourceUtil;
+import it.unibo.scalapacman.lobby.util.VertxUtil;
 
 public class ParticipantResource {
   private static final Logger logger = LoggerFactory.getLogger(ParticipantResource.class);
@@ -40,7 +40,7 @@ public class ParticipantResource {
           .setStatusCode(C.HTTP.ResponseCode.OK)
           .end(array.toString());
       },
-      ResourceUtil.onError(routingContext)
+      VertxUtil.onRxError(routingContext)
     );
   }
 
@@ -53,7 +53,7 @@ public class ParticipantResource {
             .putHeader(C.HTTP.HeaderElement.CONTENT_TYPE, C.HTTP.HeaderElement.ContentType.APPLICATION_JSON)
             .setStatusCode(C.HTTP.ResponseCode.OK)
             .end(result.toJson().toString()),
-        ResourceUtil.onError(routingContext)
+        VertxUtil.onRxError(routingContext)
       );
   }
 
@@ -65,7 +65,7 @@ public class ParticipantResource {
           routingContext.response().setStatusCode(C.HTTP.ResponseCode.CREATED)
             .putHeader(C.HTTP.HeaderElement.CONTENT_TYPE, C.HTTP.HeaderElement.ContentType.APPLICATION_JSON)
             .end(result.toJson().toString()),
-        ResourceUtil.onError(routingContext)
+        VertxUtil.onRxError(routingContext)
       );
   }
 
@@ -79,7 +79,7 @@ public class ParticipantResource {
           .setStatusCode(C.HTTP.ResponseCode.OK)
           .putHeader(C.HTTP.HeaderElement.CONTENT_TYPE, C.HTTP.HeaderElement.ContentType.APPLICATION_JSON)
           .end(result.toJson().toString()),
-      ResourceUtil.onError(routingContext)
+      VertxUtil.onRxError(routingContext)
     );
   }
 
@@ -92,7 +92,7 @@ public class ParticipantResource {
           .setStatusCode(C.HTTP.ResponseCode.OK)
           .putHeader(C.HTTP.HeaderElement.CONTENT_TYPE, C.HTTP.HeaderElement.ContentType.APPLICATION_JSON)
           .end(result.toJson().toString()),
-      ResourceUtil.onError(routingContext)
+      VertxUtil.onRxError(routingContext)
     );
   }
 }

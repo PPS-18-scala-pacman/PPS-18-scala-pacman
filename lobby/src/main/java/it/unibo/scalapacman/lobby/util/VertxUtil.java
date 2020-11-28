@@ -6,10 +6,10 @@ import io.vertx.rxjava.ext.web.RoutingContext;
 import it.unibo.scalapacman.lobby.util.exception.APIException;
 import rx.functions.Action1;
 
-public class ResourceUtil {
-  private static final Logger logger = LoggerFactory.getLogger(ResourceUtil.class);
+public class VertxUtil {
+  private static final Logger logger = LoggerFactory.getLogger(VertxUtil.class);
 
-  public static Action1<Throwable> onError(final RoutingContext routingContext) {
+  public static Action1<Throwable> onRxError(final RoutingContext routingContext) {
     return (Throwable ex) -> {
       if (ex instanceof APIException) {
         logger.info(ex.getMessage());
@@ -18,5 +18,13 @@ public class ResourceUtil {
       }
       routingContext.fail(ex);
     };
+  }
+
+  public static void onError(final RoutingContext routingContext) {
+    handleException(routingContext.failure());
+  }
+
+  public static void handleException(final Throwable ex) {
+    logger.error(ex.getMessage(), ex);
   }
 }

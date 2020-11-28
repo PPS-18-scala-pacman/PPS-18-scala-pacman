@@ -24,6 +24,7 @@ import it.unibo.scalapacman.lobby.resource.ParticipantResource;
 import it.unibo.scalapacman.lobby.service.LobbyService;
 import it.unibo.scalapacman.lobby.service.LobbyStreamService;
 import it.unibo.scalapacman.lobby.service.ParticipantService;
+import it.unibo.scalapacman.lobby.util.VertxUtil;
 import it.unibo.scalapacman.lobby.util.exception.APIException;
 import rx.Completable;
 import rx.Single;
@@ -37,6 +38,7 @@ public class MainVerticle extends AbstractVerticle {
 
   @Override
   public Completable rxStart() {
+    vertx.exceptionHandler(VertxUtil::handleException);
     return getConfiguration()
       .flatMap(this::start)
       .toCompletable();
@@ -82,9 +84,9 @@ public class MainVerticle extends AbstractVerticle {
     new LobbyResource(router, services.lobby, services.lobbyStream);
     new ParticipantResource(router, services.participant);
 
-    //router.route().handler(StaticHandler.create().setWebRoot("webroot/myname").setCachingEnabled(false));
-
     router.route().failureHandler(ctx -> {
+      VertxUtil.onError(ctx);
+
       final JsonObject error = new JsonObject()
         .put("timestamp", System.nanoTime())
         .put("exception", ctx.failure().getClass().getName())
