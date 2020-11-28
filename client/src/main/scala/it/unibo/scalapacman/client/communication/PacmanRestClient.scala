@@ -21,6 +21,7 @@ import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContextExecutor, Future}
 import scala.util.{Failure, Success}
 import akka.http.scaladsl.unmarshalling.sse.EventStreamUnmarshalling._ // scalastyle:ignore
+import it.unibo.scalapacman.client.model.LobbySSEEventType // scalastyle:ignore
 
 // scalastyle:off multiple.string.literals
 
@@ -47,7 +48,13 @@ trait PacmanRestClient extends Logging { this: HttpClient =>
   def watchLobbies(
                     messageHandler: String => Unit,
                     connectionErrorHandler: () => Unit,
-                  ): Future[Any] = connectSSE(PacmanRestClient.LOBBY_URL, messageHandler, connectionErrorHandler)
+                  ): Future[Any] =
+    connectSSE(
+      PacmanRestClient.LOBBY_URL,
+      messageHandler,
+      connectionErrorHandler,
+      _ => true
+    )
 
   /**
    * Si connette al canale SSE per il recupero della lobby e dei suoi aggiornamenti
@@ -59,12 +66,19 @@ trait PacmanRestClient extends Logging { this: HttpClient =>
                   id: Int,
                   messageHandler: String => Unit,
                   connectionErrorHandler: () => Unit
-                ): Future[Any] = connectSSE(s"${PacmanRestClient.LOBBY_URL}/$id", messageHandler, connectionErrorHandler)
+                ): Future[Any] =
+    connectSSE(
+      s"${PacmanRestClient.LOBBY_URL}/$id",
+      messageHandler,
+      connectionErrorHandler,
+      !_.eventType.contains(LobbySSEEventType.LOBBY_DELETE.toString)
+    )
 
   private def connectSSE(
                            requestUri: String,
                            messageHandler: String => Unit,
-                           connectionErrorHandler: () => Unit
+                           connectionErrorHandler: () => Unit,
+                           sseEventTypeStop: ServerSentEvent => Boolean
                          ): Future[Any] = {
     val request = Get(requestUri).withHeaders(
       RawHeader("Accept", "text/event-stream")
@@ -74,17 +88,95 @@ trait PacmanRestClient extends Logging { this: HttpClient =>
       response.status match {
         case StatusCodes.OK =>
           Unmarshal(response.entity).to[Source[ServerSentEvent, NotUsed]].foreach(
-            _.runForeach(elem => messageHandler(elem.getData())) onComplete {
-              case Success(_) => info("SSE chiusa correttamente")
-              case Failure(exception) =>
-                info(s"Connessione SSE interrotta ${exception.getMessage}")
-                connectionErrorHandler()
-            }
+            _.takeWhile(sseEventTypeStop(_))
+              .runForeach(sse => messageHandler(sse.getData())) onComplete {
+                case Success(_) => info("SSE chiusa correttamente")
+                case Failure(exception) =>
+                  info(s"Connessione SSE interrotta ${exception.getMessage}")
+                  connectionErrorHandler()
+              }
           )
           Future.successful("OK")
         case _ => Unmarshal(response.entity).to[String] flatMap { body =>
           Future.failed(new IOException(s"Errore connessione SSE: $body"))
         }
+      }
+    }
+  }
+
+  /**
+   * Invia richiesta creazione lobby
+   * @param hostUsername  nome utente di chi crea la lobby
+   * @param description descrizione della lobby
+   * @param size  numero massimo di giocatori
+   * @return  i dati della lobby come JSON
+   */
+  def createLobby(
+                   hostUsername: String,
+                   description: String,
+                   size: Int
+                 ): Future[String] = {
+    val request = Post(PacmanRestClient.LOBBY_URL).withEntity(
+      HttpEntity(
+        ContentTypes.`application/json`,
+        Map("hostUsername" -> hostUsername, "description" -> description, "size" -> size.toString).toJson.toString()
+      )
+    )
+
+    sendRequest(request) flatMap { response =>
+      response.status match {
+        case StatusCodes.Created => Unmarshal(response.entity).to[String]
+        case StatusCodes.InternalServerError => Unmarshal(response.entity).to[String] flatMap { body =>
+          Future.failed(new IOException(s"Errore creazione lobby: $body"))
+        }
+        case _ => handleUnknownStatusCode(request, response)
+      }
+    }
+  }
+
+  /**
+   * Invia richiesta partecipazione ad una lobby
+   * @param lobbyId id della lobby a cui partecipare
+   * @param username  username giocatore che vuole partecipare
+   * @return  i dati del participant come JSON
+   */
+  def joinLobby(
+                 lobbyId: Int,
+                 username: String
+               ): Future[String] = {
+    val request = Post(PacmanRestClient.PARTICIPANT_URL).withEntity(
+      HttpEntity(
+        ContentTypes.`application/json`,
+        Map("lobbyId" -> lobbyId.toString, "username" -> username).toJson.toString()
+      )
+    )
+
+    sendRequest(request) flatMap { response =>
+      response.status match {
+        case StatusCodes.Created => Unmarshal(response.entity).to[String]
+        case StatusCodes.InternalServerError => Unmarshal(response.entity).to[String] flatMap { body =>
+          Future.failed(new IOException(s"Errore partecipazione lobby: $body"))
+        }
+        case _ => handleUnknownStatusCode(request, response)
+      }
+    }
+  }
+
+  /**
+   * Invia richiesta abbandono lobby
+   * @param username  nome giocatore che vuole abbandonare
+   * @return  i dati del participant come JSON
+   */
+  def leaveLobby(username: String): Future[String] = {
+    val request = Delete(s"${PacmanRestClient.PARTICIPANT_URL}/$username")
+
+    sendRequest(request) flatMap { response =>
+      response.status match {
+        case StatusCodes.OK => Unmarshal(response.entity).to[String]
+        case StatusCodes.InternalServerError => Unmarshal(response.entity).to[String] flatMap { body =>
+          Future.failed(new IOException(s"Errore durante abbandono lobby: $body"))
+        }
+        case _ => handleUnknownStatusCode(request, response)
       }
     }
   }
@@ -240,4 +332,8 @@ case object PacmanRestClient {
    * Indirizzo per lobby
    */
   val LOBBY_URL = s"http://$serverURL/api/lobby"
+  /**
+   * Indirizzo per participant
+   */
+  val PARTICIPANT_URL = s"http://$serverURL/api/participant"
 }
