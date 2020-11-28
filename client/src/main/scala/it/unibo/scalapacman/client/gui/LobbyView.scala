@@ -2,7 +2,7 @@ package it.unibo.scalapacman.client.gui
 
 import java.awt.BorderLayout
 
-import it.unibo.scalapacman.client.controller.Action.SUBSCRIBE_TO_EVENTS
+import it.unibo.scalapacman.client.controller.Action.{LEAVE_LOBBY, SUBSCRIBE_TO_EVENTS}
 import it.unibo.scalapacman.client.controller.Controller
 import it.unibo.scalapacman.client.event.{LobbyUpdate, PacmanEvent, PacmanSubscriber}
 import it.unibo.scalapacman.client.gui.View.SETUP
@@ -14,17 +14,17 @@ object LobbyView {
 }
 
 class LobbyView(implicit controller: Controller, viewChanger: ViewChanger) extends PanelImpl with AskToController {
-  private val BACK_BUTTON_LABEL: String = "Indietro"
+  private val LEAVE_BUTTON_LABEL: String = "Abbandona"
   private val SUB_SL_EMPTY_BORDER_Y_AXIS: Int = 10
   private val SUB_SL_EMPTY_BORDER_X_AXIS: Int = 100
 
-  private val backButton: JButton = createButton(BACK_BUTTON_LABEL)
+  private val leaveButton: JButton = createButton(LEAVE_BUTTON_LABEL)
 
-  backButton addActionListener (_ => viewChanger.changeView(SETUP))
+  leaveButton addActionListener (_ => handleLeaveButton())
 
   private val buttonsPanel: PanelImpl = PanelImpl()
 
-  buttonsPanel add backButton
+  buttonsPanel add leaveButton
 
   private val playersPanel: PanelImpl = PanelImpl()
 
@@ -55,5 +55,10 @@ class LobbyView(implicit controller: Controller, viewChanger: ViewChanger) exten
   private def handlePacmanEvent(pe: PacmanEvent): Unit = pe match {
     case LobbyUpdate(lobby) => updateLobby(lobby)
     case _ => Unit
+  }
+
+  private def handleLeaveButton(): Unit = {
+    askToController(LEAVE_LOBBY, None)
+    viewChanger.changeView(SETUP)
   }
 }

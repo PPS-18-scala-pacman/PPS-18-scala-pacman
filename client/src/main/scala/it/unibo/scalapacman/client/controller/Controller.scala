@@ -4,7 +4,7 @@ import java.util.{Timer, TimerTask}
 
 import grizzled.slf4j.Logging
 import it.unibo.scalapacman.client.communication.PacmanRestClient
-import Action.{END_GAME, EXIT_APP, JOIN_GAME, MOVEMENT, PAUSE_RESUME, RESET_KEY_MAP, SAVE_KEY_MAP, START_GAME, SUBSCRIBE_TO_EVENTS}
+import Action.{CREATE_LOBBY, END_GAME, EXIT_APP, JOIN_LOBBY, LEAVE_LOBBY, MOVEMENT, PAUSE_RESUME, RESET_KEY_MAP, SAVE_KEY_MAP, START_GAME, SUBSCRIBE_TO_EVENTS}
 import it.unibo.scalapacman.client.event.{GamePaused, GameStarted, GameUpdate, LobbiesUpdate, LobbyUpdate, NetworkIssue,
   NewKeyMap, PacmanPublisher, PacmanSubscriber}
 import it.unibo.scalapacman.client.gui.{LOBBIES_RECONNECTION_TIME_DELAY, WS_RECONNECTION_TIME_DELAY}
@@ -12,7 +12,7 @@ import it.unibo.scalapacman.client.input.JavaKeyBinding.DefaultJavaKeyBinding
 import it.unibo.scalapacman.client.input.KeyMap
 import it.unibo.scalapacman.client.map.PacmanMap
 import it.unibo.scalapacman.client.model.LobbyJsonProtocol.lobbyFormat
-import it.unibo.scalapacman.client.model.{CreateGameData, GameModel, JoinGameData, Lobby}
+import it.unibo.scalapacman.client.model.{CreateLobbyData, GameModel, JoinLobbyData, Lobby}
 import it.unibo.scalapacman.common.CommandType.CommandType
 import it.unibo.scalapacman.common.MoveCommandType.MoveCommandType
 import it.unibo.scalapacman.common.{Command, CommandType, CommandTypeHolder, JSONConverter, MapUpdater, MoveCommandTypeHolder, UpdateModelDTO}
@@ -72,8 +72,10 @@ private case class ControllerImpl(pacmanRestClient: PacmanRestClient) extends Co
 
   // scalastyle:off cyclomatic.complexity
   def handleAction(action: Action, param: Option[Any]): Unit = action match {
-    case START_GAME => evalStartGame(model.gameId, param.asInstanceOf[Option[CreateGameData]])
-    case JOIN_GAME => evalJoinGameMulti(model.gameId, param.asInstanceOf[Option[JoinGameData]])
+    case START_GAME => evalStartGame(model.gameId, param.asInstanceOf[Option[CreateLobbyData]])
+    case CREATE_LOBBY => evalCreateLobby(model.gameId, model.lobby, param.asInstanceOf[Option[CreateLobbyData]])
+    case JOIN_LOBBY => evalJoinLobby(model.gameId, model.lobby, param.asInstanceOf[Option[JoinLobbyData]])
+    case LEAVE_LOBBY => evalLeaveLobby(model.gameId, model.lobby)
     case END_GAME => evalEndGame(model.gameId)
     case SUBSCRIBE_TO_EVENTS => evalSubscribeToGameUpdates(param.asInstanceOf[Option[PacmanSubscriber]])
     case MOVEMENT => evalMovement(param.asInstanceOf[Option[MoveCommandType]], _prevUserAction, model.gameId)
@@ -93,7 +95,7 @@ private case class ControllerImpl(pacmanRestClient: PacmanRestClient) extends Co
    * @param gameId il valore attuale di gameId ottenuto dal Model
    * @param cgdMaybe oggetto di configurazione per la nuova partita
    */
-  private def evalStartGame(gameId: Option[String], cgdMaybe: Option[CreateGameData]): Unit = gameId match {
+  private def evalStartGame(gameId: Option[String], cgdMaybe: Option[CreateLobbyData]): Unit = gameId match {
     case None => startGame(cgdMaybe.get)
     case Some(_) => error("Impossibile creare nuova partita quando ce n'è già una in corso")
   }
@@ -107,22 +109,62 @@ private case class ControllerImpl(pacmanRestClient: PacmanRestClient) extends Co
    *
    * @param cgd l'oggetto di configurazione per la nuova partita
    */
-  private def startGame(cgd: CreateGameData): Unit = pacmanRestClient.startGame(cgd.players) onComplete {
+  private def startGame(cgd: CreateLobbyData): Unit = pacmanRestClient.startGame(cgd.size) onComplete {
     case Success(value) =>
       info(s"Partita creata con successo: id $value") // scalastyle:ignore multiple.string.literals
       model = model.copy(gameId = Some(value)/*, paused = true*/) // Il gioco parte sempre in pausa --> NON PIù
-      model = model.copy(nickname = cgd.nickname)
+      model = model.copy(username = cgd.username)
       _prevUserAction = None
       new Thread(_webSocketRunnable).start()
-      pacmanRestClient.openWS(value, model.nickname, handleWebSocketMessage, handleWSConnectionError)
+      pacmanRestClient.openWS(value, model.username, handleWebSocketMessage, handleWSConnectionError)
       _publisher.notifySubscribers(GameStarted())
     case Failure(exception) =>
       error(s"Errore nella creazione della partita: ${exception.getMessage}")
       _publisher.notifySubscribers(NetworkIssue(serverError = true, "Errore comunicazione col server"))
   }
 
-  private def evalJoinGameMulti(gameId: Option[String], jgd: Option[JoinGameData]): Unit = gameId match {
-    case _ => connectToLobby(jgd.get.lobbyId)
+  private def evalCreateLobby(gameId: Option[String], lobby: Option[Lobby], cld: Option[CreateLobbyData]): Unit = (gameId, lobby) match {
+    case (None, None) => createLobby(cld.get)
+    case (Some(_), None) => error("Impossibile creare una lobby quando c'è una partita in corso")
+    case (None, Some(_)) => error("Impossibile creare una lobby quando ne esiste già una")
+    case _ => error("Errore: partita in corso e lobby esistente")
+  }
+
+  private def createLobby(cld: CreateLobbyData): Unit = pacmanRestClient.createLobby(cld.username, cld.username, cld.size) onComplete {
+    case Success(value) =>
+      val lobby: Lobby = value.parseJson.convertTo[Lobby]
+      info(s"Lobby ${lobby.description} creata con successo")
+      model = model.copy(lobby = Some(lobby))
+      connectToLobby(lobby.id)
+    case Failure(exception) =>
+      error(s"Errore nella creazione della lobby: ${exception.getMessage}")
+  }
+
+  private def evalJoinLobby(gameId: Option[String], lobby: Option[Lobby], jgd: Option[JoinLobbyData]): Unit = (gameId, lobby) match {
+    case (None, None) => pacmanRestClient.joinLobby(jgd.get.lobby.id, model.username) onComplete {
+      case Success(_) =>
+        info(s"Partecipazione a lobby ${jgd.get.lobby.description} avvenuta con successo")
+        model = model.copy(lobby = Some(jgd.get.lobby))
+        connectToLobby(jgd.get.lobby.id)
+      case Failure(exception) =>
+        error(s"Errore durante partecipazione lobby ${jgd.get.lobby.description}: ${exception.getMessage}")
+    }
+    case (Some(_), None) => error("Impossibile partecipare ad una lobby quando c'è una partita in corso")
+    case (None, Some(_)) => error("Impossibile partecipare ad una lobby quando ne esiste già una")
+    case _ => error("Errore: partita in corso e lobby esistente")
+  }
+
+  private def evalLeaveLobby(gameId: Option[String], lobby: Option[Lobby]): Unit = (gameId, lobby) match {
+    case (None, Some(lobby)) =>
+      pacmanRestClient.leaveLobby(model.username) onComplete {
+        case Success(_) =>
+          info(s"Lobby ${lobby.description} abbandonata con successo")
+          model = model.copy(lobby = None)
+        case Failure(exception) =>
+          error(s"Errore durante abbandono lobby ${lobby.description}: ${exception.getMessage}")
+      }
+    case (Some(_), _) => error("Impossibile abbandonare una lobby quando c'è una partita in corso")
+    case (None, None) => error("Nessuna lobby da abbandonare")
   }
 
   /**
@@ -279,7 +321,7 @@ private case class ControllerImpl(pacmanRestClient: PacmanRestClient) extends Co
         override def run(): Unit = {
           // Devo ricontrollare perché potrebbe essere che nel frattempo l'utente sia uscito dalla schermata di gioco
           if (model.gameId.isDefined) {
-            pacmanRestClient.openWS(model.gameId.get, model.nickname, handleWebSocketMessage, handleWSConnectionError)
+            pacmanRestClient.openWS(model.gameId.get, model.username, handleWebSocketMessage, handleWSConnectionError)
           }
           t.cancel()
         }

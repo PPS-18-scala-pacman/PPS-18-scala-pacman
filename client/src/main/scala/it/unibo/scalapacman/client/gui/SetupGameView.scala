@@ -2,11 +2,11 @@ package it.unibo.scalapacman.client.gui
 
 import java.awt.{BorderLayout, GridLayout}
 
-import it.unibo.scalapacman.client.controller.Action.{JOIN_GAME, START_GAME, SUBSCRIBE_TO_EVENTS}
+import it.unibo.scalapacman.client.controller.Action.{CREATE_LOBBY, JOIN_LOBBY, START_GAME, SUBSCRIBE_TO_EVENTS}
 import it.unibo.scalapacman.client.controller.Controller
 import it.unibo.scalapacman.client.event.{LobbiesUpdate, PacmanEvent, PacmanSubscriber}
 import it.unibo.scalapacman.client.gui.View.{LOBBY, MENU, PLAY}
-import it.unibo.scalapacman.client.model.{CreateGameData, JoinGameData, Lobby}
+import it.unibo.scalapacman.client.model.{CreateLobbyData, JoinLobbyData, Lobby}
 import javax.swing.{BorderFactory, Box, BoxLayout, DefaultListModel, JButton, JLabel, JScrollPane, JSeparator, JSpinner, JTextField, SwingConstants}
 
 object SetupGameView {
@@ -44,7 +44,7 @@ class SetupGameView(implicit controller: Controller, viewChanger: ViewChanger) e
   private val gameIdTextField: JTextField = createTextField()
 
   nicknameTextField setHorizontalAlignment SwingConstants.RIGHT
-  nicknameTextField setText controller.model.nickname
+  nicknameTextField setText controller.model.username
 
   gameIdTextField setHorizontalAlignment SwingConstants.RIGHT
 
@@ -122,15 +122,17 @@ class SetupGameView(implicit controller: Controller, viewChanger: ViewChanger) e
   askToController(SUBSCRIBE_TO_EVENTS, Some(PacmanSubscriber(handlePacmanEvent)))
 
   private def handleCreateGameButton(): Unit = if (checkNickName()) {
-    askToController(START_GAME, Some(CreateGameData(nicknameTextField.getText(), numPlayersSpinner.getValue.toString.toInt)))
-    viewChanger.changeView(PLAY)
+//    askToController(START_GAME, Some(CreateGameData(nicknameTextField.getText(), numPlayersSpinner.getValue.toString.toInt)))
+//    viewChanger.changeView(PLAY)
+    askToController(CREATE_LOBBY, Some(CreateLobbyData(nicknameTextField.getText(), numPlayersSpinner.getValue.toString.toInt)))
+    viewChanger.changeView(LOBBY)
   }
 
   private def handleJoinGameButton(): Unit = if (checkNickName()) {
     val lobby: Lobby = lobbyJList.getSelectedValue
 
     if (lobby != null) {
-      askToController(JOIN_GAME, Some(JoinGameData(nicknameTextField.getText(), lobby.id)))
+      askToController(JOIN_LOBBY, Some(JoinLobbyData(nicknameTextField.getText(), lobby)))
     }
 
     viewChanger.changeView(LOBBY)

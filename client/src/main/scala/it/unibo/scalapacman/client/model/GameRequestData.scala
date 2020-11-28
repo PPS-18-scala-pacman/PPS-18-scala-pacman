@@ -1,4 +1,4 @@
 package it.unibo.scalapacman.client.model
 
-case class CreateGameData(nickname: String, players: Int)
-case class JoinGameData(nickname: String, lobbyId: Int)
+case class CreateLobbyData(username: String, size: Int)
+case class JoinLobbyData(username: String, lobby: Lobby)

@@ -14,7 +14,7 @@ import it.unibo.scalapacman.client.communication.{HttpClient, PacmanRestClient}
 import it.unibo.scalapacman.client.controller.Action.{END_GAME, MOVEMENT, PAUSE_RESUME, RESET_KEY_MAP, SAVE_KEY_MAP, START_GAME}
 import it.unibo.scalapacman.client.input.JavaKeyBinding.DefaultJavaKeyBinding
 import it.unibo.scalapacman.client.input.KeyMap
-import it.unibo.scalapacman.client.model.CreateGameData
+import it.unibo.scalapacman.client.model.CreateLobbyData
 import it.unibo.scalapacman.common.{CommandType, MoveCommandType}
 import it.unibo.scalapacman.lib.model.{Map, MapType}
 import org.scalamock.function.MockFunction1
@@ -94,7 +94,7 @@ class ControllerTest
           ContentTypes.`application/json`,
           scala.collection.immutable.Map("playersNumber" -> NUM_PLAYERS).toJson.toString()
         )
-        val cgd: CreateGameData = CreateGameData("test", NUM_PLAYERS)
+        val cgd: CreateLobbyData = CreateLobbyData("test", NUM_PLAYERS)
 
         _controller.model.gameId shouldEqual None
 
@@ -118,7 +118,7 @@ class ControllerTest
           ContentTypes.`application/json`,
           scala.collection.immutable.Map("playersNumber" -> NUM_PLAYERS).toJson.toString()
         )
-        val cgd: CreateGameData = CreateGameData("test", NUM_PLAYERS)
+        val cgd: CreateLobbyData = CreateLobbyData("test", NUM_PLAYERS)
 
         _controller.model.gameId shouldEqual None
 

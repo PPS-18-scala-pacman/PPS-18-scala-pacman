@@ -11,7 +11,8 @@ import it.unibo.scalapacman.lib.model.Map
  * @param map lo stato attuale della mappa di gioco (senza le informazioni dei personaggi)
  */
 case class GameModel(
-                      nickname: String = "GioL",
+                      username: String = "GioL",
+                      lobby: Option[Lobby] = None,
                       gameId: Option[String] = None,
                       paused: Boolean = false,
                       keyMap: KeyMap,

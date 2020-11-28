@@ -7,7 +7,9 @@ sealed trait Action
  */
 object Action {
   case object START_GAME extends Action
-  case object JOIN_GAME extends Action
+  case object CREATE_LOBBY extends Action
+  case object JOIN_LOBBY extends Action
+  case object LEAVE_LOBBY extends Action
   case object END_GAME extends Action
   case object SUBSCRIBE_TO_EVENTS extends Action
   case object EXIT_APP extends Action
