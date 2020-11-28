@@ -7,7 +7,7 @@ CREATE TABLE lobby (
 
 CREATE TABLE participant (
     username varchar(255) PRIMARY KEY,
-    pacman_type smallint NOT NULL,
+    pacman_type smallint NOT NULL CHECK(pacman_type >= 0) DEFAULT 0,
     lobby_id bigint NOT NULL,
     CONSTRAINT fk_lobby
         FOREIGN KEY(lobby_id)
