@@ -26,16 +26,19 @@ public class LobbyDao implements Dao<Lobby, Long> {
     return new Lobby(
       row.getLong("lobby_id"),
       row.getString("description"),
-      row.getInteger("lobby_size")
+      row.getInteger("lobby_size"),
+      row.getString("host_username")
     );
   }
 
   private static Lobby toEntity(List<Row> rows) {
     if (rows.size() == 0) return null;
+    Lobby temp = toEntity(rows.get(0));
     return new Lobby(
-      rows.get(0).getLong("lobby_id"),
-      rows.get(0).getString("description"),
-      rows.get(0).getInteger("lobby_size"),
+      temp.getId(),
+      temp.getDescription(),
+      temp.getSize(),
+      temp.getHostUsername(),
       rows.stream().filter(row -> row.getString("username") != null).map(ParticipantDao::toEntity).collect(Collectors.toList())
     );
   }
@@ -75,8 +78,8 @@ public class LobbyDao implements Dao<Lobby, Long> {
 
   public Single<Lobby> create(Lobby lobby) {
     return dbClient
-      .preparedQuery("INSERT INTO lobby (description, lobby_size) VALUES ($1, $2) RETURNING *")
-      .rxExecute(Tuple.of(lobby.getDescription(), lobby.getSize()))
+      .preparedQuery("INSERT INTO lobby (description, lobby_size, host_username) VALUES ($1, $2, $3) RETURNING *")
+      .rxExecute(Tuple.of(lobby.getDescription(), lobby.getSize(), lobby.getHostUsername()))
       .map(rows -> {
         logger.debug("Got " + rows.size() + " rows ");
         return StreamSupport.stream(rows.spliterator(), false)
@@ -88,8 +91,8 @@ public class LobbyDao implements Dao<Lobby, Long> {
 
   public Single<Lobby> update(Long id, Lobby lobby) {
     return dbClient
-      .preparedQuery("UPDATE lobby SET description = $2, lobby_size = $3 WHERE lobby_id=$1 RETURNING *")
-      .rxExecute(Tuple.of(id, lobby.getDescription(), lobby.getSize()))
+      .preparedQuery("UPDATE lobby SET description = $2, lobby_size = $3, host_username = $4 WHERE lobby_id=$1 RETURNING *")
+      .rxExecute(Tuple.of(id, lobby.getDescription(), lobby.getSize(), lobby.getHostUsername()))
       .map(rows -> {
         logger.debug("Got " + rows.size() + " rows ");
         return StreamSupport.stream(rows.spliterator(), false)

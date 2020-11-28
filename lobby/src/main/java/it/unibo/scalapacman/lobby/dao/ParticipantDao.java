@@ -25,7 +25,6 @@ public class ParticipantDao implements Dao<Participant, String> {
   public static Participant toEntity(Row row) {
     return new Participant(
       row.getString("username"),
-      row.getBoolean("host"),
       row.getInteger("pacman_type"),
       row.getLong("lobby_id")
     );
@@ -58,8 +57,8 @@ public class ParticipantDao implements Dao<Participant, String> {
 
   public Single<Participant> create(Participant participant) {
     return dbClient
-      .preparedQuery("INSERT INTO participant (username, host, pacman_type, lobby_id) VALUES ($1, $2, $3, $4) RETURNING *")
-      .rxExecute(Tuple.of(participant.getUsername(), participant.getHost(), participant.getPacmanTypeAsInteger(), participant.getLobbyId()))
+      .preparedQuery("INSERT INTO participant (username, pacman_type, lobby_id) VALUES ($1, $2, $3) RETURNING *")
+      .rxExecute(Tuple.of(participant.getUsername(), participant.getPacmanTypeAsInteger(), participant.getLobbyId()))
       .map(rows -> {
         logger.debug("Got " + rows.size() + " rows ");
         return StreamSupport.stream(rows.spliterator(), false)
@@ -71,8 +70,8 @@ public class ParticipantDao implements Dao<Participant, String> {
 
   public Single<Participant> update(String username, Participant participant) {
     return dbClient
-      .preparedQuery("UPDATE participant SET host = $2, pacman_type = $3 WHERE username=$1 RETURNING *")
-      .rxExecute(Tuple.of(username, participant.getHost(), participant.getPacmanTypeAsInteger()))
+      .preparedQuery("UPDATE participant SET pacman_type = $2 WHERE username=$1 RETURNING *")
+      .rxExecute(Tuple.of(username, participant.getPacmanTypeAsInteger()))
       .map(rows -> {
         logger.debug("Got " + rows.size() + " rows ");
         return StreamSupport.stream(rows.spliterator(), false)
