@@ -14,8 +14,7 @@ import akka.stream.{CompletionStrategy, OverflowStrategy}
 import akka.stream.scaladsl.{Keep, Sink, Source}
 import grizzled.slf4j.Logging
 import it.unibo.scalapacman.client.config.ConfLoader.appConf
-import spray.json.DefaultJsonProtocol.{IntJsonFormat, StringJsonFormat, mapFormat}
-import spray.json.enrichAny
+import spray.json.{JsNumber, JsObject, JsString}
 
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContextExecutor, Future}
@@ -119,7 +118,11 @@ trait PacmanRestClient extends Logging { this: HttpClient =>
     val request = Post(PacmanRestClient.LOBBY_URL).withEntity(
       HttpEntity(
         ContentTypes.`application/json`,
-        Map("hostUsername" -> hostUsername, "description" -> description, "size" -> size.toString).toJson.toString()
+        JsObject(
+          "hostUsername" -> JsString(hostUsername),
+          "description" -> JsString(description),
+          "size" -> JsNumber(size)
+        ).toString()
       )
     )
 
@@ -147,7 +150,11 @@ trait PacmanRestClient extends Logging { this: HttpClient =>
     val request = Post(PacmanRestClient.PARTICIPANT_URL).withEntity(
       HttpEntity(
         ContentTypes.`application/json`,
-        Map("lobbyId" -> lobbyId.toString, "username" -> username).toJson.toString()
+        JsObject(
+          "lobbyId" -> JsNumber(lobbyId),
+          "username" -> JsString(username),
+          "pacmanType" -> JsNumber(1)
+        ).toString()
       )
     )
 
@@ -189,7 +196,9 @@ trait PacmanRestClient extends Logging { this: HttpClient =>
   def startGame(players: Int): Future[String] = {
     // Come passare un JSON https://stackoverflow.com/a/56569369/4328569
     val request = Post(PacmanRestClient.GAMES_URL).withEntity(
-      HttpEntity(ContentTypes.`application/json`, Map("playersNumber" -> players).toJson.toString())
+      HttpEntity(
+        ContentTypes.`application/json`,
+        JsObject("playersNumber" -> JsNumber(players)).toString())
     )
     sendRequest(request) flatMap { response =>
       response.status match {
