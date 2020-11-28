@@ -11,11 +11,14 @@ import it.unibo.scalapacman.lib.model.Direction.Direction
 import it.unibo.scalapacman.lib.model.GhostType.GhostType
 import it.unibo.scalapacman.lib.model.PacmanType.PacmanType
 import it.unibo.scalapacman.lib.model.{Character, GameObject, Level, LevelState, Map}
-import it.unibo.scalapacman.server.core.Engine.{ChangeDirectionCur, ChangeDirectionReq, EngineCommand, Model, Pause,
-  RegisterWatcher, Resume, Setup, Start, UnRegisterWatcher, UpdateCommand, UpdateMsg, WakeUp}
+import it.unibo.scalapacman.server.config.Settings
+import it.unibo.scalapacman.server.core.Engine.{ChangeDirectionCur, ChangeDirectionReq, DelayedResume, EngineCommand,
+  Model, Pause, RegisterWatcher, Resume, Setup, Start, UnRegisterWatcher, UpdateCommand, UpdateMsg, WakeUp}
 import it.unibo.scalapacman.server.model.GameParticipant.gameParticipantToGameEntity
 import it.unibo.scalapacman.server.model.MoveDirection.MoveDirection
 import it.unibo.scalapacman.server.model.{GameData, GameEntity, GameParameter, GameParticipant}
+
+import scala.concurrent.duration.FiniteDuration
 
 /**
  * Attore che si occupa, per ogni partita, di effettuare l’elaborazione dello stato di avanzamento del gioco.
@@ -34,6 +37,7 @@ object Engine {
   case class Pause() extends EngineCommand
   case class Start() extends EngineCommand
   case class Resume() extends EngineCommand
+  private case class DelayedResume() extends EngineCommand
   case class ChangeDirectionReq(nickname: String, direction: MoveDirection) extends EngineCommand
   case class ChangeDirectionCur(nickname: String) extends EngineCommand
   case class RegisterWatcher(actor: ActorRef[UpdateCommand]) extends EngineCommand
@@ -64,10 +68,26 @@ private class Engine(setup: Setup) {
       case RegisterWatcher(actor) => initRoutine(watcher = watcher + actor)
       case UnRegisterWatcher(actor) => initRoutine(watcher = watcher - actor)
       case Start() =>
-        setup.context.log.info("Run id: " + setup.gameId)
-        pauseRoutine(initEngineModel(watcher))
+        setup.context.log.info("Start id: " + setup.gameId)
+        delayRoutine(initEngineModel(watcher), Settings.gameDelay)
       case _ => unhandledMsg()
     }
+
+  private def delayRoutine(model: Model, delay: FiniteDuration): Behavior[EngineCommand] = {
+    updateWatchers(model)
+    setup.context.scheduleOnce(delay, setup.context.self, DelayedResume())
+
+    Behaviors.withStash(Settings.stashSize) { buffer =>
+      Behaviors.receiveMessage {
+        case DelayedResume() =>
+          setup.context.log.info("Attesa finita, gioco in avvio: " + setup.gameId)
+          buffer.unstashAll(mainRoutine(model))
+        case other: EngineCommand =>
+          buffer.stash(other)
+          Behaviors.same
+      }
+    }
+  }
 
   /**
    * Behavior utilizzato nel caso in cui il gioco venga messo in pausa, esegue l'invio di aggiornamenti
@@ -86,7 +106,7 @@ private class Engine(setup: Setup) {
           updateWatchers(model)
           Behaviors.same
         case Resume() =>
-          setup.context.log.info("Run id: " + setup.gameId)
+          setup.context.log.info("Resume id: " + setup.gameId)
           timers.cancel(WakeUp())
           mainRoutine(model)
         case Pause() => Behaviors.same
