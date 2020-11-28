@@ -122,8 +122,6 @@ class SetupGameView(implicit controller: Controller, viewChanger: ViewChanger) e
   askToController(SUBSCRIBE_TO_EVENTS, Some(PacmanSubscriber(handlePacmanEvent)))
 
   private def handleCreateGameButton(): Unit = if (checkNickName()) {
-//    askToController(START_GAME, Some(CreateGameData(nicknameTextField.getText(), numPlayersSpinner.getValue.toString.toInt)))
-//    viewChanger.changeView(PLAY)
     askToController(CREATE_LOBBY, Some(CreateLobbyData(nicknameTextField.getText(), numPlayersSpinner.getValue.toString.toInt)))
     viewChanger.changeView(LOBBY)
   }

@@ -7,16 +7,21 @@ import it.unibo.scalapacman.client.controller.Controller
 import it.unibo.scalapacman.client.event.{LobbyUpdate, PacmanEvent, PacmanSubscriber}
 import it.unibo.scalapacman.client.gui.View.SETUP
 import it.unibo.scalapacman.client.model.{Lobby, Participant}
-import javax.swing.{BorderFactory, DefaultListModel, JButton, JScrollPane}
+import javax.swing.{BorderFactory, DefaultListModel, JButton, JLabel, JScrollPane, SwingConstants}
 
 object LobbyView {
   def apply()(implicit controller: Controller, viewChanger: ViewChanger): LobbyView = new LobbyView()
 }
 
 class LobbyView(implicit controller: Controller, viewChanger: ViewChanger) extends PanelImpl with AskToController {
+  private val TITLE_LABEL: String = "Lista partecipanti"
   private val LEAVE_BUTTON_LABEL: String = "Abbandona"
   private val SUB_SL_EMPTY_BORDER_Y_AXIS: Int = 10
   private val SUB_SL_EMPTY_BORDER_X_AXIS: Int = 100
+
+  private val titleLabel: JLabel = createTitleLabel(TITLE_LABEL)
+
+  titleLabel setHorizontalAlignment SwingConstants.CENTER
 
   private val leaveButton: JButton = createButton(LEAVE_BUTTON_LABEL)
 
@@ -42,6 +47,7 @@ class LobbyView(implicit controller: Controller, viewChanger: ViewChanger) exten
   )
 
   setLayout(new BorderLayout)
+  add(titleLabel, BorderLayout.PAGE_START)
   add(playersPanel, BorderLayout.CENTER)
   add(buttonsPanel, BorderLayout.PAGE_END)
 

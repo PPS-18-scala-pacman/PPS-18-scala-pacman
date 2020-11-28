@@ -123,6 +123,12 @@ private case class ControllerImpl(pacmanRestClient: PacmanRestClient) extends Co
       _publisher.notifySubscribers(NetworkIssue(serverError = true, "Errore comunicazione col server"))
   }
 
+  /**
+   * Se non c'è nessuna partita / lobby in corso, procede con la creazione della lobby
+   * @param gameId  il valore attuale di gameId ottenuto dal Model
+   * @param lobby il valore attuale di lobby ottenuto dal Model
+   * @param cld dati per la creazione della lobby
+   */
   private def evalCreateLobby(gameId: Option[String], lobby: Option[Lobby], cld: Option[CreateLobbyData]): Unit = (gameId, lobby) match {
     case (None, None) => createLobby(cld.get)
     case (Some(_), None) => error("Impossibile creare una lobby quando c'è una partita in corso")
@@ -130,6 +136,10 @@ private case class ControllerImpl(pacmanRestClient: PacmanRestClient) extends Co
     case _ => error("Errore: partita in corso e lobby esistente")
   }
 
+  /**
+   * Effettua chiamata creazione lobby
+   * @param cld dati per la creazione della lobby
+   */
   private def createLobby(cld: CreateLobbyData): Unit = pacmanRestClient.createLobby(cld.username, cld.username, cld.size) onComplete {
     case Success(value) =>
       val lobby: Lobby = value.parseJson.convertTo[Lobby]
@@ -140,19 +150,31 @@ private case class ControllerImpl(pacmanRestClient: PacmanRestClient) extends Co
       error(s"Errore nella creazione della lobby: ${exception.getMessage}")
   }
 
-  private def evalJoinLobby(gameId: Option[String], lobby: Option[Lobby], jgd: Option[JoinLobbyData]): Unit = (gameId, lobby) match {
-    case (None, None) => pacmanRestClient.joinLobby(jgd.get.lobby.id, model.username) onComplete {
+  /**
+   * Se non c'è nessuna partita / lobby in corso, procede con il join alla lobby
+   * @param gameId  il valore attuale di gameId ottenuto dal Model
+   * @param lobby il valore attuale di lobby ottenuto dal Model
+   * @param jld dati per il join della lobby
+   */
+  private def evalJoinLobby(gameId: Option[String], lobby: Option[Lobby], jld: Option[JoinLobbyData]): Unit = (gameId, lobby) match {
+    case (None, None) => pacmanRestClient.joinLobby(jld.get.lobby.id, model.username) onComplete {
       case Success(_) =>
-        info(s"Partecipazione a lobby ${jgd.get.lobby.description} avvenuta con successo")
-        model = model.copy(lobby = Some(jgd.get.lobby))
-        connectToLobby(jgd.get.lobby.id)
+        info(s"Partecipazione a lobby ${jld.get.lobby.description} avvenuta con successo")
+        model = model.copy(lobby = Some(jld.get.lobby))
+        connectToLobby(jld.get.lobby.id)
       case Failure(exception) =>
-        error(s"Errore durante partecipazione lobby ${jgd.get.lobby.description}: ${exception.getMessage}")
+        error(s"Errore durante partecipazione lobby ${jld.get.lobby.description}: ${exception.getMessage}")
     }
     case (Some(_), None) => error("Impossibile partecipare ad una lobby quando c'è una partita in corso")
     case (None, Some(_)) => error("Impossibile partecipare ad una lobby quando ne esiste già una")
     case _ => error("Errore: partita in corso e lobby esistente")
   }
+
+  /**
+   * Se non c'è una lobby in corso, procede con l'abbandono dalla lobby
+   * @param gameId  il valore attuale di gameId ottenuto dal Model
+   * @param lobby il valore attuale di lobby ottenuto dal Model
+   */
 
   private def evalLeaveLobby(gameId: Option[String], lobby: Option[Lobby]): Unit = (gameId, lobby) match {
     case (None, Some(lobby)) =>
@@ -370,9 +392,16 @@ private case class ControllerImpl(pacmanRestClient: PacmanRestClient) extends Co
     case _ => Unit
   }
 
+  /**
+   * Gestisce i messaggi ricevuti sul canale SSE della lobby
+   * @param jsonStr i dati in formato JSON
+   */
   private def handleLobbyUpdate(jsonStr: String): Unit =
     _publisher.notifySubscribers(LobbyUpdate(jsonStr.parseJson.convertTo[Lobby]))
 
+  /**
+   * Gestisce l'interruzione al canale SSE delle lobby per un problema di rete
+   */
   private def handleLobbyConnectionError(lobbyId: Int)(): Unit = {
     info(s"Nuovo tentativo connessione servizio lobby tra ${LOBBIES_RECONNECTION_TIME_DELAY/1000} secondi")
     val t = new Timer
