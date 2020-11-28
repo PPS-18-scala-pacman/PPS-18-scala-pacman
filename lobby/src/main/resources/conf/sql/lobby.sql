@@ -15,18 +15,12 @@ CREATE TABLE participant (
         ON DELETE CASCADE
 );
 
-ALTER TABLE lobby
-    ADD CONSTRAINT fk_host_username
-        FOREIGN KEY(host_username)
-        REFERENCES participant(username)
-        ON DELETE CASCADE;
-
-INSERT INTO lobby (description, lobby_size)
-VALUES('Lobby A', 4);
-INSERT INTO lobby (description, lobby_size)
-VALUES('Lobby B', 3);
-INSERT INTO lobby (description, lobby_size)
-VALUES('Lobby C', 2);
+INSERT INTO lobby (description, lobby_size, host_username)
+VALUES('Lobby A', 4, 'userA1');
+INSERT INTO lobby (description, lobby_size, host_username)
+VALUES('Lobby B', 3, 'userB1');
+INSERT INTO lobby (description, lobby_size, host_username)
+VALUES('Lobby C', 2, 'userC1');
 
 INSERT INTO participant (username, pacman_type, lobby_id)
 VALUES('userA1', 0, 1);
@@ -39,9 +33,8 @@ VALUES('userB1', 0, 2);
 INSERT INTO participant (username, pacman_type, lobby_id)
 VALUES('userC1', 0, 3);
 
-UPDATE lobby SET host_username = 'userA1'
-WHERE lobby_id = 1;
-UPDATE lobby SET host_username = 'userB1'
-WHERE lobby_id = 2;
-UPDATE lobby SET host_username = 'userC1'
-WHERE lobby_id = 3;
+ALTER TABLE lobby
+    ADD CONSTRAINT fk_host_username
+        FOREIGN KEY(host_username)
+        REFERENCES participant(username)
+        ON DELETE CASCADE;
