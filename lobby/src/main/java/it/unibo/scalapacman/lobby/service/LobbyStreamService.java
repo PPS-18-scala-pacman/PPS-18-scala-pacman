@@ -8,14 +8,21 @@ import it.unibo.scalapacman.lobby.util.ListJsonable;
 import it.unibo.scalapacman.lobby.util.REST;
 import it.unibo.scalapacman.lobby.util.SSE;
 import it.unibo.scalapacman.lobby.util.exception.NotFoundException;
+import rx.BackpressureOverflow;
 import rx.Observable;
 import rx.Single;
+import rx.schedulers.Schedulers;
 import rx.subjects.BehaviorSubject;
 
 import java.util.*;
+import java.util.concurrent.TimeUnit;
+
+// https://www.baeldung.com/rxjava-backpressure
 
 public class LobbyStreamService {
   private final Logger logger = LoggerFactory.getLogger(LobbyStreamService.class);
+
+  private final static long SAMPLE_MS = 10000;
 
   private final Dao<Lobby, Long> dao;
   private final BehaviorSubject<SSE.Event<LobbyStreamEventType, ListJsonable<Lobby>>> getAllSubject = BehaviorSubject.create();
@@ -31,7 +38,10 @@ public class LobbyStreamService {
   }
 
   public Observable<SSE.Event<LobbyStreamEventType, ListJsonable<Lobby>>> getStreamAll() {
-    return getAllSubject;
+    return getAllSubject
+      .onBackpressureBuffer(16, () -> {}, BackpressureOverflow.ON_OVERFLOW_DROP_OLDEST)
+      .sample(SAMPLE_MS, TimeUnit.MILLISECONDS)
+      .observeOn(Schedulers.computation());
   }
 
   public Observable<SSE.Event<LobbyStreamEventType, Lobby>> getStreamById(Long id) {
@@ -44,7 +54,10 @@ public class LobbyStreamService {
       getByIdSubject.put(id, subject);
     }
 
-    return getByIdSubject.get(id);
+    return getByIdSubject.get(id)
+      .onBackpressureBuffer(16, () -> {}, BackpressureOverflow.ON_OVERFLOW_DROP_OLDEST)
+      .sample(SAMPLE_MS, TimeUnit.MILLISECONDS)
+      .observeOn(Schedulers.computation());
   }
 
   public void updateStreams(Long lobbyId, LobbyStreamEventType type) {
