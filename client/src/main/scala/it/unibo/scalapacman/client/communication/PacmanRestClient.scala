@@ -353,22 +353,23 @@ trait PacmanRestClient extends Logging { this: HttpClient =>
 
 case object PacmanRestClient {
 
-  val serverURL: String = appConf.getString("server.address") + ":" +  appConf.getInt("server.port")
+  val pacmanServerURL: String = appConf.getString("server.pacman.address") + ":" +  appConf.getInt("server.pacman.port")
+  val lobbyServerURL: String = appConf.getString("server.lobby.address") + ":" +  appConf.getInt("server.lobby.port")
 
   /**
    * Indirizzo per creazione/termine partita
    */
-  val GAMES_URL = s"http://$serverURL/games"
+  val GAMES_URL = s"http://$pacmanServerURL/games"
   /**
    * Indirizzo per canale WebSocket
    */
-  val GAMES_WS_URL = s"ws://$serverURL/connection-management/games"
-  /**
-   * Indirizzo per lobby
-   */
-  val LOBBY_URL = s"http://$serverURL/api/lobby"
+  val GAMES_WS_URL = s"ws://$pacmanServerURL/connection-management/games"
+//  /**
+//   * Indirizzo per lobby
+//   */
+  val LOBBY_URL = s"http://$lobbyServerURL/api/lobby"
   /**
    * Indirizzo per participant
    */
-  val PARTICIPANT_URL = s"http://$serverURL/api/participant"
+  val PARTICIPANT_URL = s"http://$lobbyServerURL/api/participant"
 }
