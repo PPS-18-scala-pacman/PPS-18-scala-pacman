@@ -25,10 +25,6 @@ dependencies {
   testRuntimeOnly(group = "org.junit.jupiter", name = "junit-jupiter-engine", version = junitVersion)
 }
 
-java {
-  sourceCompatibility = JavaVersion.VERSION_1_8
-}
-
 application {
   mainClassName = "io.vertx.core.Launcher"
 }

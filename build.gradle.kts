@@ -64,6 +64,11 @@ allprojects {
     scoverage(group = "org.scoverage", name = "scalac-scoverage-runtime_$scalaVersion", version = scoverageVersion)
   }
 
+  java {
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
+  }
+
   tasks.withType<ScalaCompile> {
     sourceCompatibility = "1.8"
     targetCompatibility = "1.8"
