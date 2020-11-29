@@ -1,4 +1,5 @@
 package it.unibo.scalapacman.server.communication
+
 //scalastyle:off
 import akka.actor.typed.receptionist.Receptionist
 import akka.actor.typed.scaladsl.AskPattern.{Askable, schedulerFromActorSystem}
@@ -8,14 +9,14 @@ import akka.http.scaladsl.model.ws.Message
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import akka.stream.scaladsl.Flow
+
 import it.unibo.scalapacman.server.config.Settings.{askTimeout, maxPlayersNumber}
-import spray.json.DefaultJsonProtocol
-import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
-import it.unibo.scalapacman.server.model.{GameComponent, RequestMockUp}
-import spray.json._
-//scalastyle:on
+import it.unibo.scalapacman.server.model.CreateGameRequest
+import it.unibo.scalapacman.server.model.CreateGameJsonProtocol._
+import it.unibo.scalapacman.lib.model.PacmanType
 
 import scala.concurrent.Future
+//scalastyle:on
 
 /**
  * Elemento core del server HTTP definisce l'insieme dei servizi esposti inoltre si occupa smistare le
@@ -26,7 +27,7 @@ object ServiceRoutes {
   // Messaggi di gestione richieste ricevute
   trait RoutesCommand
   case class DeleteGame(gameId: String) extends RoutesCommand
-  case class CreateGame(replyTo: ActorRef[ResponseCreateGame], components: List[GameComponent]) extends RoutesCommand
+  case class CreateGame(replyTo: ActorRef[ResponseCreateGame], components: Map[String, PacmanType.PacmanType]) extends RoutesCommand
   case class CreateConnectionGame(replyTo: ActorRef[ResponseConnGame], gameId: String, nickname: String) extends RoutesCommand
 
   // Messaggi di risposta per creazione nuova partita
@@ -39,14 +40,7 @@ object ServiceRoutes {
   case class SuccessConG(flow: Flow[Message, Message, Any]) extends ResponseConnGame
   case class FailureConG(reason: String) extends ResponseConnGame
 
-  case class CreateGameRequest(playersNumber: Int) //TODO L da sostituire
-  object JsonSupport extends SprayJsonSupport with DefaultJsonProtocol {
-    implicit val createGameRequestFormat: RootJsonFormat[CreateGameRequest] = jsonFormat1(CreateGameRequest)
-  }
-
   private case class ListingResponse(listing: Receptionist.Listing)
-
-  import ServiceRoutes.JsonSupport._ // scalastyle:ignore
 
   def apply(handler: ActorRef[RoutesCommand])(implicit system: ActorSystem[_]): Route =
     concat(
@@ -55,10 +49,10 @@ object ServiceRoutes {
           pathEnd {
             post {
               entity(as[CreateGameRequest]) { req =>
-                if(req.playersNumber < 1 || req.playersNumber > maxPlayersNumber) {
+                if(req.components.size < 1 || req.components.size > maxPlayersNumber) {
                   complete(StatusCodes.UnprocessableEntity -> "Numero di giocatori non valido")
                 } else {
-                  val operationPerformed: Future[ResponseCreateGame] = handler.ask(CreateGame(_, RequestMockUp.getComponentDefault(req.playersNumber)))
+                  val operationPerformed: Future[ResponseCreateGame] = handler.ask(CreateGame(_, req.components))
                   onSuccess(operationPerformed) {
                     case ServiceRoutes.SuccessCrG(gameId) => complete(StatusCodes.Created, gameId)
                     case ServiceRoutes.FailureCrG(reason) => complete(StatusCodes.InternalServerError -> reason)

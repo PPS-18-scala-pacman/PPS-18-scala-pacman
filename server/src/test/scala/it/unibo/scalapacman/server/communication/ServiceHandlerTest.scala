@@ -9,7 +9,6 @@ import it.unibo.scalapacman.server.core.Game.GameCommand
 import it.unibo.scalapacman.server.core.PlayerAct.{RegistrationAccepted, RegistrationRejected}
 import it.unibo.scalapacman.server.core.{Game, Master}
 import it.unibo.scalapacman.server.config.TestSettings.askTestDuration
-import it.unibo.scalapacman.server.model.GameComponent
 import org.scalatest.wordspec.AnyWordSpecLike
 
 class ServiceHandlerTest extends ScalaTestWithActorTestKit with AnyWordSpecLike {
@@ -35,7 +34,7 @@ class ServiceHandlerTest extends ScalaTestWithActorTestKit with AnyWordSpecLike 
         val masterProbe = createTestProbe[Master.MasterCommand]()
         system.receptionist ! Receptionist.Register(Master.masterServiceKey, masterProbe.ref)
 
-        serviceHandlerActor ! ServiceRoutes.CreateGame(clientProbe.ref, List(GameComponent("fooId", PacmanType.PACMAN)))
+        serviceHandlerActor ! ServiceRoutes.CreateGame(clientProbe.ref, Map("fooId"-> PacmanType.PACMAN))
         masterProbe.expectMessageType[Master.CreateGame]
 
         serviceHandlerActor ! ServiceHandler.WrapRespCreateGame(Master.GameCreated(fakeGameId))

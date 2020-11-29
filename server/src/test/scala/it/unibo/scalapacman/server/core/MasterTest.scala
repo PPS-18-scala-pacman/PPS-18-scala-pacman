@@ -6,7 +6,6 @@ import akka.actor.typed.receptionist.{Receptionist, ServiceKey}
 import it.unibo.scalapacman.lib.model.PacmanType
 import it.unibo.scalapacman.server.config.ConfLoader
 import it.unibo.scalapacman.server.config.TestSettings.{awaitLowerBound, awaitUpperBound}
-import it.unibo.scalapacman.server.model.GameComponent
 import org.scalatest.wordspec.AnyWordSpecLike
 
 import scala.reflect.ClassTag
@@ -16,7 +15,7 @@ class MasterTest extends ScalaTestWithActorTestKit(ConfLoader.akkaConf) with Any
   private var gameCreatedProbe: TestProbe[Master.GameCreated] = _
   private var masterActor: ActorRef[Master.MasterCommand] = _
 
-  private val defaultComponents = List(GameComponent(PacmanType.PACMAN.toString(), PacmanType.PACMAN))
+  private val defaultComponents = Map(PacmanType.PACMAN.toString()-> PacmanType.PACMAN)
 
   implicit def stringToKeyService[A: ClassTag](keyId: String): ServiceKey[A] = ServiceKey[A](keyId)
 

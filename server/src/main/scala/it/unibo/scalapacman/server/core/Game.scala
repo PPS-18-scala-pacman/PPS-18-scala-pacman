@@ -5,11 +5,12 @@ import akka.actor.typed.receptionist.{Receptionist, ServiceKey}
 import akka.actor.typed.scaladsl.{ActorContext, Behaviors}
 import akka.http.scaladsl.model.ws.Message
 import it.unibo.scalapacman.lib.model.GhostType.{BLINKY, CLYDE, GhostType, INKY, PINKY}
+import it.unibo.scalapacman.lib.model.PacmanType.PacmanType
 import it.unibo.scalapacman.server.core.Engine.{EngineCommand, Start}
 import it.unibo.scalapacman.server.core.Game.{CloseCommand, GameCommand, Model, NotifyPlayerReady, PlayerData, RegisterPlayer, Setup}
 import it.unibo.scalapacman.server.config.Settings
 import it.unibo.scalapacman.server.core.PlayerAct.{PlayerRegistration, RegistrationRejected}
-import it.unibo.scalapacman.server.model.{GameComponent, GameEntity}
+import it.unibo.scalapacman.server.model.GameEntity
 
 import scala.util.Random
 
@@ -33,12 +34,12 @@ object Game {
   private case class Setup( id: String,
                             context: ActorContext[GameCommand],
                             engine: ActorRef[EngineCommand],
-                            components: List[GameComponent])
+                            components: Map[String, PacmanType])
 
   private case class Model( players: Map[ActorRef[PlayerAct.PlayerCommand], PlayerData],
                             ghosts: Map[ActorRef[Engine.UpdateCommand], GhostData])
 
-  def apply(id: String, components: List[GameComponent], visible: Boolean = true): Behavior[GameCommand] = {
+  def apply(id: String, components: Map[String, PacmanType], visible: Boolean = true): Behavior[GameCommand] = {
     require(components.nonEmpty || components.size <= Settings.maxPlayersNumber, "Numero di giocatori errato")
     Behaviors.setup { context =>
 
@@ -50,8 +51,8 @@ object Game {
       // inizializzazione attori partecipanti
       val defaultGhosts = List(BLINKY, INKY, PINKY, CLYDE)
       implicit val generator: Random = new Random(System.currentTimeMillis())
-      val entityList = defaultGhosts.map(gt => GameEntity(generateGhostId(gt, components.map(_.nickname)), gt)) :::
-                        components.map(cp => GameEntity(cp.nickname, cp.pacmanType))
+      val entityList: List[GameEntity] = defaultGhosts.map(gt => GameEntity(generateGhostId(gt, components.keys.toList), gt)) :::
+        components.map(cp => GameEntity(cp._1, cp._2)).toList
 
       val engine = context.spawn(Engine(id, entityList, Settings.levelDifficulty), "EngineActor")
 
@@ -83,7 +84,7 @@ private class Game(setup: Setup) {
       case RegisterPlayer(replyTo, source, nickname) =>
         setup.context.log.info("RegisterPlayer ricevuto")
 
-        if(!setup.components.exists(_.nickname == nickname) || model.players.exists(_._2.nickname == nickname)) {
+        if(!setup.components.contains(nickname) || model.players.exists(_._2.nickname == nickname)) {
           setup.context.log.error(s"Nickname: $nickname, non valido")
           replyTo ! RegistrationRejected("Giocatore non valido")
           prepareBehavior(idleRoutine, model)

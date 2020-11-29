@@ -3,7 +3,7 @@ package it.unibo.scalapacman.server.core
 import akka.actor.typed.receptionist.{Receptionist, ServiceKey}
 import akka.actor.typed.scaladsl.{ActorContext, Behaviors}
 import akka.actor.typed.{ActorRef, Behavior}
-import it.unibo.scalapacman.server.model.GameComponent
+import it.unibo.scalapacman.lib.model.PacmanType.PacmanType
 
 /**
  * Attore il cui suo scopo è di elaborare le richieste di avvio di nuove partite provvedendo a creare per
@@ -13,7 +13,7 @@ object Master {
 
   // Messaggi gestiti dall'attore
   sealed trait MasterCommand
-  case class CreateGame(replyTo: ActorRef[GameCreated], components: List[GameComponent]) extends MasterCommand
+  case class CreateGame(replyTo: ActorRef[GameCreated], components: Map[String, PacmanType]) extends MasterCommand
 
   // Messaggio di notifica gioco creato
   case class GameCreated(gameId: String)

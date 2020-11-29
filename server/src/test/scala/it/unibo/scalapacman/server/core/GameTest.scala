@@ -12,7 +12,6 @@ import it.unibo.scalapacman.server.config.TestSettings.waitTime
 import it.unibo.scalapacman.server.core.Game.{CloseCommand, RegisterPlayer}
 import it.unibo.scalapacman.server.core.PlayerAct.{PlayerRegistration, RegistrationAccepted, RegistrationRejected}
 import it.unibo.scalapacman.server.config.{ConfLoader, TestSettings}
-import it.unibo.scalapacman.server.model.GameComponent
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.wordspec.AnyWordSpecLike
 
@@ -25,7 +24,7 @@ class GameTest extends ScalaTestWithActorTestKit(ConfLoader.akkaConf) with AnyWo
   private var fooProbe: TestProbe[Message] = _
 
   override def beforeEach(): Unit = {
-    gameActor = spawn(Game(fakeGameId, List(GameComponent(testId, PACMAN))))
+    gameActor = spawn(Game(fakeGameId, Map(testId -> PACMAN)))
     fooProbe = createTestProbe[Message]()
   }
 
@@ -52,7 +51,7 @@ class GameTest extends ScalaTestWithActorTestKit(ConfLoader.akkaConf) with AnyWo
     }
 
     "create actor for game" in {
-      val testKit = BehaviorTestKit(Game(fakeGameId, List(GameComponent(testId, PACMAN)), visible = false))
+      val testKit = BehaviorTestKit(Game(fakeGameId, Map(testId -> PACMAN), visible = false))
 
       testKit.expectEffectType[Spawned[Engine]]
       GhostType.values.foreach(_ => testKit.expectEffectType[Spawned[GhostAct]])

@@ -8,6 +8,7 @@ import akka.actor.typed.receptionist.{Receptionist, ServiceKey}
 import akka.actor.typed.scaladsl.{ActorContext, Behaviors}
 import akka.http.scaladsl.model.ws.Message
 import akka.stream.scaladsl.{Flow, Source}
+import it.unibo.scalapacman.lib.model.PacmanType.PacmanType
 import it.unibo.scalapacman.server.communication.ConnectionProtocol.ConnectionMsg
 import it.unibo.scalapacman.server.communication.ServiceHandler.{ListingResponse, PlayerRegisterRespFailure}
 import it.unibo.scalapacman.server.communication.ServiceHandler.{PlayerRegisterRespSuccess, Setup, WrapRespCreateGame}
@@ -16,7 +17,6 @@ import it.unibo.scalapacman.server.core.PlayerAct.{PlayerRegistration, Registrat
 import it.unibo.scalapacman.server.core.{Game, Master}
 import it.unibo.scalapacman.server.config.Settings
 import it.unibo.scalapacman.server.config.Settings.askTimeout
-import it.unibo.scalapacman.server.model.GameComponent
 
 /**
  * Attore incaricato di gestire le richieste in arrivo dal Client
@@ -85,7 +85,7 @@ private class ServiceHandler(setup: Setup) {
    */
   def createGameEx(replyTo: ActorRef[ServiceRoutes.ResponseCreateGame],
                    key: ServiceKey[Master.MasterCommand],
-                   components: List[GameComponent]): Behavior[ServiceRoutes.RoutesCommand] =
+                   components: Map[String, PacmanType]): Behavior[ServiceRoutes.RoutesCommand] =
     Behaviors.withStash(Settings.stashSize) { buffer =>
       Behaviors.receiveMessage {
         case ListingResponse(key.Listing(listings)) =>
@@ -93,7 +93,7 @@ private class ServiceHandler(setup: Setup) {
             replyTo ! ServiceRoutes.FailureCrG("Errore, servizio di gioco non attivo")
             buffer.unstashAll(mainRoutine())
           } else {
-            listings.head ! Master.CreateGame(respondCreateGameAdapter, components: List[GameComponent])
+            listings.head ! Master.CreateGame(respondCreateGameAdapter, components)
             Behaviors.same
           }
         case WrapRespCreateGame(response) =>
