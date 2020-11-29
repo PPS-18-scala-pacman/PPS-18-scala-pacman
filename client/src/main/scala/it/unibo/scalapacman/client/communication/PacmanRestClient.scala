@@ -77,13 +77,13 @@ trait PacmanRestClient extends Logging { this: HttpClient =>
       !_.eventType.contains(LobbySSEEventType.LOBBY_DELETE.toString)
     )
 
-  private def connectSSE(
-                           requestUri: String,
-                           messageHandler: ServerSentEvent => Unit,
-                           connectionErrorHandler: () => Unit,
-                           onSSEClose: () => Unit,
-                           sseEventTypeStop: ServerSentEvent => Boolean
-                         ): Future[Any] = {
+  def connectSSE(
+                  requestUri: String,
+                  messageHandler: ServerSentEvent => Unit,
+                  connectionErrorHandler: () => Unit,
+                  onSSEClose: () => Unit,
+                  sseEventTypeStop: ServerSentEvent => Boolean
+                ): Future[Any] = {
     val request = Get(requestUri).withHeaders(
       RawHeader("Accept", "text/event-stream")
     )
