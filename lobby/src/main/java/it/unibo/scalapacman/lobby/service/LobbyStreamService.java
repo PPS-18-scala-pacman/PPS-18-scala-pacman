@@ -67,7 +67,6 @@ public class LobbyStreamService {
 
     return subject
       .onBackpressureBuffer(1, () -> {}, BackpressureOverflow.ON_OVERFLOW_DROP_OLDEST)
-      .sample(MEDIUM_SAMPLE_MS, TimeUnit.MILLISECONDS)
       .startWith(firstValue.toObservable());
   }
 
