@@ -20,7 +20,7 @@ import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContextExecutor, Future}
 import scala.util.{Failure, Success}
 import akka.http.scaladsl.unmarshalling.sse.EventStreamUnmarshalling._ // scalastyle:ignore
-import it.unibo.scalapacman.client.model.LobbySSEEventType // scalastyle:ignore
+import it.unibo.scalapacman.client.model.LobbySSEEventType.LOBBY_DELETE // scalastyle:ignore
 
 // scalastyle:off multiple.string.literals
 
@@ -74,7 +74,7 @@ trait PacmanRestClient extends Logging { this: HttpClient =>
       messageHandler,
       connectionErrorHandler,
       onSSEClose,
-      !_.eventType.contains(LobbySSEEventType.LOBBY_DELETE.toString)
+      !_.eventType.contains(LOBBY_DELETE.toString)
     )
 
   def connectSSE(
@@ -189,6 +189,25 @@ trait PacmanRestClient extends Logging { this: HttpClient =>
         case StatusCodes.OK => Unmarshal(response.entity).to[String]
         case StatusCodes.InternalServerError => Unmarshal(response.entity).to[String] flatMap { body =>
           Future.failed(new IOException(s"Errore durante abbandono lobby: $body"))
+        }
+        case _ => handleUnknownStatusCode(request, response)
+      }
+    }
+  }
+
+  def startLobbyGame(username: String, lobbyId: Int): Future[Any] = {
+    val request = Post(s"${PacmanRestClient.LOBBY_URL}/$lobbyId/startGame").withEntity(
+      HttpEntity(
+        ContentTypes.`text/plain(UTF-8)`,
+        username
+      )
+    )
+
+    sendRequest(request) flatMap { response =>
+      response.status match {
+        case StatusCodes.OK =>Future.successful("OK")
+        case StatusCodes.InternalServerError => Unmarshal(response.entity).to[String] flatMap { body =>
+          Future.failed(new IOException(s"Errore inizio partita lobby: $body"))
         }
         case _ => handleUnknownStatusCode(request, response)
       }
