@@ -198,8 +198,8 @@ trait PacmanRestClient extends Logging { this: HttpClient =>
   def startLobbyGame(username: String, lobbyId: Int): Future[Any] = {
     val request = Post(s"${PacmanRestClient.LOBBY_URL}/$lobbyId/startGame").withEntity(
       HttpEntity(
-        ContentTypes.`text/plain(UTF-8)`,
-        username
+        ContentTypes.`application/json`,
+        JsString(username).toString()
       )
     )
 

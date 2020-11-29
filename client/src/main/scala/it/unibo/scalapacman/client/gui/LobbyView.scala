@@ -26,7 +26,7 @@ class LobbyView(implicit controller: Controller, viewChanger: ViewChanger) exten
   private val startLobbyGameButton: JButton = createButton(START_LOBBY_GAME_BUTTON_LABEL)
   private val leaveLobbyButton: JButton = createButton(LEAVE_LOBBY_BUTTON_LABEL)
 
-  leaveLobbyButton addActionListener (_ => handleStartGameButton())
+  startLobbyGameButton addActionListener (_ => handleStartGameButton())
   leaveLobbyButton addActionListener (_ => handleLeaveButton())
 
   private val buttonsPanel: PanelImpl = PanelImpl()
