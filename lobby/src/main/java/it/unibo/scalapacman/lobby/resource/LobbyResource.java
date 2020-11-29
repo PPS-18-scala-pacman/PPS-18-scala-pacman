@@ -1,8 +1,6 @@
 package it.unibo.scalapacman.lobby.resource;
 
-import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonArray;
-import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 import io.vertx.rxjava.ext.web.Router;
@@ -60,7 +58,7 @@ public class LobbyResource {
       .putHeader("Connection", "keep-alive")
       .putHeader("Cache-Control", "no-cache");
 
-    this.streamService.getStreamAll().subscribe(
+    this.streamService.getAllStream().subscribe(
       event ->
         routingContext.response()
           .write(event.toString()),
@@ -91,7 +89,7 @@ public class LobbyResource {
       .putHeader("Connection", "keep-alive")
       .putHeader("Cache-Control", "no-cache");
 
-    this.streamService.getStreamById(id).subscribe(
+    this.streamService.getByIdStream(id).subscribe(
       result -> {
         Optional<SSE.Event<LobbyStreamEventType, Lobby>> eventOpt = Optional.ofNullable(result);
         routingContext.response()
@@ -103,7 +101,7 @@ public class LobbyResource {
   }
 
   private void handleCreate(final RoutingContext routingContext) {
-    final Lobby lobby = new Lobby((JsonObject) Json.decodeValue(routingContext.getBodyAsString()));
+    final Lobby lobby = new Lobby(routingContext.getBodyAsJson());
 
     this.service.create(lobby).subscribe(
         result ->
@@ -116,7 +114,7 @@ public class LobbyResource {
 
   private void handleUpdate(final RoutingContext routingContext) {
     final Long id = Long.valueOf(routingContext.request().getParam("id"));
-    final Lobby newLobby = new Lobby((JsonObject) Json.decodeValue(routingContext.getBodyAsString()));
+    final Lobby newLobby = new Lobby(routingContext.getBodyAsJson());
 
     this.service.update(id, newLobby).subscribe(
       result ->

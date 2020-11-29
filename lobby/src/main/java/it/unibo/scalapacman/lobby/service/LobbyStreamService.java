@@ -2,7 +2,7 @@ package it.unibo.scalapacman.lobby.service;
 
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
-import it.unibo.scalapacman.lobby.dao.Dao;
+import it.unibo.scalapacman.lobby.dao.LobbyDao;
 import it.unibo.scalapacman.lobby.model.Lobby;
 import it.unibo.scalapacman.lobby.util.ListJsonable;
 import it.unibo.scalapacman.lobby.util.REST;
@@ -24,11 +24,12 @@ public class LobbyStreamService {
 
   private final static long SAMPLE_MS = 10000;
 
-  private final Dao<Lobby, Long> dao;
+  private final LobbyDao dao;
   private final BehaviorSubject<SSE.Event<LobbyStreamEventType, ListJsonable<Lobby>>> getAllSubject = BehaviorSubject.create();
+  private final BehaviorSubject<SSE.Event<LobbyStreamEventType, Lobby>> getSubject = BehaviorSubject.create();
   private final Map<Long, BehaviorSubject<SSE.Event<LobbyStreamEventType, Lobby>>> getByIdSubject = new HashMap<>();
 
-  public LobbyStreamService(Dao<Lobby, Long> dao) {
+  public LobbyStreamService(LobbyDao dao) {
     this.dao = dao;
     this.initStreams();
   }
@@ -37,14 +38,21 @@ public class LobbyStreamService {
     this.updateStreamAll(new LobbyStreamEventType(LobbyStreamObject.Lobby, REST.Create));
   }
 
-  public Observable<SSE.Event<LobbyStreamEventType, ListJsonable<Lobby>>> getStreamAll() {
+  public Observable<SSE.Event<LobbyStreamEventType, ListJsonable<Lobby>>> getAllStream() {
     return getAllSubject
       .onBackpressureBuffer(16, () -> {}, BackpressureOverflow.ON_OVERFLOW_DROP_OLDEST)
       .sample(SAMPLE_MS, TimeUnit.MILLISECONDS)
       .observeOn(Schedulers.computation());
   }
 
-  public Observable<SSE.Event<LobbyStreamEventType, Lobby>> getStreamById(Long id) {
+  public Observable<SSE.Event<LobbyStreamEventType, Lobby>> getStream() {
+    return getSubject
+      .onBackpressureBuffer(16, () -> {}, BackpressureOverflow.ON_OVERFLOW_DROP_OLDEST)
+      .sample(SAMPLE_MS, TimeUnit.MILLISECONDS)
+      .observeOn(Schedulers.computation());
+  }
+
+  public Observable<SSE.Event<LobbyStreamEventType, Lobby>> getByIdStream(Long id) {
     LobbyStreamEventType type = new LobbyStreamEventType(LobbyStreamObject.Lobby, REST.Create);
     if (!getByIdSubject.containsKey(id)) {
       BehaviorSubject<SSE.Event<LobbyStreamEventType, Lobby>> subject = BehaviorSubject.create();

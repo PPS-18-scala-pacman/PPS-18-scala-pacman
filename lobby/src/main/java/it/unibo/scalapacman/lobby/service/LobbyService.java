@@ -1,7 +1,7 @@
 package it.unibo.scalapacman.lobby.service;
 
+import it.unibo.scalapacman.lobby.dao.LobbyDao;
 import it.unibo.scalapacman.lobby.model.Lobby;
-import it.unibo.scalapacman.lobby.dao.Dao;
 import it.unibo.scalapacman.lobby.model.Participant;
 import it.unibo.scalapacman.lobby.util.REST;
 import rx.Single;
@@ -9,10 +9,10 @@ import rx.Single;
 import java.util.*;
 
 public class LobbyService {
-  private final Dao<Lobby, Long> dao;
+  private final LobbyDao dao;
   private final LobbyStreamService streamService;
 
-  public LobbyService(final Dao<Lobby, Long> dao, final LobbyStreamService streamService) {
+  public LobbyService(final LobbyDao dao, final LobbyStreamService streamService) {
     this.dao = dao;
     this.streamService = streamService;
   }

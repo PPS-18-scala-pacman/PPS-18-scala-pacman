@@ -15,14 +15,22 @@ public class SSE {
   }
 
   public static class Event<T, D extends Jsonable> {
-    static String template = "event: %s\ndata: %s\n\n";
+    private final static String template = "event: %s\ndata: %s\n\n";
 
-    T type;
-    D data;
+    private final T type;
+    private final D data;
 
     public Event(T type, D data) {
       this.type = type;
       this.data = data;
+    }
+
+    public T getType() {
+      return type;
+    }
+
+    public D getData() {
+      return data;
     }
 
     @Override
