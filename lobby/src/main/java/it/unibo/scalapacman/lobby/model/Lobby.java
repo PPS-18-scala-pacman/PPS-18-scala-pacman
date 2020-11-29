@@ -16,7 +16,7 @@ public class Lobby implements Jsonable {
   private Short size;
   private String hostUsername;
   private List<Participant> participants;
-  private Long gameId;
+  private String gameId;
 
   public Lobby(final Long id, final String description, Short size, String hostUsername) {
     this(id, description, size, hostUsername, new ArrayList<>(size));
@@ -26,7 +26,7 @@ public class Lobby implements Jsonable {
     this(id, description, size, hostUsername, participants, null);
   }
 
-  public Lobby(final Long id, final String description, Short size, String hostUsername, List<Participant> participants, Long gameId) {
+  public Lobby(final Long id, final String description, Short size, String hostUsername, List<Participant> participants, String gameId) {
     if (participants.size() > size) throw new IllegalArgumentException("participants can't have more items than size value");
     this.id = id;
     this.description = description;
@@ -84,11 +84,11 @@ public class Lobby implements Jsonable {
     this.participants = participants;
   }
 
-  public Long getGameId() {
+  public String getGameId() {
     return gameId;
   }
 
-  public void setGameId(Long gameId) {
+  public void setGameId(String gameId) {
     this.gameId = gameId;
   }
 

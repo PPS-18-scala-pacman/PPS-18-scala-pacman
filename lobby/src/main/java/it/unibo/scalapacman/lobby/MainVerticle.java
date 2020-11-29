@@ -62,7 +62,7 @@ public class MainVerticle extends AbstractVerticle {
     return Single.just(new ExternalInterfacesContainer(
       new LobbyDaoImpl(dbClient),
       new ParticipantDaoImpl(dbClient),
-      new GameActionsImpl(config.getString("GAME_SERVER_URL"), webClient)
+      new GameActionsImpl(config.getInteger("GAME_SERVER_PORT"), config.getString("GAME_SERVER_URL"), webClient)
     ));
   }
 
@@ -87,7 +87,7 @@ public class MainVerticle extends AbstractVerticle {
     router.route().handler(corsHandler());
     router.route().handler(BodyHandler.create());
 
-    new LobbyResource(router, services.lobby, services.lobbyStream);
+    new LobbyResource(router, services.lobby, services.lobbyStream, services.game);
     new ParticipantResource(router, services.participant);
 
     router.route().failureHandler(ctx -> {

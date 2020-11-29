@@ -8,10 +8,10 @@ import java.util.stream.Collectors;
 
 public class Game implements Jsonable {
 
-  private final Long id;
+  private final String id;
   private final Map<String, Integer> components;
 
-  public Game(Long id, Map<String, Integer> components) {
+  public Game(String id, Map<String, Integer> components) {
     this.id = id;
     this.components = components;
   }
@@ -25,7 +25,7 @@ public class Game implements Jsonable {
       .collect(Collectors.toMap(Participant::getUsername, Participant::getPacmanTypeAsInteger));
   }
 
-  public Long getId() {
+  public String getId() {
     return id;
   }
 
