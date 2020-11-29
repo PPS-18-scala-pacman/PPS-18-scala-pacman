@@ -61,11 +61,11 @@ class LobbyView(implicit controller: Controller, viewChanger: ViewChanger) exten
   private def updateLobby(lobby: Lobby): Unit = {
     if (lobby.hostUsername.equals(controller.model.username) && !startLobbyGameButton.isEnabled) {
       startLobbyGameButton setEnabled true
-    } else if (lobby.hostUsername.equals(controller.model.username) && startLobbyGameButton.isEnabled) {
+    } else if (!lobby.hostUsername.equals(controller.model.username) && startLobbyGameButton.isEnabled) {
       startLobbyGameButton setEnabled false
     }
 
-    lobbyDescriptionLabel setText lobby.description
+    lobbyDescriptionLabel setText s"${lobby.description} - (${lobby.participants.size}/${lobby.size})"
     playersList clear()
     lobby.participants foreach { playersList.addElement }
   }
