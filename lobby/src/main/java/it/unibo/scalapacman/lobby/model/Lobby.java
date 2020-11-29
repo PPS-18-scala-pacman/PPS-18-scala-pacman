@@ -127,7 +127,7 @@ public class Lobby implements Jsonable {
         && this.description.equals(other.getDescription())
         && this.size.equals(other.getSize())
         && this.hostUsername.equals(other.getHostUsername())
-        && this.gameId.equals(other.getGameId());
+        && ((this.gameId == null && other.getGameId() == null) || this.gameId.equals(other.getGameId()));
     }
 
     return false;
