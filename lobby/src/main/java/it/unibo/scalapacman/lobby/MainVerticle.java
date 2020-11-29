@@ -49,7 +49,7 @@ public class MainVerticle extends AbstractVerticle {
 
   public Single<?> start(JsonObject config) {
     return prepareDatabase(config.getJsonObject("DATABASE"))
-      .flatMap(dbClient -> this.initDao(dbClient, WebClient.create(vertx)))
+      .flatMap(dbClient -> this.initExternalInterfaces(config, dbClient, WebClient.create(vertx)))
       .flatMap(this::initServices)
       .flatMap(services -> startHttpServer(config, services));
   }
@@ -58,21 +58,22 @@ public class MainVerticle extends AbstractVerticle {
     return ConfigRetriever.create(vertx).rxGetConfig();
   }
 
-  private Single<ExternalInterfacesContainer> initDao(PgPool dbClient, WebClient webClient) {
+  private Single<ExternalInterfacesContainer> initExternalInterfaces(JsonObject config, PgPool dbClient, WebClient webClient) {
     return Single.just(new ExternalInterfacesContainer(
       new LobbyDaoImpl(dbClient),
       new ParticipantDaoImpl(dbClient),
-      new GameActionsImpl(webClient)
+      new GameActionsImpl(config.getString("GAME_SERVER_URL"), webClient)
     ));
   }
 
   private Single<ServiceContainer> initServices(ExternalInterfacesContainer container) {
     LobbyStreamService lobbyStreamService = new LobbyStreamService(container.lobby);
+    LobbyService lobbyService = new LobbyService(container.lobby, lobbyStreamService);
     return Single.just(new ServiceContainer(
       lobbyStreamService,
-      new LobbyService(container.lobby, lobbyStreamService),
+      lobbyService,
       new ParticipantService(container.participant, lobbyStreamService),
-      new GameService(container.game, lobbyStreamService)
+      new GameService(container.game, lobbyStreamService, lobbyService)
     ));
   }
 

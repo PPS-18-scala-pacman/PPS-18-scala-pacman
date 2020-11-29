@@ -20,7 +20,7 @@ public class Game implements Jsonable {
     if (lobby == null || lobby.getParticipants() == null) throw new IllegalArgumentException("Lobby object is null or participants argument is null");
     if (lobby.getSize() > lobby.getParticipants().size()) throw new IllegalStateException("Lobby is not full, can't create a new game");
 
-    this.id = null;
+    this.id = lobby.getGameId();
     this.components = lobby.getParticipants().stream()
       .collect(Collectors.toMap(Participant::getUsername, Participant::getPacmanTypeAsInteger));
   }

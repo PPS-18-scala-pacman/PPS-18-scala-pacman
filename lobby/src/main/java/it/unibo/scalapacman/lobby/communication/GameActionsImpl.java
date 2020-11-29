@@ -8,15 +8,16 @@ import rx.Single;
 
 public class GameActionsImpl implements GameActions {
 
+  private final String serverUrl;
   private final WebClient client;
 
-  public GameActionsImpl(WebClient client) {
+  public GameActionsImpl(final String serverUrl, final WebClient client) {
+    this.serverUrl = serverUrl;
     this.client = client;
   }
 
   public Single<Game> startGame(Game game) {
-    // http://$serverURL
-    return this.client.post("http://localhost:8080", "/games")
+    return this.client.post(this.serverUrl, "/games")
       .as(BodyCodec.json(Long.class))
       .rxSendJson(game)
       .map(HttpResponse::body)
