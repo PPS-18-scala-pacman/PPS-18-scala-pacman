@@ -2,10 +2,10 @@ package it.unibo.scalapacman.client.gui
 
 import java.awt.{BorderLayout, GridLayout}
 
-import it.unibo.scalapacman.client.controller.Action.{CREATE_LOBBY, JOIN_LOBBY, START_GAME, SUBSCRIBE_TO_EVENTS}
+import it.unibo.scalapacman.client.controller.Action.{CREATE_LOBBY, JOIN_LOBBY, SUBSCRIBE_TO_EVENTS}
 import it.unibo.scalapacman.client.controller.Controller
 import it.unibo.scalapacman.client.event.{LobbiesUpdate, PacmanEvent, PacmanSubscriber}
-import it.unibo.scalapacman.client.gui.View.{LOBBY, MENU, PLAY}
+import it.unibo.scalapacman.client.gui.View.{LOBBY, MENU}
 import it.unibo.scalapacman.client.model.{CreateLobbyData, JoinLobbyData, Lobby}
 import javax.swing.{BorderFactory, Box, BoxLayout, DefaultListModel, JButton, JLabel, JScrollPane, JSeparator, JSpinner, JTextField, SwingConstants}
 

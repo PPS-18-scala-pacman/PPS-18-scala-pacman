@@ -31,6 +31,7 @@ object LobbyJsonProtocol extends DefaultJsonProtocol {
 }
 
 object LobbySSEEventType extends Enumeration {
+  val GAME_CREATE: LobbySSEEventType.Value = Value("Game/Create")
   val LOBBY_CREATE: LobbySSEEventType.Value = Value("Lobby/Create")
   val LOBBY_DELETE: LobbySSEEventType.Value = Value("Lobby/Delete")
   val LOBBY_UPDATE: LobbySSEEventType.Value = Value("Lobby/Update")

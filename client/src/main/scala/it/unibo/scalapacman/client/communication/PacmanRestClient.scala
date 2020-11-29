@@ -45,7 +45,7 @@ trait PacmanRestClient extends Logging { this: HttpClient =>
    * @param connectionErrorHandler  callback per errore di connessione al servizio
    */
   def watchLobbies(
-                    messageHandler: String => Unit,
+                    messageHandler: ServerSentEvent => Unit,
                     connectionErrorHandler: () => Unit,
                     onSSEClose: () => Unit,
                   ): Future[Any] =
@@ -65,7 +65,7 @@ trait PacmanRestClient extends Logging { this: HttpClient =>
    */
   def watchLobby(
                   id: Int,
-                  messageHandler: String => Unit,
+                  messageHandler: ServerSentEvent => Unit,
                   connectionErrorHandler: () => Unit,
                   onSSEClose: () => Unit,
                 ): Future[Any] =
@@ -79,7 +79,7 @@ trait PacmanRestClient extends Logging { this: HttpClient =>
 
   private def connectSSE(
                            requestUri: String,
-                           messageHandler: String => Unit,
+                           messageHandler: ServerSentEvent => Unit,
                            connectionErrorHandler: () => Unit,
                            onSSEClose: () => Unit,
                            sseEventTypeStop: ServerSentEvent => Boolean
@@ -93,7 +93,7 @@ trait PacmanRestClient extends Logging { this: HttpClient =>
         case StatusCodes.OK =>
           Unmarshal(response.entity).to[Source[ServerSentEvent, NotUsed]].foreach(
             _.takeWhile(sseEventTypeStop(_))
-              .runForeach(sse => messageHandler(sse.getData())) onComplete {
+              .runForeach(sse => messageHandler(sse)) onComplete {
                 case Success(_) =>
                   info("SSE chiusa correttamente")
                   onSSEClose()

@@ -4,8 +4,8 @@ import java.awt.BorderLayout
 
 import it.unibo.scalapacman.client.controller.Action.{LEAVE_LOBBY, SUBSCRIBE_TO_EVENTS}
 import it.unibo.scalapacman.client.controller.Controller
-import it.unibo.scalapacman.client.event.{LobbyDeleted, LobbyUpdate, PacmanEvent, PacmanSubscriber}
-import it.unibo.scalapacman.client.gui.View.SETUP
+import it.unibo.scalapacman.client.event.{GameStarted, LobbyDeleted, LobbyUpdate, PacmanEvent, PacmanSubscriber}
+import it.unibo.scalapacman.client.gui.View.{PLAY, SETUP}
 import it.unibo.scalapacman.client.model.{Lobby, Participant}
 import javax.swing.{BorderFactory, DefaultListModel, JButton, JLabel, JScrollPane, SwingConstants}
 
@@ -19,9 +19,9 @@ class LobbyView(implicit controller: Controller, viewChanger: ViewChanger) exten
   private val SUB_SL_EMPTY_BORDER_Y_AXIS: Int = 10
   private val SUB_SL_EMPTY_BORDER_X_AXIS: Int = 100
 
-  private val titleLabel: JLabel = createTitleLabel(TITLE_LABEL)
+  private val lobbyDescriptionLabel: JLabel = createTitleLabel("")
 
-  titleLabel setHorizontalAlignment SwingConstants.CENTER
+  lobbyDescriptionLabel setHorizontalAlignment SwingConstants.CENTER
 
   private val leaveButton: JButton = createButton(LEAVE_BUTTON_LABEL)
 
@@ -47,13 +47,14 @@ class LobbyView(implicit controller: Controller, viewChanger: ViewChanger) exten
   )
 
   setLayout(new BorderLayout)
-  add(titleLabel, BorderLayout.PAGE_START)
+  add(lobbyDescriptionLabel, BorderLayout.PAGE_START)
   add(playersPanel, BorderLayout.CENTER)
   add(buttonsPanel, BorderLayout.PAGE_END)
 
   askToController(SUBSCRIBE_TO_EVENTS, Some(PacmanSubscriber(handlePacmanEvent)))
 
   private def updateLobby(lobby: Lobby): Unit = {
+    lobbyDescriptionLabel setText lobby.description
     playersList clear()
     lobby.participants foreach { playersList.addElement }
   }
@@ -61,6 +62,7 @@ class LobbyView(implicit controller: Controller, viewChanger: ViewChanger) exten
   private def handlePacmanEvent(pe: PacmanEvent): Unit = pe match {
     case LobbyUpdate(lobby) => updateLobby(lobby)
     case LobbyDeleted() => viewChanger.changeView(SETUP)
+    case GameStarted() => viewChanger.changeView(PLAY)
     case _ => Unit
   }
 

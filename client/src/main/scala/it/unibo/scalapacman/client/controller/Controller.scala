@@ -4,7 +4,8 @@ import java.util.{Timer, TimerTask}
 
 import grizzled.slf4j.Logging
 import it.unibo.scalapacman.client.communication.PacmanRestClient
-import Action.{CREATE_LOBBY, END_GAME, EXIT_APP, JOIN_LOBBY, LEAVE_LOBBY, MOVEMENT, PAUSE_RESUME, RESET_KEY_MAP, SAVE_KEY_MAP, START_GAME, SUBSCRIBE_TO_EVENTS}
+import Action.{CREATE_LOBBY, END_GAME, EXIT_APP, JOIN_LOBBY, LEAVE_LOBBY, MOVEMENT, PAUSE_RESUME, RESET_KEY_MAP, SAVE_KEY_MAP, SUBSCRIBE_TO_EVENTS}
+import akka.http.scaladsl.model.sse.ServerSentEvent
 import it.unibo.scalapacman.client.event.{GamePaused, GameStarted, GameUpdate, LobbiesUpdate, LobbyDeleted, LobbyUpdate,
   NetworkIssue, NewKeyMap, PacmanPublisher, PacmanSubscriber}
 import it.unibo.scalapacman.client.gui.{LOBBIES_RECONNECTION_TIME_DELAY, WS_RECONNECTION_TIME_DELAY}
@@ -12,6 +13,7 @@ import it.unibo.scalapacman.client.input.JavaKeyBinding.DefaultJavaKeyBinding
 import it.unibo.scalapacman.client.input.KeyMap
 import it.unibo.scalapacman.client.map.PacmanMap
 import it.unibo.scalapacman.client.model.LobbyJsonProtocol.lobbyFormat
+import it.unibo.scalapacman.client.model.LobbySSEEventType.GAME_CREATE
 import it.unibo.scalapacman.client.model.{CreateLobbyData, GameModel, JoinLobbyData, Lobby}
 import it.unibo.scalapacman.common.CommandType.CommandType
 import it.unibo.scalapacman.common.MoveCommandType.MoveCommandType
@@ -72,7 +74,7 @@ private case class ControllerImpl(pacmanRestClient: PacmanRestClient) extends Co
 
   // scalastyle:off cyclomatic.complexity
   def handleAction(action: Action, param: Option[Any]): Unit = action match {
-    case START_GAME => evalStartGame(model.gameId, param.asInstanceOf[Option[CreateLobbyData]])
+//    case START_GAME => evalStartGame(model.gameId, param.asInstanceOf[Option[CreateLobbyData]])
     case CREATE_LOBBY => evalCreateLobby(model.gameId, model.lobby, param.asInstanceOf[Option[CreateLobbyData]])
     case JOIN_LOBBY => evalJoinLobby(model.gameId, model.lobby, param.asInstanceOf[Option[JoinLobbyData]])
     case LEAVE_LOBBY => evalLeaveLobby(model.gameId, model.lobby)
@@ -90,37 +92,31 @@ private case class ControllerImpl(pacmanRestClient: PacmanRestClient) extends Co
   def userAction: Option[MoveCommandType] = _prevUserAction
 
   /**
-   * Se non c'è nessuna partita in corso, procede con la creazione di una nuova partita.
+   * Se non c'è nessuna partita in corso, procede con il collegamento alla nuova partita.
    *
-   * @param gameId il valore attuale di gameId ottenuto dal Model
-   * @param cgdMaybe oggetto di configurazione per la nuova partita
+   * @param modelGameId il valore attuale di gameId ottenuto dal Model
+   * @param newGameId id della partita ricevuto dalla lobby
    */
-  private def evalStartGame(gameId: Option[String], cgdMaybe: Option[CreateLobbyData]): Unit = gameId match {
-    case None => startGame(cgdMaybe.get)
+  private def evalStartGame(modelGameId: Option[String], newGameId: String): Unit = modelGameId match {
+    case None => startGame(newGameId)
     case Some(_) => error("Impossibile creare nuova partita quando ce n'è già una in corso")
   }
 
   /**
-   * Se la chiamata ha successo:
-   * - re-inizializza il Model
-   * - istanzia un nuovo thread per la gestione dei messaggi WebSocket
-   * - la chiamata al Server per aprire il canale WebSocket
-   * - pubblica l'evento di gioco iniziato tramite il Publisher
+   * - Re-inizializza il Model
+   * - Istanzia un nuovo thread per la gestione dei messaggi WebSocket
+   * - Esegue chiamata al Server per aprire il canale WebSocket
+   * - Pubblica l'evento di gioco iniziato tramite il Publisher
    *
-   * @param cgd l'oggetto di configurazione per la nuova partita
+   * @param gameId id della partita
    */
-  private def startGame(cgd: CreateLobbyData): Unit = pacmanRestClient.startGame(cgd.size) onComplete {
-    case Success(value) =>
-      info(s"Partita creata con successo: id $value") // scalastyle:ignore multiple.string.literals
-      model = model.copy(gameId = Some(value)/*, paused = true*/) // Il gioco parte sempre in pausa --> NON PIù
-      model = model.copy(username = cgd.username)
-      _prevUserAction = None
-      new Thread(_webSocketRunnable).start()
-      pacmanRestClient.openWS(value, model.username, handleWebSocketMessage, handleWSConnectionError)
-      _publisher.notifySubscribers(GameStarted())
-    case Failure(exception) =>
-      error(s"Errore nella creazione della partita: ${exception.getMessage}")
-      _publisher.notifySubscribers(NetworkIssue(serverError = true, "Errore comunicazione col server"))
+  private def startGame(gameId: String): Unit = {
+    info(s"Partita creata con successo: id $gameId")
+    model = model.copy(gameId = Some(gameId))
+    _prevUserAction = None
+    new Thread(_webSocketRunnable).start()
+    pacmanRestClient.openWS(gameId, model.username, handleWebSocketMessage, handleWSConnectionError)
+    _publisher.notifySubscribers(GameStarted())
   }
 
   /**
@@ -365,10 +361,10 @@ private case class ControllerImpl(pacmanRestClient: PacmanRestClient) extends Co
 
   /**
    * Gestisce i messaggi ricevuti sul canale SSE delle lobby
-   * @param jsonStr i dati in formato JSON
+   * @param sse oggetto ServerSentEvent ricevuto dal server
    */
-  private def handleLobbiesUpdate(jsonStr: String): Unit =
-    _publisher.notifySubscribers(LobbiesUpdate(jsonStr.parseJson.convertTo[List[Lobby]]))
+  private def handleLobbiesUpdate(sse: ServerSentEvent): Unit =
+    _publisher.notifySubscribers(LobbiesUpdate(sse.getData().parseJson.convertTo[List[Lobby]]))
 
   /**
    * Gestisce l'interruzione al canale SSE delle lobby per un problema di rete
@@ -396,10 +392,14 @@ private case class ControllerImpl(pacmanRestClient: PacmanRestClient) extends Co
 
   /**
    * Gestisce i messaggi ricevuti sul canale SSE della lobby
-   * @param jsonStr i dati in formato JSON
+   * @param sse oggetto ServerSentEvent ricevuto dal server
    */
-  private def handleLobbyUpdate(jsonStr: String): Unit =
-      _publisher.notifySubscribers(LobbyUpdate(jsonStr.parseJson.convertTo[Lobby]))
+  private def handleLobbyUpdate(sse: ServerSentEvent): Unit =
+    if (sse.eventType.contains(GAME_CREATE.toString)) {
+      evalStartGame(model.gameId, sse.getData())
+    } else {
+      _publisher.notifySubscribers(LobbyUpdate(sse.getData().parseJson.convertTo[Lobby]))
+    }
 
   /**
    * Gestisce l'interruzione al canale SSE delle lobby per un problema di rete
