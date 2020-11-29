@@ -417,7 +417,7 @@ private case class ControllerImpl(pacmanRestClient: PacmanRestClient) extends Co
    */
   private def handleLobbyUpdate(sse: ServerSentEvent): Unit = sse.getData().parseJson.convertTo[Lobby] match {
     case Lobby(_, _, _, _, _, Some(gameId)) => evalStartGame(model.gameId, gameId)
-    case lobby: Lobby => _publisher.notifySubscribers(LobbyUpdate(lobby))
+    case lobby@Lobby(_, _, _, _, _, None) => _publisher.notifySubscribers(LobbyUpdate(lobby))
   }
 
   /**
