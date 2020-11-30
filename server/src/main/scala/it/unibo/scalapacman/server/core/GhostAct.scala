@@ -56,8 +56,9 @@ private class GhostAct(setup: Setup) {
     setup.context.log.debug("Ricevuto update: " + model)
     val gameState: GameState = model.state
     val selfDTO = model.gameEntities.find(_.id == setup.nickname)
+    val pacmanTypes = GameCharacter.PACMAN :: GameCharacter.MS_PACMAN :: GameCharacter.CAPMAN :: GameCharacter.RAPMAN :: Nil;
     val pacmanList = model.gameEntities
-      .filter(_.gameCharacterHolder.gameChar == GameCharacter.PACMAN)
+      .filter(e => pacmanTypes.contains(e.gameCharacterHolder.gameChar))
       .map(_.toPacman.get)
 
     if(gameState.levelState != LevelState.ONGOING) {
