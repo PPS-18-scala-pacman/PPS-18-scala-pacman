@@ -4,9 +4,11 @@ import java.util.{Timer, TimerTask}
 
 import grizzled.slf4j.Logging
 import it.unibo.scalapacman.client.communication.PacmanRestClient
-import Action.{CREATE_LOBBY, END_GAME, EXIT_APP, JOIN_LOBBY, LEAVE_LOBBY, MOVEMENT, PAUSE_RESUME, RESET_KEY_MAP, SAVE_KEY_MAP, START_LOBBY_GAME, SUBSCRIBE_TO_EVENTS}
+import Action.{CREATE_LOBBY, END_GAME, EXIT_APP, JOIN_LOBBY, LEAVE_LOBBY, MOVEMENT, PAUSE_RESUME, RESET_KEY_MAP,
+  SAVE_KEY_MAP, START_LOBBY_GAME, SUBSCRIBE_TO_EVENTS}
 import akka.http.scaladsl.model.sse.ServerSentEvent
-import it.unibo.scalapacman.client.event.{GamePaused, GameStarted, GameUpdate, LobbiesUpdate, LobbyDeleted, LobbyUpdate, NetworkIssue, NewKeyMap, PacmanPublisher, PacmanSubscriber}
+import it.unibo.scalapacman.client.event.{GamePaused, GameStarted, GameUpdate, LobbiesUpdate, LobbyDeleted, LobbyUpdate,
+  NetworkIssue, NewKeyMap, PacmanPublisher, PacmanSubscriber}
 import it.unibo.scalapacman.client.gui.{LOBBIES_RECONNECTION_TIME_DELAY, WS_RECONNECTION_TIME_DELAY}
 import it.unibo.scalapacman.client.input.JavaKeyBinding.DefaultJavaKeyBinding
 import it.unibo.scalapacman.client.input.KeyMap
