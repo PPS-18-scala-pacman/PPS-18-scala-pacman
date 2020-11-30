@@ -106,7 +106,7 @@ public class MainVerticle extends AbstractVerticle {
 
     return vertx.createHttpServer()
       .requestHandler(router)
-      .rxListen(localPort)
+      .rxListen(localPort, "0.0.0.0")
       .doOnSuccess(res -> logger.info("HTTP server running on port " + localPort));
   }
 
