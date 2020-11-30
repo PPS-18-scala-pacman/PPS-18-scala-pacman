@@ -81,9 +81,9 @@ case object Map {
     def getStartPosition[T >: Character: ClassTag](c: T, characterType: CharacterType): Point2D =
       (c, characterType) match {
         case (Pacman, PacmanType.PACMAN) => PACMAN_START_POSITION
-        case (Pacman, PacmanType.MS_PACMAN) => PACMAN_START_POSITION + Point2D(TileGeography.SIZE, TileGeography.SIZE)
-        case (Pacman, PacmanType.CAPMAN) => PACMAN_START_POSITION + Point2D(-TileGeography.SIZE, -TileGeography.SIZE)
-        case (Pacman, PacmanType.RAPMAN) => PACMAN_START_POSITION + Point2D(TileGeography.SIZE * 2, TileGeography.SIZE * 2)
+        case (Pacman, PacmanType.MS_PACMAN) => PACMAN_START_POSITION + Point2D(TileGeography.SIZE, 0)
+        case (Pacman, PacmanType.CAPMAN) => PACMAN_START_POSITION + Point2D(-TileGeography.SIZE, 0)
+        case (Pacman, PacmanType.RAPMAN) => PACMAN_START_POSITION + Point2D(TileGeography.SIZE * 2, 0)
         case (Ghost, GhostType.BLINKY) => BLINKY_START_POSITION
         case (Ghost, GhostType.PINKY) => PINKY_START_POSITION
         case (Ghost, GhostType.INKY) => INKY_START_POSITION
