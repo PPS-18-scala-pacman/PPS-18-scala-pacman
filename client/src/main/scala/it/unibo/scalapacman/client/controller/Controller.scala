@@ -427,12 +427,9 @@ private case class ControllerImpl(pacmanRestClient: PacmanRestClient) extends Co
    * Gestisce i messaggi ricevuti sul canale SSE della lobby
    * @param sse oggetto ServerSentEvent ricevuto dal server
    */
-  private def handleLobbyUpdate(sse: ServerSentEvent): Unit = {
-    info(sse)
-    sse.getData().parseJson.convertTo[Lobby] match {
-      case Lobby(_, _, _, _, _, Some(gameId)) => evalStartGame(model.gameId, gameId)
-      case lobby@Lobby(_, _, _, _, _, None) => _publisher.notifySubscribers(LobbyUpdate(lobby))
-    }
+  private def handleLobbyUpdate(sse: ServerSentEvent): Unit = sse.getData().parseJson.convertTo[Lobby] match {
+    case Lobby(_, _, _, _, _, Some(gameId)) => evalStartGame(model.gameId, gameId)
+    case lobby@Lobby(_, _, _, _, _, None) => _publisher.notifySubscribers(LobbyUpdate(lobby))
   }
 
   /**
