@@ -6,6 +6,7 @@ import it.unibo.scalapacman.common.{GameCharacter, UpdateModelDTO}
 import it.unibo.scalapacman.common.GameCharacter.{CLYDE, GameCharacter, INKY, PACMAN}
 import it.unibo.scalapacman.lib.model.Direction.Direction
 import it.unibo.scalapacman.lib.model.{GhostType, PacmanType}
+import it.unibo.scalapacman.server.config.Settings
 import it.unibo.scalapacman.server.config.TestSettings.{awaitLowerBound, awaitUpperBound, waitTime}
 import it.unibo.scalapacman.server.core.Engine.ChangeDirectionReq
 import it.unibo.scalapacman.server.model.GameEntity
@@ -37,6 +38,8 @@ class EngineCommandTest extends ScalaTestWithActorTestKit with AnyWordSpecLike {
     }).toMap
 
     engineActor ! Engine.Start()
+    // Attesa delayed start
+    Thread.sleep(Settings.gameDelay.toMillis)
 
     watcherMap = ghostMap + (PACMAN -> watcherPlayerProbe)
   }

@@ -76,7 +76,7 @@ class RouteTest extends AnyWordSpec with ScalatestRouteTest with Matchers {
     }
 
     "return a new game for POST requests to the games path" in {
-      Post("/games", HttpEntity(ContentTypes.`application/json`, """{ "playersNumber": 2}""")) ~>
+      Post("/games", HttpEntity(ContentTypes.`application/json`, """{"components":{"nickname1":1,"nickname2":2}}""")) ~>
         routes ~> check {
           status shouldEqual StatusCodes.Created
           contentType shouldEqual ContentTypes.`text/plain(UTF-8)`

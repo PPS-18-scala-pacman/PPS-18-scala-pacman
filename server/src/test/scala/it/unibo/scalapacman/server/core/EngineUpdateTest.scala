@@ -3,6 +3,7 @@ package it.unibo.scalapacman.server.core
 import akka.actor.testkit.typed.scaladsl.{ScalaTestWithActorTestKit, TestProbe}
 import akka.actor.typed.ActorRef
 import it.unibo.scalapacman.lib.model.{GhostType, PacmanType}
+import it.unibo.scalapacman.server.config.Settings
 import it.unibo.scalapacman.server.config.TestSettings.waitTime
 import it.unibo.scalapacman.server.model.GameEntity
 import org.scalatest.wordspec.AnyWordSpecLike
@@ -32,6 +33,8 @@ class EngineUpdateTest extends ScalaTestWithActorTestKit with AnyWordSpecLike {
       engineActor ! Engine.RegisterWatcher(watcherPlayerProbe.ref)
 
       engineActor ! Engine.Start()
+      // Attesa delayed start
+      Thread.sleep(Settings.gameDelay.toMillis)
 
       watcherPlayerProbe.expectMessageType[Engine.UpdateMsg](waitTime)
     }
