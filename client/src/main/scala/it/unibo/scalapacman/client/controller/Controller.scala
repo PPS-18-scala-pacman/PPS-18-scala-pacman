@@ -26,6 +26,7 @@ import scala.util.{Failure, Success}
 import spray.json._ //scalastyle:ignore
 
 // scalastyle:off multiple.string.literals
+// scalastyle:off number.of.methods
 
 trait Controller {
   /**
@@ -142,6 +143,8 @@ private case class ControllerImpl(pacmanRestClient: PacmanRestClient) extends Co
     case Failure(exception) => error(s"Errore durante la richiesta: ${exception.getMessage}")
   }
 
+  private def updateUsername(username: String): Unit = model = model.copy(username = username)
+
   /**
    * Se non c'è nessuna partita / lobby in corso, procede con la creazione della lobby
    * @param gameId  il valore attuale di gameId ottenuto dal Model
@@ -149,7 +152,9 @@ private case class ControllerImpl(pacmanRestClient: PacmanRestClient) extends Co
    * @param cld dati per la creazione della lobby
    */
   private def evalCreateLobby(gameId: Option[String], lobby: Option[Lobby], cld: Option[CreateLobbyData]): Unit = (gameId, lobby) match {
-    case (None, None) => createLobby(cld.get)
+    case (None, None) =>
+      updateUsername(cld.get.username)
+      createLobby(cld.get)
     case (Some(_), None) => error("Impossibile creare una lobby quando c'è una partita in corso")
     case (None, Some(_)) => error("Impossibile creare una lobby quando ne esiste già una")
     case _ => error("Errore: partita in corso e lobby esistente")
@@ -176,17 +181,21 @@ private case class ControllerImpl(pacmanRestClient: PacmanRestClient) extends Co
    * @param jld dati per il join della lobby
    */
   private def evalJoinLobby(gameId: Option[String], lobby: Option[Lobby], jld: Option[JoinLobbyData]): Unit = (gameId, lobby) match {
-    case (None, None) => pacmanRestClient.joinLobby(jld.get.lobby.id, model.username) onComplete {
-      case Success(_) =>
-        info(s"Partecipazione a lobby ${jld.get.lobby.description} avvenuta con successo")
-        model = model.copy(lobby = Some(jld.get.lobby))
-        connectToLobby(jld.get.lobby.id)
-      case Failure(exception) =>
-        error(s"Errore durante partecipazione lobby ${jld.get.lobby.description}: ${exception.getMessage}")
-    }
+    case (None, None) =>
+      updateUsername(jld.get.username)
+      joinLobby(jld.get, model.username)
     case (Some(_), None) => error("Impossibile partecipare ad una lobby quando c'è una partita in corso")
     case (None, Some(_)) => error("Impossibile partecipare ad una lobby quando ne esiste già una")
     case _ => error("Errore: partita in corso e lobby esistente")
+  }
+
+  private def joinLobby(jld: JoinLobbyData, username: String): Unit = pacmanRestClient.joinLobby(jld.lobby.id, username) onComplete {
+    case Success(_) =>
+      info(s"Partecipazione a lobby ${jld.lobby.description} avvenuta con successo")
+      model = model.copy(lobby = Some(jld.lobby))
+      connectToLobby(jld.lobby.id)
+    case Failure(exception) =>
+      error(s"Errore durante partecipazione lobby ${jld.lobby.description}: ${exception.getMessage}")
   }
 
   /**
@@ -196,16 +205,17 @@ private case class ControllerImpl(pacmanRestClient: PacmanRestClient) extends Co
    */
 
   private def evalLeaveLobby(gameId: Option[String], lobby: Option[Lobby]): Unit = (gameId, lobby) match {
-    case (None, Some(lobby)) =>
-      pacmanRestClient.leaveLobby(model.username) onComplete {
-        case Success(_) =>
-          info(s"Lobby ${lobby.description} abbandonata con successo")
-          model = model.copy(lobby = None)
-        case Failure(exception) =>
-          error(s"Errore durante abbandono lobby ${lobby.description}: ${exception.getMessage}")
-      }
+    case (None, Some(lobby)) => leaveLobby(model.username, lobby)
     case (Some(_), _) => error("Impossibile abbandonare una lobby quando c'è una partita in corso")
     case (None, None) => error("Nessuna lobby da abbandonare")
+  }
+
+  private def leaveLobby(username: String, lobby: Lobby): Unit =  pacmanRestClient.leaveLobby(username) onComplete {
+    case Success(_) =>
+      info(s"Lobby ${lobby.description} abbandonata con successo")
+      model = model.copy(lobby = None)
+    case Failure(exception) =>
+      error(s"Errore durante abbandono lobby ${lobby.description}: ${exception.getMessage}")
   }
 
   /**
@@ -417,9 +427,12 @@ private case class ControllerImpl(pacmanRestClient: PacmanRestClient) extends Co
    * Gestisce i messaggi ricevuti sul canale SSE della lobby
    * @param sse oggetto ServerSentEvent ricevuto dal server
    */
-  private def handleLobbyUpdate(sse: ServerSentEvent): Unit = sse.getData().parseJson.convertTo[Lobby] match {
-    case Lobby(_, _, _, _, _, Some(gameId)) => evalStartGame(model.gameId, gameId)
-    case lobby@Lobby(_, _, _, _, _, None) => _publisher.notifySubscribers(LobbyUpdate(lobby))
+  private def handleLobbyUpdate(sse: ServerSentEvent): Unit = {
+    info(sse)
+    sse.getData().parseJson.convertTo[Lobby] match {
+      case Lobby(_, _, _, _, _, Some(gameId)) => evalStartGame(model.gameId, gameId)
+      case lobby@Lobby(_, _, _, _, _, None) => _publisher.notifySubscribers(LobbyUpdate(lobby))
+    }
   }
 
   /**
@@ -442,4 +455,5 @@ private case class ControllerImpl(pacmanRestClient: PacmanRestClient) extends Co
   }
 }
 
+// scalastyle:on number.of.methods
 // scalastyle:on multiple.string.literals
