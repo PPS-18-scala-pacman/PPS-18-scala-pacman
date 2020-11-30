@@ -3,7 +3,7 @@ package it.unibo.scalapacman.client.model
 import it.unibo.scalapacman.lib.model.PacmanType
 import spray.json.{DefaultJsonProtocol, JsNumber, JsObject, JsString, JsValue, JsonFormat, RootJsonFormat, deserializationError}
 
-case class Lobby(id: Int, description: String, size: Int, hostUsername: String, participants: List[Participant]) {
+case class Lobby(id: Int, description: String, size: Int, hostUsername: String, participants: List[Participant], gameId: Option[String]) {
   override def toString: String = s"$description - (${participants.size}/$size)"
 }
 
@@ -27,11 +27,10 @@ object LobbyJsonProtocol extends DefaultJsonProtocol {
     }
   }
 
-  implicit def lobbyFormat: JsonFormat[Lobby] = jsonFormat5(Lobby)
+  implicit def lobbyFormat: JsonFormat[Lobby] = jsonFormat6(Lobby)
 }
 
 object LobbySSEEventType extends Enumeration {
-  val GAME_CREATE: LobbySSEEventType.Value = Value("Game/Create")
   val LOBBY_CREATE: LobbySSEEventType.Value = Value("Lobby/Create")
   val LOBBY_DELETE: LobbySSEEventType.Value = Value("Lobby/Delete")
   val LOBBY_UPDATE: LobbySSEEventType.Value = Value("Lobby/Update")

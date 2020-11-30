@@ -2,7 +2,7 @@ package it.unibo.scalapacman.lobby.service;
 
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
-import it.unibo.scalapacman.lobby.dao.Dao;
+import it.unibo.scalapacman.lobby.dao.LobbyDao;
 import it.unibo.scalapacman.lobby.model.Lobby;
 import it.unibo.scalapacman.lobby.util.ListJsonable;
 import it.unibo.scalapacman.lobby.util.REST;
@@ -11,10 +11,11 @@ import it.unibo.scalapacman.lobby.util.exception.NotFoundException;
 import rx.BackpressureOverflow;
 import rx.Observable;
 import rx.Single;
-import rx.schedulers.Schedulers;
 import rx.subjects.BehaviorSubject;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 // https://www.baeldung.com/rxjava-backpressure
@@ -22,13 +23,14 @@ import java.util.concurrent.TimeUnit;
 public class LobbyStreamService {
   private final Logger logger = LoggerFactory.getLogger(LobbyStreamService.class);
 
-  private final static long SAMPLE_MS = 10000;
+  private final static long SLOW_SAMPLE_MS = 10000;
+  private final static long MEDIUM_SAMPLE_MS = 1000;
 
-  private final Dao<Lobby, Long> dao;
+  private final LobbyDao dao;
   private final BehaviorSubject<SSE.Event<LobbyStreamEventType, ListJsonable<Lobby>>> getAllSubject = BehaviorSubject.create();
   private final Map<Long, BehaviorSubject<SSE.Event<LobbyStreamEventType, Lobby>>> getByIdSubject = new HashMap<>();
 
-  public LobbyStreamService(Dao<Lobby, Long> dao) {
+  public LobbyStreamService(LobbyDao dao) {
     this.dao = dao;
     this.initStreams();
   }
@@ -37,27 +39,35 @@ public class LobbyStreamService {
     this.updateStreamAll(new LobbyStreamEventType(LobbyStreamObject.Lobby, REST.Create));
   }
 
-  public Observable<SSE.Event<LobbyStreamEventType, ListJsonable<Lobby>>> getStreamAll() {
+  public Observable<SSE.Event<LobbyStreamEventType, ListJsonable<Lobby>>> getAllStream() {
     return getAllSubject
-      .onBackpressureBuffer(16, () -> {}, BackpressureOverflow.ON_OVERFLOW_DROP_OLDEST)
-      .sample(SAMPLE_MS, TimeUnit.MILLISECONDS)
-      .observeOn(Schedulers.computation());
+      .onBackpressureBuffer(1, () -> {}, BackpressureOverflow.ON_OVERFLOW_DROP_OLDEST)
+      .sample(SLOW_SAMPLE_MS, TimeUnit.MILLISECONDS)
+      .startWith(getAllSubject.getValue());
   }
 
-  public Observable<SSE.Event<LobbyStreamEventType, Lobby>> getStreamById(Long id) {
-    LobbyStreamEventType type = new LobbyStreamEventType(LobbyStreamObject.Lobby, REST.Create);
-    if (!getByIdSubject.containsKey(id)) {
-      BehaviorSubject<SSE.Event<LobbyStreamEventType, Lobby>> subject = BehaviorSubject.create();
-      this.dao.get(id)
-        .map(entity -> new SSE.Event<>(type, entity))
-        .subscribe(subject::onNext, this::onError);
+  public Observable<SSE.Event<LobbyStreamEventType, Lobby>> getByIdStream(Long id) {
+    BehaviorSubject<SSE.Event<LobbyStreamEventType, Lobby>> subject = null;
+    Single<SSE.Event<LobbyStreamEventType, Lobby>> firstValue = null;
+
+    if (getByIdSubject.containsKey(id)) {
+      subject = getByIdSubject.get(id);
+      firstValue = Single.just(subject.getValue());
+    } else {
+      // Recovering the first value
+      LobbyStreamEventType type = new LobbyStreamEventType(LobbyStreamObject.Lobby, REST.Create);
+      firstValue = this.dao.get(id)
+        .map(entity -> new SSE.Event<>(type, entity));
+
+      // Initializing the subject
+      subject = BehaviorSubject.create();
+      firstValue.subscribe(subject::onNext, this::onError);
       getByIdSubject.put(id, subject);
     }
 
-    return getByIdSubject.get(id)
-      .onBackpressureBuffer(16, () -> {}, BackpressureOverflow.ON_OVERFLOW_DROP_OLDEST)
-      .sample(SAMPLE_MS, TimeUnit.MILLISECONDS)
-      .observeOn(Schedulers.computation());
+    return subject
+      .onBackpressureBuffer(1, () -> {}, BackpressureOverflow.ON_OVERFLOW_DROP_OLDEST)
+      .startWith(firstValue.toObservable());
   }
 
   public void updateStreams(Long lobbyId, LobbyStreamEventType type) {

@@ -10,17 +10,20 @@ import io.vertx.rxjava.config.ConfigRetriever;
 import io.vertx.rxjava.core.AbstractVerticle;
 import io.vertx.rxjava.core.http.HttpServer;
 import io.vertx.rxjava.ext.web.Router;
+import io.vertx.rxjava.ext.web.client.WebClient;
 import io.vertx.rxjava.ext.web.handler.BodyHandler;
 import io.vertx.rxjava.ext.web.handler.CorsHandler;
 import io.vertx.rxjava.pgclient.PgPool;
 import io.vertx.sqlclient.PoolOptions;
-import it.unibo.scalapacman.lobby.dao.Dao;
+import it.unibo.scalapacman.lobby.communication.GameActions;
+import it.unibo.scalapacman.lobby.communication.GameActionsImpl;
 import it.unibo.scalapacman.lobby.dao.LobbyDao;
+import it.unibo.scalapacman.lobby.dao.LobbyDaoImpl;
 import it.unibo.scalapacman.lobby.dao.ParticipantDao;
-import it.unibo.scalapacman.lobby.model.Lobby;
-import it.unibo.scalapacman.lobby.model.Participant;
+import it.unibo.scalapacman.lobby.dao.ParticipantDaoImpl;
 import it.unibo.scalapacman.lobby.resource.LobbyResource;
 import it.unibo.scalapacman.lobby.resource.ParticipantResource;
+import it.unibo.scalapacman.lobby.service.GameService;
 import it.unibo.scalapacman.lobby.service.LobbyService;
 import it.unibo.scalapacman.lobby.service.LobbyStreamService;
 import it.unibo.scalapacman.lobby.service.ParticipantService;
@@ -46,7 +49,7 @@ public class MainVerticle extends AbstractVerticle {
 
   public Single<?> start(JsonObject config) {
     return prepareDatabase(config.getJsonObject("DATABASE"))
-      .flatMap(this::initDao)
+      .flatMap(dbClient -> this.initExternalInterfaces(config, dbClient, WebClient.create(vertx)))
       .flatMap(this::initServices)
       .flatMap(services -> startHttpServer(config, services));
   }
@@ -55,19 +58,22 @@ public class MainVerticle extends AbstractVerticle {
     return ConfigRetriever.create(vertx).rxGetConfig();
   }
 
-  private Single<DaoContainer> initDao(PgPool dbClient) {
-    return Single.just(new DaoContainer(
-      new LobbyDao(dbClient),
-      new ParticipantDao(dbClient)
+  private Single<ExternalInterfacesContainer> initExternalInterfaces(JsonObject config, PgPool dbClient, WebClient webClient) {
+    return Single.just(new ExternalInterfacesContainer(
+      new LobbyDaoImpl(dbClient),
+      new ParticipantDaoImpl(dbClient),
+      new GameActionsImpl(config.getInteger("GAME_SERVER_PORT"), config.getString("GAME_SERVER_URL"), webClient)
     ));
   }
 
-  private Single<ServiceContainer> initServices(DaoContainer dao) {
-    LobbyStreamService lobbyStreamService = new LobbyStreamService(dao.lobby);
+  private Single<ServiceContainer> initServices(ExternalInterfacesContainer container) {
+    LobbyStreamService lobbyStreamService = new LobbyStreamService(container.lobby);
+    LobbyService lobbyService = new LobbyService(container.lobby, lobbyStreamService);
     return Single.just(new ServiceContainer(
       lobbyStreamService,
-      new LobbyService(dao.lobby, lobbyStreamService),
-      new ParticipantService(dao.participant, lobbyStreamService)
+      lobbyService,
+      new ParticipantService(container.participant, lobbyStreamService),
+      new GameService(container.game, lobbyStreamService, lobbyService)
     ));
   }
 
@@ -81,7 +87,7 @@ public class MainVerticle extends AbstractVerticle {
     router.route().handler(corsHandler());
     router.route().handler(BodyHandler.create());
 
-    new LobbyResource(router, services.lobby, services.lobbyStream);
+    new LobbyResource(router, services.lobby, services.lobbyStream, services.game);
     new ParticipantResource(router, services.participant);
 
     router.route().failureHandler(ctx -> {
@@ -100,7 +106,7 @@ public class MainVerticle extends AbstractVerticle {
 
     return vertx.createHttpServer()
       .requestHandler(router)
-      .rxListen(localPort)
+      .rxListen(localPort, "0.0.0.0")
       .doOnSuccess(res -> logger.info("HTTP server running on port " + localPort));
   }
 
@@ -143,13 +149,15 @@ public class MainVerticle extends AbstractVerticle {
     return LoggerFactory.getLogger(MainVerticle.class);
   }
 
-  private static class DaoContainer {
-    final Dao<Lobby, Long> lobby;
-    final Dao<Participant, String> participant;
+  private static class ExternalInterfacesContainer {
+    final LobbyDao lobby;
+    final ParticipantDao participant;
+    final GameActions game;
 
-    DaoContainer(Dao<Lobby, Long> lobby, Dao<Participant, String> participant) {
+    ExternalInterfacesContainer(final LobbyDao lobby, final ParticipantDao participant, final GameActions game) {
       this.lobby = lobby;
       this.participant = participant;
+      this.game = game;
     }
   }
 
@@ -157,11 +165,13 @@ public class MainVerticle extends AbstractVerticle {
     final LobbyStreamService lobbyStream;
     final LobbyService lobby;
     final ParticipantService participant;
+    final GameService game;
 
-    ServiceContainer(final LobbyStreamService lobbyStream, final LobbyService lobby, final ParticipantService participant) {
+    ServiceContainer(final LobbyStreamService lobbyStream, final LobbyService lobby, final ParticipantService participant, final GameService game) {
       this.lobbyStream = lobbyStream;
       this.lobby = lobby;
       this.participant = participant;
+      this.game = game;
     }
   }
 }

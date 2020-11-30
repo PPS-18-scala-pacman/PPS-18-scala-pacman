@@ -12,7 +12,7 @@ import akka.stream.scaladsl.Flow
 import akka.util.ByteString
 import grizzled.slf4j.Logging
 import it.unibo.scalapacman.client.communication.{HttpClient, PacmanRestClient}
-import it.unibo.scalapacman.client.controller.Action.{END_GAME, MOVEMENT, PAUSE_RESUME, RESET_KEY_MAP, SAVE_KEY_MAP, START_GAME}
+import it.unibo.scalapacman.client.controller.Action.{END_GAME, MOVEMENT, PAUSE_RESUME, RESET_KEY_MAP, SAVE_KEY_MAP}
 import it.unibo.scalapacman.client.input.JavaKeyBinding.DefaultJavaKeyBinding
 import it.unibo.scalapacman.client.input.KeyMap
 import it.unibo.scalapacman.client.model.CreateLobbyData
@@ -60,7 +60,7 @@ class ControllerTest
                              connectionErrorHandler: () => Unit,
                              onSSEClose: () => Unit,
                              sseEventTypeStop: ServerSentEvent => Boolean
-                           ): Future[Any] = Future.successful()
+                           ): Future[Any] = Future.successful("OK")
   }
 
   var _defaultKeyMap: KeyMap = _
@@ -142,13 +142,13 @@ class ControllerTest
 //
 //        _controller.model.gameId shouldEqual None
 //      }
-
-      "not start a new game when one is already on" in {
-        _controller.model = _controller.model.copy(gameId = Some(GAME_ID))
-
-        _controller.handleAction(START_GAME, None)
-        _controller.model.gameId shouldEqual Some(GAME_ID)
-      }
+//
+//      "not start a new game when one is already on" in {
+//        _controller.model = _controller.model.copy(gameId = Some(GAME_ID))
+//
+//        _controller.handleAction(START_GAME, None)
+//        _controller.model.gameId shouldEqual Some(GAME_ID)
+//      }
 
       "be able to end a game when request is successful" in {
         _controller.model = _controller.model.copy(gameId = Some(GAME_ID))

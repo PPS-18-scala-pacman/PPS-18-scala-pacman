@@ -16,6 +16,7 @@ dependencies {
   implementation(group = "io.vertx", name = "vertx-core", version = vertxVersion)
   implementation(group = "io.vertx", name = "vertx-config", version = vertxVersion)
   implementation(group = "io.vertx", name = "vertx-web", version = vertxVersion)
+  implementation(group = "io.vertx", name = "vertx-web-client", version = vertxVersion)
   implementation(group = "io.vertx", name = "vertx-pg-client", version = vertxVersion)
   implementation(group = "io.vertx", name = "vertx-rx-java", version = vertxVersion)
 

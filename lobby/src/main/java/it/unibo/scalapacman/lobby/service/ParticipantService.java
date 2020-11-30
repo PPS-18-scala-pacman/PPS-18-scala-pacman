@@ -1,7 +1,7 @@
 package it.unibo.scalapacman.lobby.service;
 
 import it.unibo.scalapacman.lib.model.PacmanType;
-import it.unibo.scalapacman.lobby.dao.Dao;
+import it.unibo.scalapacman.lobby.dao.ParticipantDao;
 import it.unibo.scalapacman.lobby.model.Participant;
 import it.unibo.scalapacman.lobby.util.REST;
 import it.unibo.scalapacman.lobby.util.exception.ConflictException;
@@ -11,10 +11,10 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 public class ParticipantService {
-  private final Dao<Participant, String> dao;
+  private final ParticipantDao dao;
   private final LobbyStreamService streamService;
 
-  public ParticipantService(final Dao<Participant, String> dao, final LobbyStreamService streamService) {
+  public ParticipantService(final ParticipantDao dao, final LobbyStreamService streamService) {
     this.dao = dao;
     this.streamService = streamService;
   }

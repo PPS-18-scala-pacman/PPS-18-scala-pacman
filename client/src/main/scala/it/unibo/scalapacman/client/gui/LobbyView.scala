@@ -2,7 +2,7 @@ package it.unibo.scalapacman.client.gui
 
 import java.awt.BorderLayout
 
-import it.unibo.scalapacman.client.controller.Action.{LEAVE_LOBBY, SUBSCRIBE_TO_EVENTS}
+import it.unibo.scalapacman.client.controller.Action.{LEAVE_LOBBY, START_LOBBY_GAME, SUBSCRIBE_TO_EVENTS}
 import it.unibo.scalapacman.client.controller.Controller
 import it.unibo.scalapacman.client.event.{GameStarted, LobbyDeleted, LobbyUpdate, PacmanEvent, PacmanSubscriber}
 import it.unibo.scalapacman.client.gui.View.{PLAY, SETUP}
@@ -14,8 +14,8 @@ object LobbyView {
 }
 
 class LobbyView(implicit controller: Controller, viewChanger: ViewChanger) extends PanelImpl with AskToController {
-  private val TITLE_LABEL: String = "Lista partecipanti"
-  private val LEAVE_BUTTON_LABEL: String = "Abbandona"
+  private val START_LOBBY_GAME_BUTTON_LABEL: String = "Avvia partita"
+  private val LEAVE_LOBBY_BUTTON_LABEL: String = "Abbandona"
   private val SUB_SL_EMPTY_BORDER_Y_AXIS: Int = 10
   private val SUB_SL_EMPTY_BORDER_X_AXIS: Int = 100
 
@@ -23,13 +23,18 @@ class LobbyView(implicit controller: Controller, viewChanger: ViewChanger) exten
 
   lobbyDescriptionLabel setHorizontalAlignment SwingConstants.CENTER
 
-  private val leaveButton: JButton = createButton(LEAVE_BUTTON_LABEL)
+  private val startLobbyGameButton: JButton = createButton(START_LOBBY_GAME_BUTTON_LABEL)
+  private val leaveLobbyButton: JButton = createButton(LEAVE_LOBBY_BUTTON_LABEL)
 
-  leaveButton addActionListener (_ => handleLeaveButton())
+  startLobbyGameButton addActionListener (_ => handleStartGameButton())
+  leaveLobbyButton addActionListener (_ => handleLeaveButton())
 
   private val buttonsPanel: PanelImpl = PanelImpl()
 
-  buttonsPanel add leaveButton
+  startLobbyGameButton setEnabled false
+
+  buttonsPanel add startLobbyGameButton
+  buttonsPanel add leaveLobbyButton
 
   private val playersPanel: PanelImpl = PanelImpl()
 
@@ -54,14 +59,20 @@ class LobbyView(implicit controller: Controller, viewChanger: ViewChanger) exten
   askToController(SUBSCRIBE_TO_EVENTS, Some(PacmanSubscriber(handlePacmanEvent)))
 
   private def updateLobby(lobby: Lobby): Unit = {
-    lobbyDescriptionLabel setText lobby.description
+    if (lobby.hostUsername.equals(controller.model.username) && !startLobbyGameButton.isEnabled) {
+      startLobbyGameButton setEnabled true
+    } else if (!lobby.hostUsername.equals(controller.model.username) && startLobbyGameButton.isEnabled) {
+      startLobbyGameButton setEnabled false
+    }
+
+    lobbyDescriptionLabel setText s"${lobby.description} - (${lobby.participants.size}/${lobby.size})"
     playersList clear()
     lobby.participants foreach { playersList.addElement }
   }
 
   private def handlePacmanEvent(pe: PacmanEvent): Unit = pe match {
     case LobbyUpdate(lobby) => updateLobby(lobby)
-    case LobbyDeleted() => viewChanger.changeView(SETUP)
+    case LobbyDeleted() if controller.model.gameId.isEmpty => viewChanger.changeView(SETUP)
     case GameStarted() => viewChanger.changeView(PLAY)
     case _ => Unit
   }
@@ -69,5 +80,9 @@ class LobbyView(implicit controller: Controller, viewChanger: ViewChanger) exten
   private def handleLeaveButton(): Unit = {
     askToController(LEAVE_LOBBY, None)
     viewChanger.changeView(SETUP)
+  }
+
+  private def handleStartGameButton(): Unit = if (controller.model.lobby.get.hostUsername.equals(controller.model.username)) {
+    askToController(START_LOBBY_GAME, None)
   }
 }

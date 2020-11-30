@@ -6,7 +6,7 @@ sealed trait Action
  * Azioni che rappresentano la volontà dell'utente
  */
 object Action {
-  case object START_GAME extends Action
+  case object START_LOBBY_GAME extends Action
   case object CREATE_LOBBY extends Action
   case object JOIN_LOBBY extends Action
   case object LEAVE_LOBBY extends Action
