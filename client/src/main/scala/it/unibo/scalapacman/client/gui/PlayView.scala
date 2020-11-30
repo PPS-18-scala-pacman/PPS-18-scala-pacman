@@ -1,16 +1,14 @@
 package it.unibo.scalapacman.client.gui
 
 import java.awt.{BorderLayout, Color, Font, GridLayout}
-import java.util.{Timer, TimerTask}
 
-import it.unibo.scalapacman.client.controller.Action.{END_GAME, PAUSE_RESUME, SUBSCRIBE_TO_EVENTS}
+import it.unibo.scalapacman.client.controller.Action.{END_GAME, SUBSCRIBE_TO_EVENTS}
 import it.unibo.scalapacman.client.controller.Controller
 import it.unibo.scalapacman.client.event.{GamePaused, GameStarted, GameUpdate, NetworkIssue, NewKeyMap, PacmanEvent, PacmanSubscriber}
 import it.unibo.scalapacman.client.input.{KeyMap, UserInput}
 import it.unibo.scalapacman.client.gui.View.MENU
 import it.unibo.scalapacman.client.map.PacmanMap
 import it.unibo.scalapacman.client.map.PacmanMap.PacmanMap
-import it.unibo.scalapacman.common.CommandType
 import it.unibo.scalapacman.lib.model.{GameState, LevelState, Map, MapType}
 import javax.swing.{BorderFactory, JButton, JComponent, JLabel, SwingConstants}
 
@@ -157,20 +155,6 @@ class PlayView(implicit controller: Controller, viewChanger: ViewChanger) extend
     _gameState = None
     userMessage setText GOOD_LUCK_MESSAGE
     updateGameView(PacmanMap.toPacmanMap(Map.create(MapType.CLASSIC)), GameState(0), gameCanvas, scoreCount)
-//    delayedResume() // Il gioco non parte più in pausa
-  }
-
-  /**
-   * Effettua l'invio temporizzato del comando di riprisa del gioco ad inizio partita
-   */
-  private def delayedResume(): Unit = {
-    val t = new Timer
-    t.schedule(new TimerTask() {
-      override def run(): Unit = {
-        askToController(PAUSE_RESUME, Some(CommandType.RESUME))
-        t.cancel()
-      }
-    }, GAME_RESUME_TIME_DELAY)
   }
 
   /**
