@@ -110,6 +110,6 @@ object GhostAI {
   }
 
   def choosePacmanToFollow(ghost: Ghost, pacmanList: Iterable[Pacman]): Pacman = {
-    pacmanList.minBy(_.position distance ghost.position)
+    pacmanList.filter(!_.isDead).minBy(_.position distance ghost.position)
   }
 }
