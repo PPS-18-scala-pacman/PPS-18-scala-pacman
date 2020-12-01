@@ -27,8 +27,9 @@ object Game {
   case class CloseCommand() extends GameCommand
   case class RegisterPlayer(replyTo: ActorRef[PlayerRegistration], source: ActorRef[Message], nickname: String) extends GameCommand
   case class NotifyPlayerReady(nickname: String) extends GameCommand
+  case class PlayerLeftGame(nickname: String) extends GameCommand
 
-  private case class PlayerData(nickname: String, isReady: Boolean)
+  private case class PlayerData(nickname: String, isReady: Boolean, hasLeft: Boolean = false)
   private case class GhostData(nickname: String, ghostType: GhostType)
 
   private case class Setup( id: String,
@@ -103,7 +104,7 @@ private class Game(setup: Setup) {
           prepareBehavior(idleRoutine, model)
         } else {
           val updatedPlayers = model.players + (elem.get._1 -> elem.get._2.copy(isReady = true))
-          if(setup.components.size == updatedPlayers.count(_._2.isReady)) {
+          if(setup.components.size == updatedPlayers.count(player => player._2.isReady || player._2.hasLeft)) {
             setup.engine ! Start()
             prepareBehavior(runRoutine, model.copy(players = updatedPlayers))
           } else {
@@ -152,9 +153,13 @@ private class Game(setup: Setup) {
       case (context, ChildFailed(act, _)) if act.isInstanceOf[ActorRef[PlayerAct.PlayerCommand]] =>
         context.log.error(s"$act player crashed")
         val playerAct = act.asInstanceOf[ActorRef[PlayerAct.PlayerCommand]]
-        if(model.players.contains(playerAct)) setup.engine ! Engine.Pause()
-        val updatedModel = model.copy(players = model.players - playerAct)
-        prepareBehavior(idleRoutine, updatedModel)
+        if(!model.players(playerAct).hasLeft) {
+          setup.engine ! Engine.Pause()
+          val updatedModel = model.copy(players = model.players - playerAct)
+          prepareBehavior(idleRoutine, updatedModel)
+        } else {
+          prepareBehavior(recBe, model)
+        }
       case (context, ChildFailed(act, _)) if act.isInstanceOf[ActorRef[Engine.UpdateCommand]] =>
         context.log.error(s"$act ghost stopped")
         val ghostAct = act.asInstanceOf[ActorRef[Engine.UpdateCommand]]

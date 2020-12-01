@@ -12,8 +12,8 @@ import it.unibo.scalapacman.lib.model.GhostType.GhostType
 import it.unibo.scalapacman.lib.model.PacmanType.PacmanType
 import it.unibo.scalapacman.lib.model.{Character, GameObject, Level, LevelState, Map}
 import it.unibo.scalapacman.server.config.Settings
-import it.unibo.scalapacman.server.core.Engine.{ChangeDirectionCur, ChangeDirectionReq, DelayedResume, EngineCommand,
-  Model, Pause, RegisterWatcher, Resume, Setup, Start, UnRegisterWatcher, UpdateCommand, UpdateMsg, WakeUp}
+import it.unibo.scalapacman.server.core.Engine.{ChangeDirectionCur, ChangeDirectionReq, DelayedResume, DisablePlayer,
+  EngineCommand, Model, Pause, RegisterWatcher, Resume, Setup, Start, UnRegisterWatcher, UpdateCommand, UpdateMsg, WakeUp}
 import it.unibo.scalapacman.server.model.GameParticipant.gameParticipantToGameEntity
 import it.unibo.scalapacman.server.model.MoveDirection.MoveDirection
 import it.unibo.scalapacman.server.model.{GameData, GameEntity, GameParameter, GameParticipant}
@@ -42,6 +42,7 @@ object Engine {
   case class ChangeDirectionCur(nickname: String) extends EngineCommand
   case class RegisterWatcher(actor: ActorRef[UpdateCommand]) extends EngineCommand
   case class UnRegisterWatcher(actor: ActorRef[UpdateCommand]) extends EngineCommand
+  case class DisablePlayer(nickname: String) extends EngineCommand
 
   // Messaggi inviati agli osservatori
   sealed trait UpdateCommand
@@ -53,7 +54,7 @@ object Engine {
 
   def apply(gameId: String, entities: List[GameEntity], level: Int): Behavior[EngineCommand] =
     Behaviors.setup { context =>
-      new Engine(Setup(gameId, context, GameParameter(entities, level))).initRoutine(Set())
+      new Engine(Setup(gameId, context, GameParameter(entities, level))).initRoutine(Set(), Set())
     }
 }
 
@@ -62,14 +63,17 @@ private class Engine(setup: Setup) {
   /**
    * Behavior iniziale, gestisce la prima registrazione da parte degli attori partecipanti alla partita
    */
-  private def initRoutine(watcher: Set[ActorRef[UpdateCommand]]): Behavior[EngineCommand] =
+  private def initRoutine(watchers: Set[ActorRef[UpdateCommand]], disabledPlayers: Set[String]): Behavior[EngineCommand] =
     Behaviors.receiveMessage {
 
-      case RegisterWatcher(actor) => initRoutine(watcher = watcher + actor)
-      case UnRegisterWatcher(actor) => initRoutine(watcher = watcher - actor)
+      case RegisterWatcher(actor) => initRoutine(watchers = watchers + actor, disabledPlayers)
+      case UnRegisterWatcher(actor) => initRoutine(watchers = watchers - actor, disabledPlayers)
       case Start() =>
         setup.context.log.info("Start id: " + setup.gameId)
-        delayRoutine(initEngineModel(watcher), Settings.gameDelay)
+        delayRoutine(initEngineModel(watchers, disabledPlayers), Settings.gameDelay)
+      case DisablePlayer(nickname) =>
+        setup.context.log.info("Remove player " + nickname + ", id: " + setup.gameId)
+        initRoutine(watchers, disabledPlayers = disabledPlayers + nickname)
       case _ => unhandledMsg()
     }
 
@@ -112,6 +116,7 @@ private class Engine(setup: Setup) {
         case Pause() => Behaviors.same
         case ChangeDirectionCur(nickname) => clearDesiredDir(model, nickname, pauseRoutine)
         case ChangeDirectionReq(nickname, dir) => changeDesiredDir(model, nickname, dir, pauseRoutine)
+        case DisablePlayer(nickname) => pauseRoutine(removePlayer(model, nickname))
         case _ => unhandledMsg()
       }
     }
@@ -135,6 +140,7 @@ private class Engine(setup: Setup) {
           pauseRoutine(model)
         case ChangeDirectionCur(nickname) => clearDesiredDir(model, nickname, mainRoutine)
         case ChangeDirectionReq(nickname, dir) => changeDesiredDir(model, nickname, dir, mainRoutine)
+        case DisablePlayer(nickname) => mainRoutine(removePlayer(model, nickname))
         case _ => unhandledMsg()
       }
     }
@@ -154,9 +160,11 @@ private class Engine(setup: Setup) {
     UpdateModelDTO(gameEntities, model.state, dots, fruit)
   }
 
-  private def initEngineModel(watcher: Set[ActorRef[UpdateCommand]]): Model = {
+  private def initEngineModel(watcher: Set[ActorRef[UpdateCommand]], disabledPlayers: Set[String]): Model = {
     val classicFactory = Level.Classic(setup.info.level)
-    val participants: List[GameParticipant] = setup.info.players.map(char => char.charType match {
+    val participants: List[GameParticipant] = setup.info.players
+      .filter(p => !disabledPlayers.contains(p.nickname))
+      .map(char => char.charType match {
         case typ: GhostType   => GameParticipant(char.nickname, classicFactory.ghost(typ))
         case typ: PacmanType  => GameParticipant(char.nickname, classicFactory.pacman(typ))
       })
@@ -169,6 +177,12 @@ private class Engine(setup: Setup) {
   private def addWatcher(model: Model, watcher: ActorRef[UpdateCommand]): Model = {
     setup.context.watchWith(watcher, UnRegisterWatcher(watcher))
     model.copy(watchers = model.watchers + watcher)
+  }
+
+  private def removePlayer(model: Model, nickname: String): Model = {
+    setup.context.log.info("Remove player " + nickname + ", id: " + setup.gameId)
+    val updatedParticipants = model.data.participants.filter(_.nickname == nickname)
+    model.copy(data = model.data.copy(participants = updatedParticipants))
   }
 
   private def removeWatcher(model: Model, watcher: ActorRef[UpdateCommand]): Model =
