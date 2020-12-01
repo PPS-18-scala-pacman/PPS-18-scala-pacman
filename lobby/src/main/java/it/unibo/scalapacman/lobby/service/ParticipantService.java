@@ -34,7 +34,7 @@ public class ParticipantService {
       .map(usedPacmanTypes ->
         // Check if the pacman type is valid, else a not used pacman type is chosen
         Optional.ofNullable(participant.getPacmanType())
-          .filter(usedPacmanTypes::contains)
+          .filter(pacmanType -> !usedPacmanTypes.contains(pacmanType))
           .orElse(this.usablePacmanType(usedPacmanTypes))
       )
       .doOnSuccess(pacmanType -> {
