@@ -22,8 +22,9 @@ case class GamePaused(paused: Boolean) extends PacmanEvent
 
 /**
  * Evento partita iniziata
+ * @param lobby le info sulla lobby
  */
-case class GameStarted() extends PacmanEvent
+case class GameStarted(lobby: Lobby) extends PacmanEvent
 
 /**
  * Evento nuova configurazione comandi

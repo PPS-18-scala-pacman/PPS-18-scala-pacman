@@ -97,7 +97,7 @@ private case class ControllerImpl(pacmanRestClient: PacmanRestClient) extends Co
    * @param modelGameId il valore attuale di gameId ottenuto dal Model
    * @param newGameId id della partita ricevuto dalla lobby
    */
-  private def evalStartGame(modelGameId: Option[String], newGameId: String): Unit = {
+  private def evalStartGame(modelGameId: Option[String], newGameId: String, lobby: Lobby): Unit = {
 
     /**
      * - Re-inizializza il Model
@@ -113,7 +113,7 @@ private case class ControllerImpl(pacmanRestClient: PacmanRestClient) extends Co
       _prevUserAction = None
       new Thread(_webSocketRunnable).start()
       pacmanRestClient.openWS(gameId, model.username, handleWebSocketMessage, handleWSConnectionError)
-      _publisher.notifySubscribers(GameStarted())
+      _publisher.notifySubscribers(GameStarted(lobby))
     }
 
     modelGameId match {
@@ -447,7 +447,8 @@ private case class ControllerImpl(pacmanRestClient: PacmanRestClient) extends Co
    * @param sse oggetto ServerSentEvent ricevuto dal server
    */
   private def handleLobbyUpdate(sse: ServerSentEvent): Unit = sse.getData().parseJson.convertTo[Lobby] match {
-    case Lobby(_, _, _, _, _, Some(gameId)) => evalStartGame(model.gameId, gameId)
+    case lobby@Lobby(_, _, _, _, _, Some(gameId)) =>
+      evalStartGame(model.gameId, gameId, lobby)
     case lobby@Lobby(_, _, _, _, _, None) => _publisher.notifySubscribers(LobbyUpdate(lobby))
   }
 

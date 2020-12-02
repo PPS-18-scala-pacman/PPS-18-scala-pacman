@@ -9,6 +9,7 @@ import it.unibo.scalapacman.client.input.{KeyMap, UserInput}
 import it.unibo.scalapacman.client.gui.View.MENU
 import it.unibo.scalapacman.client.map.PacmanMap
 import it.unibo.scalapacman.client.map.PacmanMap.PacmanMap
+import it.unibo.scalapacman.client.model.Lobby
 import it.unibo.scalapacman.lib.model.{GameState, LevelState, Map, MapType}
 import javax.swing.{BorderFactory, JButton, JComponent, JLabel, SwingConstants}
 
@@ -29,6 +30,7 @@ class PlayView(implicit controller: Controller, viewChanger: ViewChanger) extend
   private val SCORE_LABEL: String = "Punteggio"
   private val LIVES_LABEL: String = "Vite"
   private val END_GAME_BUTTON_LABEL: String = "Fine partita"
+  private val LEAVE_GAME_BUTTON_LABEL: String = "Abbandona"
   private val BACK_BUTTON_LABEL: String = "Indietro"
   private val PLAY_PANEL_BORDER: Int = 5
   private val MAIN_LABELS_FONT: Int = 24
@@ -68,6 +70,7 @@ class PlayView(implicit controller: Controller, viewChanger: ViewChanger) extend
   private val gameCanvas: GameCanvas = initGameCanvas()
 
   private val endGameButton: JButton = createButton(END_GAME_BUTTON_LABEL)
+  private val leaveGameButton: JButton = createButton(LEAVE_GAME_BUTTON_LABEL)
   private val backButton: JButton = createButton(BACK_BUTTON_LABEL)
 
   scoreLabel setHorizontalAlignment SwingConstants.CENTER
@@ -88,19 +91,15 @@ class PlayView(implicit controller: Controller, viewChanger: ViewChanger) extend
     updateGameView(_map.getOrElse(Nil), _gameState.getOrElse(GameState(score = 0)).copy(levelState = LevelState.DEFEAT), gameCanvas, scoreCount)
   })
 
-  backButton addActionListener (_ => {
-    askToController(END_GAME, None)
-    viewChanger.changeView(MENU)
-    gameCanvas stop()
-    // Pulisco l'area di gioco
-    gameCanvas setText ""
-  })
+  leaveGameButton addActionListener (_ => handleLeaveGame())
+
+  backButton addActionListener (_ => handleLeaveGame())
 
   private val playPanel: PanelImpl = PanelImpl()
   private val buttonsPanel: PanelImpl = PanelImpl()
   private val labelsPanel: PanelImpl = PanelImpl()
 
-//  buttonsPanel add startGameButton
+  buttonsPanel add leaveGameButton
   buttonsPanel add endGameButton
   buttonsPanel add backButton
 
@@ -121,9 +120,7 @@ class PlayView(implicit controller: Controller, viewChanger: ViewChanger) extend
   add(playPanel, BorderLayout.CENTER)
   add(buttonsPanel, BorderLayout.PAGE_END)
 
-  // Applico mappatura di default
   bindKeys(playPanel, controller.model.keyMap)
-  // Sottoscrivo ad eventi che pubblicherà il controller
   askToController(SUBSCRIBE_TO_EVENTS, Some(PacmanSubscriber(handlePacmanEvent)))
 
   /**
@@ -148,7 +145,8 @@ class PlayView(implicit controller: Controller, viewChanger: ViewChanger) extend
   /**
    * Esegue le operazioni preliminari quando l'utente inizia una nuova partita
    */
-  private def gameStarted(): Unit = {
+  private def gameStarted(lobby: Lobby): Unit = {
+    updateButtonsVisibility(lobby.participants.size)
     gameCanvas start()
     _gameRunning = true
     _map = None
@@ -183,6 +181,21 @@ class PlayView(implicit controller: Controller, viewChanger: ViewChanger) extend
   }
 
   private def updateScore(score: Int, scoreCount: JLabel): Unit = scoreCount.setText(score.toString)
+
+  /**
+   * Aggiorna la visualizzazione dei bottoni in base al numero di giocatori
+   * @param size  numero di giocatori
+   */
+  private def updateButtonsVisibility(size: Int): Unit = size match {
+    case n: Int if n > 1 =>
+      backButton setVisible false
+      endGameButton setVisible false
+      leaveGameButton setVisible true
+    case _ =>
+      backButton setVisible true
+      endGameButton setVisible true
+      leaveGameButton setVisible false
+  }
 
   /**
    * Se la mappa è diversa rispetto allo stato precedente, invoca il ridisegno della mappa
@@ -223,6 +236,13 @@ class PlayView(implicit controller: Controller, viewChanger: ViewChanger) extend
     askToController(END_GAME, None)
   }
 
+  private def handleLeaveGame(): Unit = {
+    askToController(END_GAME, None)
+    viewChanger.changeView(MENU)
+    gameCanvas stop()
+    gameCanvas setText ""
+  }
+
   /**
    * Genera il messaggio di fine partita da mostrare all'utente
    *
@@ -234,6 +254,7 @@ class PlayView(implicit controller: Controller, viewChanger: ViewChanger) extend
     case LevelState.DEFEAT => s"$GAME_OVER_MESSAGE $SCORE_MESSAGE: ${gameState.score}"
   }
 
+  // scalastyle:off cyclomatic.complexity
   /**
    * Gestisce gli eventi PacmanEvent pubblicati dal Controller
    *
@@ -249,12 +270,13 @@ class PlayView(implicit controller: Controller, viewChanger: ViewChanger) extend
     case GamePaused(false) =>
       userMessage setText RESUME_MESSAGE
       _gameRunning = true
-    case GameStarted() => gameStarted()
+    case GameStarted(lobby) => gameStarted(lobby)
     case NewKeyMap(keyMap) => bindKeys(playPanel, keyMap)
     case NetworkIssue(false, info) => userMessage setText s"$PAUSED_MESSAGE $info"
     case NetworkIssue(true, info) => userMessage setText s"$GAME_END_MESSAGE $info"
     case _ => Unit
   }
+  // scalastyle:on cyclomatic.complexity
 }
 
 // scalastyle:on multiple.string.literals

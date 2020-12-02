@@ -73,7 +73,7 @@ class LobbyView(implicit controller: Controller, viewChanger: ViewChanger) exten
   private def handlePacmanEvent(pe: PacmanEvent): Unit = pe match {
     case LobbyUpdate(lobby) => updateLobby(lobby)
     case LobbyDeleted() if controller.model.gameId.isEmpty => viewChanger.changeView(SETUP)
-    case GameStarted() => viewChanger.changeView(PLAY)
+    case GameStarted(_) => viewChanger.changeView(PLAY)
     case _ => Unit
   }
 
