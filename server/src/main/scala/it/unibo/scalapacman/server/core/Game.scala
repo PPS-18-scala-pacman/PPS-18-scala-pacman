@@ -7,7 +7,7 @@ import akka.http.scaladsl.model.ws.Message
 import it.unibo.scalapacman.lib.model.GhostType.{BLINKY, CLYDE, GhostType, INKY, PINKY}
 import it.unibo.scalapacman.lib.model.PacmanType.PacmanType
 import it.unibo.scalapacman.server.core.Engine.{EngineCommand, Start}
-import it.unibo.scalapacman.server.core.Game.{CloseCommand, GameCommand, Model, NotifyPlayerReady, PlayerData, RegisterPlayer, Setup}
+import it.unibo.scalapacman.server.core.Game.{CloseCommand, GameCommand, Model, NotifyPlayerReady, PlayerData, PlayerLeftGame, RegisterPlayer, Setup}
 import it.unibo.scalapacman.server.config.Settings
 import it.unibo.scalapacman.server.core.PlayerAct.{PlayerRegistration, RegistrationRejected}
 import it.unibo.scalapacman.server.model.GameEntity
@@ -37,8 +37,9 @@ object Game {
                             engine: ActorRef[EngineCommand],
                             components: Map[String, PacmanType])
 
-  private case class Model( players: Map[ActorRef[PlayerAct.PlayerCommand], PlayerData],
-                            ghosts: Map[ActorRef[Engine.UpdateCommand], GhostData])
+  private case class Model(players: Map[ActorRef[PlayerAct.PlayerCommand], PlayerData],
+                           ghosts: Map[ActorRef[Engine.UpdateCommand], GhostData],
+                           gameStarted: Boolean)
 
   def apply(id: String, components: Map[String, PacmanType], visible: Boolean = true): Behavior[GameCommand] = {
     require(components.nonEmpty || components.size <= Settings.maxPlayersNumber, "Numero di giocatori errato")
@@ -64,7 +65,7 @@ object Game {
 
       (Set(engine) ++ ghosts.keySet).foreach(context.watch(_))
 
-      new Game(Setup(id, context, engine, components)).start(Model(Map(), ghosts))
+      new Game(Setup(id, context, engine, components)).start(Model(Map(), ghosts, gameStarted = false))
     }
   }
 
@@ -82,35 +83,9 @@ private class Game(setup: Setup) {
   private def idleRoutine(model: Model): Behaviors.Receive[Game.GameCommand] =
     Behaviors.receiveMessage {
       case CloseCommand() => close()
-      case RegisterPlayer(replyTo, source, nickname) =>
-        setup.context.log.info("RegisterPlayer ricevuto")
-
-        if(!setup.components.contains(nickname) || model.players.exists(_._2.nickname == nickname)) {
-          setup.context.log.error(s"Nickname: $nickname, non valido")
-          replyTo ! RegistrationRejected("Giocatore non valido")
-          prepareBehavior(idleRoutine, model)
-        } else {
-
-          val player = setup.context.spawn(PlayerAct(setup.id, setup.engine, setup.context.self), s"${nickname}Actor")
-          setup.context.watch(player)
-          player ! PlayerAct.RegisterUser(replyTo, source, nickname)
-          val updatedPlayers = model.players + (player -> PlayerData(nickname, isReady = false))
-          prepareBehavior(idleRoutine, model.copy(players = updatedPlayers))
-        }
-      case NotifyPlayerReady(nickname) =>
-
-        val elem = model.players.find(_._2.nickname == nickname)
-        if(elem.isEmpty) {
-          prepareBehavior(idleRoutine, model)
-        } else {
-          val updatedPlayers = model.players + (elem.get._1 -> elem.get._2.copy(isReady = true))
-          if(setup.components.size == updatedPlayers.count(player => player._2.isReady || player._2.hasLeft)) {
-            setup.engine ! Start()
-            prepareBehavior(runRoutine, model.copy(players = updatedPlayers))
-          } else {
-            prepareBehavior(idleRoutine, model.copy(players = updatedPlayers))
-          }
-        }
+      case RegisterPlayer(replyTo, source, nickname) => handlePlayerRegistration(replyTo, source, nickname, model)
+      case NotifyPlayerReady(nickname) => handlePlayerChange(model, nickname, x => x.copy(isReady = true))
+      case PlayerLeftGame(nickname) => handlePlayerChange(model, nickname, x => x.copy(hasLeft = true))
     }
 
   /**
@@ -122,6 +97,15 @@ private class Game(setup: Setup) {
       case RegisterPlayer(replyTo, _, _) =>
         replyTo ! RegistrationRejected("Gioco in corso")
         prepareBehavior(runRoutine, model)
+      case PlayerLeftGame(nickname) =>
+        val player = model.players.find(_._2.nickname == nickname)
+        if(player.isEmpty) {
+          prepareBehavior(runRoutine, model)
+        } else {
+          val updatedPlayers = model.players + (player.get._1 -> player.get._2.copy(hasLeft = true))
+          setup.engine ! Engine.DisablePlayer(nickname)
+          prepareBehavior(runRoutine, model.copy(players = updatedPlayers))
+        }
       case _ =>
         setup.context.log.warn("Ricevuto messaggio non gestito")
         prepareBehavior(runRoutine, model)
@@ -134,6 +118,41 @@ private class Game(setup: Setup) {
 
   private def start(model: Model): Behavior[GameCommand] = {
     prepareBehavior(idleRoutine, model)
+  }
+
+  private def handlePlayerRegistration(replyTo: ActorRef[PlayerRegistration],
+                                       source: ActorRef[Message],
+                                       nickname: String,
+                                       model: Model) = {
+    setup.context.log.info("RegisterPlayer ricevuto")
+
+    if(!setup.components.contains(nickname) || model.players.exists(_._2.nickname == nickname)) {
+      setup.context.log.error(s"Nickname: $nickname, non valido")
+      replyTo ! RegistrationRejected("Giocatore non valido")
+      prepareBehavior(idleRoutine, model)
+    } else {
+
+      val player = setup.context.spawn(PlayerAct(setup.id, setup.engine, setup.context.self), s"${nickname}Actor")
+      setup.context.watch(player)
+      player ! PlayerAct.RegisterUser(replyTo, source, nickname)
+      val updatedPlayers = model.players + (player -> PlayerData(nickname, isReady = false))
+      prepareBehavior(idleRoutine, model.copy(players = updatedPlayers))
+    }
+  }
+
+  private def handlePlayerChange(model: Model, nickname: String, editFunc: Game.PlayerData => Game.PlayerData) = {
+    val player = model.players.find(_._2.nickname == nickname)
+    if(player.isEmpty) {
+      prepareBehavior(idleRoutine, model)
+    } else {
+      val updatedPlayers = model.players + (player.get._1 -> editFunc(player.get._2))
+      if(setup.components.size == updatedPlayers.count(player => player._2.isReady || player._2.hasLeft)) {
+        if(!model.gameStarted) setup.engine ! Start()
+        prepareBehavior(runRoutine, model.copy(players = updatedPlayers, gameStarted = true))
+      } else {
+        prepareBehavior(idleRoutine, model.copy(players = updatedPlayers))
+      }
+    }
   }
 
   /**
