@@ -9,7 +9,8 @@ import it.unibo.scalapacman.client.input.{KeyMap, UserInput}
 import it.unibo.scalapacman.client.gui.View.MENU
 import it.unibo.scalapacman.client.map.PacmanMap
 import it.unibo.scalapacman.client.map.PacmanMap.PacmanMap
-import it.unibo.scalapacman.client.model.Lobby
+import it.unibo.scalapacman.client.model.{Lobby, Participant}
+import it.unibo.scalapacman.lib.model.PacmanType.{CAPMAN, MS_PACMAN, PACMAN, PacmanType, RAPMAN}
 import it.unibo.scalapacman.lib.model.{GameState, LevelState, Map, MapType}
 import javax.swing.{BorderFactory, JButton, JComponent, JLabel, SwingConstants}
 
@@ -48,6 +49,7 @@ class PlayView(implicit controller: Controller, viewChanger: ViewChanger) extend
   private val GAME_OVER_MESSAGE: String = "Game Over!"
   private val GAME_END_MESSAGE: String = "Gioco terminato."
   private val SCORE_MESSAGE: String = "Punteggio"
+  private val YOU_ARE_MESSAGE: String = "Tu sei: "
 
   /* GameCanvas constants */
   private val FONT_PATH = "font/unifont/unifont.ttf"
@@ -67,6 +69,7 @@ class PlayView(implicit controller: Controller, viewChanger: ViewChanger) extend
   private val livesLabel: JLabel = createLabel(LIVES_LABEL)
 
   private val userMessage: JLabel = createLabel("")
+  private val youAreMessage: JLabel = createLabel("")
   private val gameCanvas: GameCanvas = initGameCanvas()
 
   private val endGameButton: JButton = createButton(END_GAME_BUTTON_LABEL)
@@ -98,6 +101,7 @@ class PlayView(implicit controller: Controller, viewChanger: ViewChanger) extend
   private val playPanel: PanelImpl = PanelImpl()
   private val buttonsPanel: PanelImpl = PanelImpl()
   private val labelsPanel: PanelImpl = PanelImpl()
+  private val userMessagesPanel: PanelImpl = PanelImpl()
 
   buttonsPanel add leaveGameButton
   buttonsPanel add endGameButton
@@ -110,9 +114,13 @@ class PlayView(implicit controller: Controller, viewChanger: ViewChanger) extend
   labelsPanel add livesCount
   labelsPanel add scoreCount
 
+  userMessagesPanel setLayout new GridLayout(1, 2)
+  userMessagesPanel add youAreMessage
+  userMessagesPanel add userMessage
+
   playPanel setLayout new BorderLayout
   playPanel setBorder BorderFactory.createLineBorder(Color.white, PLAY_PANEL_BORDER)
-  playPanel add(userMessage, BorderLayout.PAGE_START)
+  playPanel add(userMessagesPanel, BorderLayout.PAGE_START)
   playPanel add(gameCanvas, BorderLayout.CENTER)
 
   setLayout(new BorderLayout)
@@ -147,6 +155,7 @@ class PlayView(implicit controller: Controller, viewChanger: ViewChanger) extend
    */
   private def gameStarted(lobby: Lobby): Unit = {
     updateButtonsVisibility(lobby.participants.size)
+    updateUserType(lobby.participants.find(_.username.equals(controller.model.username)))
     gameCanvas start()
     _gameRunning = true
     _map = None
@@ -195,6 +204,23 @@ class PlayView(implicit controller: Controller, viewChanger: ViewChanger) extend
       backButton setVisible true
       endGameButton setVisible true
       leaveGameButton setVisible false
+  }
+
+  private def updateUserType(participantMaybe: Option[Participant]): Unit = participantMaybe match {
+    case None => Unit
+    case Some(participant) =>
+      var text = "<html>Tu sei: "
+
+      participant.pacmanType match {
+        case PACMAN => text += "<font color='yellow'>Pacman</font>"
+        case MS_PACMAN => text += "<font color='orange'>MsPacman</font>"
+        case CAPMAN => text += "<font color='green'>Capman</font>"
+        case RAPMAN => text += "<font color='blue'>Rapman</font>"
+        case _ => text += "SCONOSCIUTO"
+      }
+
+      text += "</html>"
+      youAreMessage setText text
   }
 
   /**
