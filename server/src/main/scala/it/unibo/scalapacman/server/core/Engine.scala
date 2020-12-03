@@ -181,7 +181,7 @@ private class Engine(setup: Setup) {
 
   private def removePlayer(model: Model, nickname: String): Model = {
     setup.context.log.info("Remove player " + nickname + ", id: " + setup.gameId)
-    val updatedParticipants = model.data.participants.filter(_.nickname == nickname)
+    val updatedParticipants = model.data.participants.filter(_.nickname != nickname)
     model.copy(data = model.data.copy(participants = updatedParticipants))
   }
 
