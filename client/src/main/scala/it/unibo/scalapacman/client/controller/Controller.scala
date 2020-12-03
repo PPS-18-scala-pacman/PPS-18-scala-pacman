@@ -7,8 +7,8 @@ import it.unibo.scalapacman.client.communication.PacmanRestClient
 import Action.{CREATE_LOBBY, END_GAME, EXIT_APP, JOIN_LOBBY, LEAVE_LOBBY, MOVEMENT, PAUSE_RESUME, RESET_KEY_MAP,
   SAVE_KEY_MAP, START_LOBBY_GAME, SUBSCRIBE_TO_EVENTS}
 import akka.http.scaladsl.model.sse.ServerSentEvent
-import it.unibo.scalapacman.client.event.{GamePaused, GameStarted, GameUpdate, LobbiesUpdate, LobbyDeleted, LobbyUpdate,
-  NetworkIssue, NewKeyMap, PacmanPublisher, PacmanSubscriber}
+import it.unibo.scalapacman.client.event.{GamePaused, GameStarted, GameUpdate, LobbiesUpdate, LobbyDeleted, LobbyError,
+  LobbyUpdate, NetworkIssue, NewKeyMap, PacmanPublisher, PacmanSubscriber}
 import it.unibo.scalapacman.client.gui.{LOBBIES_RECONNECTION_TIME_DELAY, WS_RECONNECTION_TIME_DELAY}
 import it.unibo.scalapacman.client.input.JavaKeyBinding.DefaultJavaKeyBinding
 import it.unibo.scalapacman.client.input.KeyMap
@@ -19,6 +19,7 @@ import it.unibo.scalapacman.common.CommandType.CommandType
 import it.unibo.scalapacman.common.MoveCommandType.MoveCommandType
 import it.unibo.scalapacman.common.{Command, CommandType, CommandTypeHolder, JSONConverter, MapUpdater, MoveCommandTypeHolder, UpdateModelDTO}
 import it.unibo.scalapacman.lib.model.{Map, MapType}
+import javax.swing.JOptionPane
 import spray.json.DefaultJsonProtocol.listFormat
 
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor}
@@ -170,6 +171,8 @@ private case class ControllerImpl(pacmanRestClient: PacmanRestClient) extends Co
         connectToLobby(lobby.id)
       case Failure(exception) =>
         error(s"Errore nella creazione della lobby: ${exception.getMessage}")
+        showError("Errore creazione lobby")
+        _publisher.notifySubscribers(LobbyError())
     }
 
     (gameId, lobby) match {
@@ -197,6 +200,8 @@ private case class ControllerImpl(pacmanRestClient: PacmanRestClient) extends Co
         connectToLobby(jld.lobby.id)
       case Failure(exception) =>
         error(s"Errore durante partecipazione lobby ${jld.lobby.description}: ${exception.getMessage}")
+        showError("Errore partecipazione lobby")
+        _publisher.notifySubscribers(LobbyError())
     }
 
     (gameId, lobby) match {
@@ -243,17 +248,7 @@ private case class ControllerImpl(pacmanRestClient: PacmanRestClient) extends Co
   private def evalEndGame(gameId: Option[String]): Unit = {
     _webSocketRunnable.terminate()
     pacmanRestClient.closeWebSocket()
-    gameId match {
-      case Some(id) => pacmanRestClient.endGame(id) onComplete {
-        case Success(message) =>
-          info(s"Partita $id terminata con successo: $message")
-          clearModel()
-        case Failure(exception) =>
-          error(s"Errore nella terminazione della partita: ${exception.getMessage}")
-          clearModel()
-      }
-      case None => info("Nessuna partita da dover terminare")
-    }
+    clearModel()
   }
 
   /**
@@ -367,7 +362,6 @@ private case class ControllerImpl(pacmanRestClient: PacmanRestClient) extends Co
    * @param updateModelDTO l'aggiornamento della partita
    */
   private def updateFromServer(updateModelDTO: UpdateModelDTO): Unit = {
-    info(updateModelDTO)
     model = model.copy(map = MapUpdater.update(model.map, updateModelDTO.dots, updateModelDTO.fruit))
     _publisher.notifySubscribers(GameUpdate(PacmanMap.createWithCharacters(model.map, updateModelDTO.gameEntities), updateModelDTO.state))
   }
@@ -467,9 +461,16 @@ private case class ControllerImpl(pacmanRestClient: PacmanRestClient) extends Co
   }
 
   private def handleLobbySSEClose(): Unit = {
-    _publisher.notifySubscribers(LobbyDeleted())
     model = model.copy(lobby = None)
+    _publisher.notifySubscribers(LobbyDeleted())
+    if (model.gameId.isEmpty) showWarning("La lobby è stata eliminata")
   }
+
+  private def showError(message: String): Unit = showDialog(message, "Errore", JOptionPane.ERROR_MESSAGE)
+  private def showWarning(message: String): Unit = showDialog(message, "Attenzione", JOptionPane.WARNING_MESSAGE)
+
+  private def showDialog(message: String, title: String, messageType: Int = JOptionPane.PLAIN_MESSAGE): Unit =
+    JOptionPane.showMessageDialog(null, message, title, messageType) // scalastyle:ignore
 }
 
 // scalastyle:on multiple.string.literals

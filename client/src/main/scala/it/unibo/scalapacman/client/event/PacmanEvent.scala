@@ -55,3 +55,8 @@ case class LobbyUpdate(lobby: Lobby) extends PacmanEvent
  * Evento lobby eliminata
  */
 case class LobbyDeleted() extends PacmanEvent
+
+/**
+ * Evento errore partecipazione lobby
+ */
+case class LobbyError() extends PacmanEvent

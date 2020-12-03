@@ -4,7 +4,7 @@ import java.awt.BorderLayout
 
 import it.unibo.scalapacman.client.controller.Action.{LEAVE_LOBBY, START_LOBBY_GAME, SUBSCRIBE_TO_EVENTS}
 import it.unibo.scalapacman.client.controller.Controller
-import it.unibo.scalapacman.client.event.{GameStarted, LobbyDeleted, LobbyUpdate, PacmanEvent, PacmanSubscriber}
+import it.unibo.scalapacman.client.event.{GameStarted, LobbyDeleted, LobbyError, LobbyUpdate, PacmanEvent, PacmanSubscriber}
 import it.unibo.scalapacman.client.gui.View.{PLAY, SETUP}
 import it.unibo.scalapacman.client.model.{Lobby, Participant}
 import javax.swing.{BorderFactory, DefaultListModel, JButton, JLabel, JScrollPane, SwingConstants}
@@ -18,6 +18,7 @@ class LobbyView(implicit controller: Controller, viewChanger: ViewChanger) exten
   private val LEAVE_LOBBY_BUTTON_LABEL: String = "Abbandona"
   private val SUB_SL_EMPTY_BORDER_Y_AXIS: Int = 10
   private val SUB_SL_EMPTY_BORDER_X_AXIS: Int = 100
+  private val LOBBY_ERROR: String = "Errore partecipazione lobby"
 
   private val lobbyDescriptionLabel: JLabel = createTitleLabel("")
 
@@ -73,6 +74,7 @@ class LobbyView(implicit controller: Controller, viewChanger: ViewChanger) exten
   private def handlePacmanEvent(pe: PacmanEvent): Unit = pe match {
     case LobbyUpdate(lobby) => updateLobby(lobby)
     case LobbyDeleted() if controller.model.gameId.isEmpty => viewChanger.changeView(SETUP)
+    case LobbyError() => viewChanger.changeView(SETUP)
     case GameStarted(_) => viewChanger.changeView(PLAY)
     case _ => Unit
   }

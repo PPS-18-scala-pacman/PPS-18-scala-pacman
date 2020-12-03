@@ -129,6 +129,12 @@ class PanelImpl extends JPanel with Panel {
    */
   override def createNumericJSpinner(value: Int, min: Int, max: Int): JSpinner = createJSpinner(new SpinnerNumberModel(value, min, max, 1))
 
+  /**
+   * Crea una lista
+   * @param model il modello da utilizzare
+   * @tparam A
+   * @return  la lista
+   */
   override def createJList[A](model: ListModel[A]): JList[A] = new JList(model) {
     setSelectionMode(ListSelectionModel.SINGLE_SELECTION)
     setFont(new Font(MAIN_FONT_NAME, Font.PLAIN, LIST_ITEM_FONT_SIZE))

@@ -1,6 +1,6 @@
 package it.unibo.scalapacman.client.gui
 
-import java.awt.{BorderLayout, Color, Font, GridLayout}
+import java.awt.{BorderLayout, Color, FlowLayout, Font, GridLayout}
 
 import it.unibo.scalapacman.client.controller.Action.{END_GAME, SUBSCRIBE_TO_EVENTS}
 import it.unibo.scalapacman.client.controller.Controller
@@ -10,7 +10,7 @@ import it.unibo.scalapacman.client.gui.View.MENU
 import it.unibo.scalapacman.client.map.PacmanMap
 import it.unibo.scalapacman.client.map.PacmanMap.PacmanMap
 import it.unibo.scalapacman.client.model.{Lobby, Participant}
-import it.unibo.scalapacman.lib.model.PacmanType.{CAPMAN, MS_PACMAN, PACMAN, PacmanType, RAPMAN}
+import it.unibo.scalapacman.lib.model.PacmanType.{CAPMAN, MS_PACMAN, PACMAN, RAPMAN}
 import it.unibo.scalapacman.lib.model.{GameState, LevelState, Map, MapType}
 import javax.swing.{BorderFactory, JButton, JComponent, JLabel, SwingConstants}
 
@@ -49,7 +49,7 @@ class PlayView(implicit controller: Controller, viewChanger: ViewChanger) extend
   private val GAME_OVER_MESSAGE: String = "Game Over!"
   private val GAME_END_MESSAGE: String = "Gioco terminato."
   private val SCORE_MESSAGE: String = "Punteggio"
-  private val YOU_ARE_MESSAGE: String = "Tu sei: "
+  private val USER_MESSAGE_SEPARATOR: String = " | "
 
   /* GameCanvas constants */
   private val FONT_PATH = "font/unifont/unifont.ttf"
@@ -88,8 +88,6 @@ class PlayView(implicit controller: Controller, viewChanger: ViewChanger) extend
   scoreCount setFont new Font(MAIN_FONT_NAME, Font.BOLD, SUB_LABELS_FONT)
   livesCount setFont new Font(MAIN_FONT_NAME, Font.BOLD, SUB_LABELS_FONT)
 
-  userMessage setFont new Font(MAIN_FONT_NAME, Font.BOLD, MAIN_LABELS_FONT)
-
   endGameButton addActionListener (_ => {
     updateGameView(_map.getOrElse(Nil), _gameState.getOrElse(GameState(score = 0)).copy(levelState = LevelState.DEFEAT), gameCanvas, scoreCount)
   })
@@ -114,7 +112,7 @@ class PlayView(implicit controller: Controller, viewChanger: ViewChanger) extend
   labelsPanel add livesCount
   labelsPanel add scoreCount
 
-  userMessagesPanel setLayout new GridLayout(1, 2)
+  userMessagesPanel setLayout new FlowLayout(FlowLayout.LEFT)
   userMessagesPanel add youAreMessage
   userMessagesPanel add userMessage
 
@@ -160,7 +158,7 @@ class PlayView(implicit controller: Controller, viewChanger: ViewChanger) extend
     _gameRunning = true
     _map = None
     _gameState = None
-    userMessage setText GOOD_LUCK_MESSAGE
+    userMessage setText (USER_MESSAGE_SEPARATOR + GOOD_LUCK_MESSAGE)
     updateGameView(PacmanMap.toPacmanMap(Map.create(MapType.CLASSIC)), GameState(0), gameCanvas, scoreCount)
   }
 
@@ -258,7 +256,7 @@ class PlayView(implicit controller: Controller, viewChanger: ViewChanger) extend
    */
   private def handleEndGame(gameState: GameState): Unit = {
     _gameRunning = false
-    userMessage setText getEndMessage(gameState)
+    userMessage setText (USER_MESSAGE_SEPARATOR + getEndMessage(gameState))
     askToController(END_GAME, None)
   }
 
@@ -291,15 +289,15 @@ class PlayView(implicit controller: Controller, viewChanger: ViewChanger) extend
       _gameState = Some(gameState)
       updateGameView(map, gameState, gameCanvas, scoreCount)
     case GamePaused(true) =>
-      userMessage setText PAUSED_MESSAGE
+      userMessage setText (USER_MESSAGE_SEPARATOR + PAUSED_MESSAGE)
       _gameRunning = false
     case GamePaused(false) =>
-      userMessage setText RESUME_MESSAGE
+      userMessage setText (USER_MESSAGE_SEPARATOR + RESUME_MESSAGE)
       _gameRunning = true
     case GameStarted(lobby) => gameStarted(lobby)
     case NewKeyMap(keyMap) => bindKeys(playPanel, keyMap)
-    case NetworkIssue(false, info) => userMessage setText s"$PAUSED_MESSAGE $info"
-    case NetworkIssue(true, info) => userMessage setText s"$GAME_END_MESSAGE $info"
+    case NetworkIssue(false, info) => userMessage setText (USER_MESSAGE_SEPARATOR + s"$PAUSED_MESSAGE $info")
+    case NetworkIssue(true, info) => userMessage setText (USER_MESSAGE_SEPARATOR + s"$GAME_END_MESSAGE $info")
     case _ => Unit
   }
   // scalastyle:on cyclomatic.complexity
