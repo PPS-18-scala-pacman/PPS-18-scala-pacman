@@ -7,15 +7,13 @@ import akka.actor.testkit.typed.scaladsl.ScalaTestWithActorTestKit
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.sse.ServerSentEvent
 import akka.http.scaladsl.model.ws.{Message, WebSocketRequest, WebSocketUpgradeResponse}
-import akka.http.scaladsl.model.{ContentTypes, HttpEntity, HttpMethods, HttpRequest, HttpResponse, StatusCodes}
+import akka.http.scaladsl.model.{HttpRequest, HttpResponse}
 import akka.stream.scaladsl.Flow
-import akka.util.ByteString
 import grizzled.slf4j.Logging
 import it.unibo.scalapacman.client.communication.{HttpClient, PacmanRestClient}
 import it.unibo.scalapacman.client.controller.Action.{END_GAME, MOVEMENT, PAUSE_RESUME, RESET_KEY_MAP, SAVE_KEY_MAP}
 import it.unibo.scalapacman.client.input.JavaKeyBinding.DefaultJavaKeyBinding
 import it.unibo.scalapacman.client.input.KeyMap
-import it.unibo.scalapacman.client.model.CreateLobbyData
 import it.unibo.scalapacman.common.{CommandType, MoveCommandType}
 import it.unibo.scalapacman.lib.model.{Map, MapType}
 import org.scalamock.function.MockFunction1
@@ -23,8 +21,6 @@ import org.scalamock.scalatest.MockFactory
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpecLike
-import spray.json.DefaultJsonProtocol.{IntJsonFormat, StringJsonFormat, mapFormat}
-import spray.json.{JsNumber, JsObject, enrichAny}
 
 import scala.concurrent.{ExecutionContextExecutor, Future}
 
@@ -96,94 +92,14 @@ class ControllerTest
     }
 
     "handling user action" must {
-      // 29/11/2020: Caso non reale
-//      "be able to start a new game" in {
-//        val NUM_PLAYERS: Int = 1
-//        val START_GAME_REQUEST_ENTITY = HttpEntity(
-//          ContentTypes.`application/json`,
-//          JsObject("playersNumber" -> JsNumber(NUM_PLAYERS)).toString()
-//        )
-//        val cgd: CreateLobbyData = CreateLobbyData("test", NUM_PLAYERS)
-//
-//        _controller.model.gameId shouldEqual None
-//
-//        _pacmanRestClientWithMockClientHandler.mockHttp
-//          .expects(HttpRequest(method = HttpMethods.POST, uri = PacmanRestClient.GAMES_URL, entity = START_GAME_REQUEST_ENTITY))
-//          .returning(Future.successful(HttpResponse(status = StatusCodes.Created, entity = HttpEntity(ByteString(GAME_ID)))))
-//
-//        _controller.handleAction(START_GAME, Some(cgd))
-//
-//        // TODO si riesce a cambiare metodo?
-//        // Attendo molto per dare tempo alla websocket(?) poiché non so come mockarla?
-//        Thread.sleep(500)// scalastyle:ignore
-//
-//        _controller.model.gameId shouldEqual Some(GAME_ID)
-//      }
-//
-//      "be able to handle failure when starting a new game" in {
-//        val FAILURE_MESSAGE: String = "failure"
-//        val NUM_PLAYERS: Int = 1
-//        val START_GAME_REQUEST_ENTITY = HttpEntity(
-//          ContentTypes.`application/json`,
-//          scala.collection.immutable.Map("playersNumber" -> NUM_PLAYERS).toJson.toString()
-//        )
-//        val cgd: CreateLobbyData = CreateLobbyData("test", NUM_PLAYERS)
-//
-//        _controller.model.gameId shouldEqual None
-//
-//        _pacmanRestClientWithMockClientHandler.mockHttp
-//          .expects(HttpRequest(method = HttpMethods.POST, uri = PacmanRestClient.GAMES_URL, entity = START_GAME_REQUEST_ENTITY))
-//          .returning(Future.successful(HttpResponse(status = StatusCodes.InternalServerError, entity = HttpEntity(ByteString(FAILURE_MESSAGE)))))
-//
-//        _controller.handleAction(START_GAME, Some(cgd))
-//
-//        // TODO si riesce a cambiare metodo?
-//        Thread.sleep(100)// scalastyle:ignore
-//
-//        _controller.model.gameId shouldEqual None
-//      }
-//
-//      "not start a new game when one is already on" in {
-//        _controller.model = _controller.model.copy(gameId = Some(GAME_ID))
-//
-//        _controller.handleAction(START_GAME, None)
-//        _controller.model.gameId shouldEqual Some(GAME_ID)
-//      }
 
-      "be able to end a game when request is successful" in {
+      // TODO test sulle lobby
+
+      "be able to end a game" in {
         _controller.model = _controller.model.copy(gameId = Some(GAME_ID))
         _controller.model.gameId shouldEqual Some(GAME_ID)
 
-        val uri = s"${PacmanRestClient.GAMES_URL}/$GAME_ID"
-        val expectedMessage = "Delete request received"
-
-        _pacmanRestClientWithMockClientHandler.mockHttp
-          .expects(HttpRequest(method = HttpMethods.DELETE, uri = uri))
-          .returning(Future.successful(HttpResponse(status = StatusCodes.Accepted, entity = HttpEntity(ByteString(expectedMessage)))))
-
         _controller.handleAction(END_GAME, None)
-
-        // TODO si riesce a cambiare metodo?
-        Thread.sleep(100)// scalastyle:ignore
-
-        _controller.model.gameId shouldEqual None
-      }
-
-      "be able to end a game when request is not successful" in {
-        _controller.model = _controller.model.copy(gameId = Some(GAME_ID))
-        _controller.model.gameId shouldEqual Some(GAME_ID)
-
-        val uri = s"${PacmanRestClient.GAMES_URL}/$GAME_ID"
-        val failureMessage = "failure"
-
-        _pacmanRestClientWithMockClientHandler.mockHttp
-          .expects(HttpRequest(method = HttpMethods.DELETE, uri = uri))
-          .returning(Future.successful(HttpResponse(status = StatusCodes.InternalServerError, entity = HttpEntity(ByteString(failureMessage)))))
-
-        _controller.handleAction(END_GAME, None)
-
-        // TODO si riesce a cambiare metodo?
-        Thread.sleep(100)// scalastyle:ignore
 
         _controller.model.gameId shouldEqual None
       }
