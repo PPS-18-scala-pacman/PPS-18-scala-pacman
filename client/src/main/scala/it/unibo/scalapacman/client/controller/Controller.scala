@@ -345,6 +345,7 @@ private case class ControllerImpl(pacmanRestClient: PacmanRestClient) extends Co
    * Esegue le operazioni di termine partita per assicurarsi che non rimangano partite pendenti lato server
    */
   private def evalExitApp(): Unit = {
+    evalLeaveLobby(model.gameId, model.lobby)
     evalEndGame(model.gameId)
     info("Chiusura dell'applicazione")
     System.exit(0)

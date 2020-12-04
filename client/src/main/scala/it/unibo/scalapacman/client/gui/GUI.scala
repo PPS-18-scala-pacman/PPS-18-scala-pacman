@@ -1,10 +1,12 @@
 package it.unibo.scalapacman.client.gui
 
+import java.awt.event.{WindowAdapter, WindowEvent}
 import java.awt.{BorderLayout, CardLayout, Dimension}
 
+import it.unibo.scalapacman.client.controller.Action.EXIT_APP
 import it.unibo.scalapacman.client.controller.Controller
 import it.unibo.scalapacman.client.gui.View.{LOBBY, MENU, OPTIONS, PLAY, SETUP, STATS}
-import javax.swing.{JFrame, JPanel, WindowConstants}
+import javax.swing.{JFrame, JOptionPane, JPanel, WindowConstants}
 
 object GUI {
   def apply(implicit controller: Controller): GUIImpl = new GUIImpl()
@@ -16,7 +18,7 @@ object GUI {
  *
  * @param controller il riferimento al componente Controller
  */
-class GUIImpl(implicit val controller: Controller) extends ViewChanger {
+class GUIImpl(implicit val controller: Controller) extends ViewChanger with AskToController {
 
   implicit val viewChanger: ViewChanger = this
 
@@ -41,17 +43,33 @@ class GUIImpl(implicit val controller: Controller) extends ViewChanger {
 
   changeView(MENU)
 
+  setOnWindowClosing(frame)
+
   frame add(mainPanel, BorderLayout.CENTER)
 
   frame setTitle "Scala Pacman"
   frame setSize new Dimension(WIDTH, HEIGHT)
   frame setResizable false
-  frame setDefaultCloseOperation WindowConstants.EXIT_ON_CLOSE
+  frame setDefaultCloseOperation WindowConstants.DO_NOTHING_ON_CLOSE
   frame setLocationRelativeTo null // scalastyle:ignore null
   frame setVisible true
 
   def changeView(view: View): Unit = {
     if (view == PLAY) playView.setupView()
     mainLayout show(mainPanel, view.name)
+  }
+
+  private def setOnWindowClosing(frame: JFrame): Unit = frame addWindowListener new WindowAdapter() {
+    override def windowClosing(windowEvent: WindowEvent): Unit = {
+      if (JOptionPane.showConfirmDialog(
+        frame,
+        "Sei sicuro di voler chiudere l'applicazione?",
+        "Chiudere l'applicazione?",
+        JOptionPane.YES_NO_OPTION,
+        JOptionPane.QUESTION_MESSAGE
+      ) == JOptionPane.YES_OPTION) {
+        askToController(EXIT_APP, None)
+      }
+    }
   }
 }
