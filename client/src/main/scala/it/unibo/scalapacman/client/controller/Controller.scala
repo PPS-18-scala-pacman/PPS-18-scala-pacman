@@ -1,7 +1,6 @@
 package it.unibo.scalapacman.client.controller
 
 import java.util.{Timer, TimerTask}
-
 import grizzled.slf4j.Logging
 import it.unibo.scalapacman.client.communication.PacmanRestClient
 import Action.{CREATE_LOBBY, END_GAME, EXIT_APP, JOIN_LOBBY, LEAVE_LOBBY, MOVEMENT, PAUSE_RESUME, RESET_KEY_MAP,
@@ -15,11 +14,12 @@ import it.unibo.scalapacman.client.input.KeyMap
 import it.unibo.scalapacman.client.map.PacmanMap
 import it.unibo.scalapacman.client.model.LobbyJsonProtocol.lobbyFormat
 import it.unibo.scalapacman.client.model.{CreateLobbyData, GameModel, JoinLobbyData, Lobby}
+import it.unibo.scalapacman.client.utils.UserDialog.{showError, showWarning}
 import it.unibo.scalapacman.common.CommandType.CommandType
 import it.unibo.scalapacman.common.MoveCommandType.MoveCommandType
 import it.unibo.scalapacman.common.{Command, CommandType, CommandTypeHolder, JSONConverter, MapUpdater, MoveCommandTypeHolder, UpdateModelDTO}
 import it.unibo.scalapacman.lib.model.{Map, MapType}
-import javax.swing.JOptionPane
+
 import spray.json.DefaultJsonProtocol.listFormat
 
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor}
@@ -466,12 +466,6 @@ private case class ControllerImpl(pacmanRestClient: PacmanRestClient) extends Co
     _publisher.notifySubscribers(LobbyDeleted())
     if (model.gameId.isEmpty) showWarning("La lobby è stata eliminata")
   }
-
-  private def showError(message: String): Unit = showDialog(message, "Errore", JOptionPane.ERROR_MESSAGE)
-  private def showWarning(message: String): Unit = showDialog(message, "Attenzione", JOptionPane.WARNING_MESSAGE)
-
-  private def showDialog(message: String, title: String, messageType: Int = JOptionPane.PLAIN_MESSAGE): Unit =
-    JOptionPane.showMessageDialog(null, message, title, messageType) // scalastyle:ignore
 }
 
 // scalastyle:on multiple.string.literals

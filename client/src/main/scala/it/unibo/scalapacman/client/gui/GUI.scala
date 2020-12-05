@@ -2,10 +2,11 @@ package it.unibo.scalapacman.client.gui
 
 import java.awt.event.{WindowAdapter, WindowEvent}
 import java.awt.{BorderLayout, CardLayout, Dimension}
-
 import it.unibo.scalapacman.client.controller.Action.EXIT_APP
 import it.unibo.scalapacman.client.controller.Controller
 import it.unibo.scalapacman.client.gui.View.{LOBBY, MENU, OPTIONS, PLAY, SETUP, STATS}
+import it.unibo.scalapacman.client.utils.UserDialog.showChoice
+
 import javax.swing.{JFrame, JOptionPane, JPanel, WindowConstants}
 
 object GUI {
@@ -61,13 +62,7 @@ class GUIImpl(implicit val controller: Controller) extends ViewChanger with AskT
 
   private def setOnWindowClosing(frame: JFrame): Unit = frame addWindowListener new WindowAdapter() {
     override def windowClosing(windowEvent: WindowEvent): Unit = {
-      if (JOptionPane.showConfirmDialog(
-        frame,
-        "Sei sicuro di voler chiudere l'applicazione?",
-        "Chiudere l'applicazione?",
-        JOptionPane.YES_NO_OPTION,
-        JOptionPane.QUESTION_MESSAGE
-      ) == JOptionPane.YES_OPTION) {
+      if (showChoice("Sei sicuro di voler chiudere l'applicazione?", "Chiudere l'applicazione?") == JOptionPane.YES_OPTION) {
         askToController(EXIT_APP, None)
       }
     }

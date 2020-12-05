@@ -1,12 +1,13 @@
 package it.unibo.scalapacman.client.gui
 
 import java.awt.{BorderLayout, GridLayout}
-
 import it.unibo.scalapacman.client.controller.Action.{CREATE_LOBBY, JOIN_LOBBY, SUBSCRIBE_TO_EVENTS}
 import it.unibo.scalapacman.client.controller.Controller
 import it.unibo.scalapacman.client.event.{LobbiesUpdate, PacmanEvent, PacmanSubscriber}
 import it.unibo.scalapacman.client.gui.View.{LOBBY, MENU}
 import it.unibo.scalapacman.client.model.{CreateLobbyData, JoinLobbyData, Lobby}
+import it.unibo.scalapacman.client.utils.UserDialog.showError
+
 import javax.swing.{BorderFactory, Box, BoxLayout, DefaultListModel, JButton, JLabel, JScrollPane, JSeparator, JSpinner, JTextField, SwingConstants}
 
 object SetupGameView {
@@ -124,6 +125,8 @@ class SetupGameView(implicit controller: Controller, viewChanger: ViewChanger) e
   private def handleCreateGameButton(): Unit = if (checkNickName()) {
     askToController(CREATE_LOBBY, Some(CreateLobbyData(nicknameTextField.getText(), numPlayersSpinner.getValue.toString.toInt)))
     viewChanger.changeView(LOBBY)
+  } else {
+    showError("Devi prima impostare un nome utente")
   }
 
   private def handleJoinGameButton(): Unit = if (checkNickName()) {
@@ -131,9 +134,14 @@ class SetupGameView(implicit controller: Controller, viewChanger: ViewChanger) e
 
     if (lobby != null) {
       askToController(JOIN_LOBBY, Some(JoinLobbyData(nicknameTextField.getText(), lobby)))
-    }
+      lobbyJList.clearSelection()
 
-    viewChanger.changeView(LOBBY)
+      viewChanger.changeView(LOBBY)
+    } else {
+      showError("Devi prima selezionare una lobby")
+    }
+  } else {
+    showError("Devi prima impostare un nome utente")
   }
 
   private def createNumberPlayersField(): JSpinner = createNumericJSpinner(MIN_PLAYERS, MIN_PLAYERS, MAX_PLAYERS)
