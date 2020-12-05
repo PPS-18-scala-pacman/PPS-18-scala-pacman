@@ -44,6 +44,7 @@ tasks {
   }
 
   withType<ShadowJar> {
+    archiveClassifier.set("fat")
     manifest {
       attributes["Main-Verticle"] = mainVerticleName
     }
