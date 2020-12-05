@@ -50,5 +50,6 @@ case class UpdateModelDTO(
                            gameEntities: Set[GameEntityDTO],
                            state: GameStateDTO,
                            dots: Set[DotDTO],
-                           fruit: Option[FruitDTO]
+                           fruit: Option[FruitDTO],
+                           paused: Boolean = false
                          )

@@ -2,7 +2,7 @@ package it.unibo.scalapacman.common
 
 object CommandType extends Enumeration {
   type CommandType = Value
-  val MOVE, PAUSE, RESUME = Value
+  val MOVE, PAUSE, RESUME, LEFT_GAME = Value
 }
 
 object MoveCommandType extends Enumeration {
