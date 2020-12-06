@@ -78,7 +78,7 @@ private class Engine(setup: Setup) {
     }
 
   private def delayRoutine(model: Model, delay: FiniteDuration): Behavior[EngineCommand] = {
-    updateWatchers(model)
+    updateWatchers(model, paused = true)
     setup.context.scheduleOnce(delay, setup.context.self, DelayedResume())
 
     Behaviors.withStash(Settings.stashSize) { buffer =>
@@ -107,7 +107,7 @@ private class Engine(setup: Setup) {
           pauseRoutine(addWatcher(model, act))
         case UnRegisterWatcher(act) => pauseRoutine(removeWatcher(model, act))
         case WakeUp() =>
-          updateWatchers(model)
+          updateWatchers(model, paused = true)
           Behaviors.same
         case Resume() =>
           setup.context.log.info("Resume id: " + setup.gameId)
@@ -149,15 +149,16 @@ private class Engine(setup: Setup) {
    * Crea il dto contentente lo stato della partita a partire dal modello di gioco
    *
    * @param model  modello contenente lo stato corrente del gioco
+   * @param paused indica se la partita è in pausa o meno
    * @return       dto per aggiornamento osservatori
    */
-  private def elaborateUpdateModel(model: GameData): UpdateModelDTO = {
+  private def elaborateUpdateModel(model: GameData, paused: Boolean): UpdateModelDTO = {
 
     val gameEntities: Set[GameEntityDTO] = model.participants.toSet.map(gameParticipantToGameEntity)
     val dots: Set[DotDTO]                = model.map.dots.map(rawToDotDTO).toSet
     val fruit: Option[FruitDTO]          = model.map.fruit.map(rawToFruitDTO)
 
-    UpdateModelDTO(gameEntities, model.state, dots, fruit)
+    UpdateModelDTO(gameEntities, model.state, dots, fruit, paused)
   }
 
   private def initEngineModel(watcher: Set[ActorRef[UpdateCommand]], disabledPlayers: Set[String]): Model = {
@@ -171,8 +172,8 @@ private class Engine(setup: Setup) {
     Model(watcher, GameData(participants, classicFactory.map, classicFactory.gameState, classicFactory.gameEvents))
   }
 
-  private def updateWatchers(model: Model): Unit =
-    model.watchers.foreach( _ ! UpdateMsg(elaborateUpdateModel(model.data)) )
+  private def updateWatchers(model: Model, paused: Boolean): Unit =
+    model.watchers.foreach( _ ! UpdateMsg(elaborateUpdateModel(model.data, paused)) )
 
   private def addWatcher(model: Model, watcher: ActorRef[UpdateCommand]): Model = {
     setup.context.watchWith(watcher, UnRegisterWatcher(watcher))
@@ -217,7 +218,7 @@ private class Engine(setup: Setup) {
 
     val gameData: GameData = GameData(updatePlayers, newMap, state, gameEvents)
     val updateModel = model.copy(data = gameData)
-    updateWatchers(updateModel)
+    updateWatchers(updateModel, paused = false)
 
     if(state.levelState == LevelState.ONGOING) {
       mainRoutine(updateModel)
