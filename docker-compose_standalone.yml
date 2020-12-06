@@ -1,0 +1,42 @@
+version: '3.3'
+
+services:
+  server:
+    image: 'openjdk:8-jre-alpine'
+    working_dir: /app
+    volumes:
+      - './server/build/libs/:/app/server/'
+      - './gradle.properties:/app/gradle.properties'
+    command: sh -c "exec java -jar ./server/server-$$(cat gradle.properties | grep 'version = ' | sed -e 's/^version = //')-fat.jar"
+    ports:
+      - '8080:8080'
+
+  lobby:
+    image: 'openjdk:8-jre-alpine'
+    working_dir: /app
+    volumes:
+      - './lobby/build/libs:/app/lobby'
+      - './gradle.properties:/app/gradle.properties'
+      - './lobby/src/main/resources/conf/config-docker.json:/app/config-docker.json'
+    environment:
+      - VERTX_CONFIG_PATH=/app/config-docker.json
+    command: sh -c "exec java -jar ./lobby/lobby-$$(cat gradle.properties | grep 'version = ' | sed -e 's/^version = //')-fat.jar"
+    ports:
+      - '8081:8081'
+    depends_on:
+      - postgres
+
+  postgres:
+    image: 'bitnami/postgresql:11.9.0'
+    volumes:
+      - 'postgresdata:/bitnami/postgresql'
+      - './lobby/src/main/resources/conf/sql:/docker-entrypoint-initdb.d'
+    environment:
+      - POSTGRESQL_USERNAME=postgres
+      - POSTGRESQL_PASSWORD=postgres
+      - POSTGRESQL_DATABASE=lobby
+    ports:
+      - '5432:5432'
+
+volumes:
+  postgresdata:

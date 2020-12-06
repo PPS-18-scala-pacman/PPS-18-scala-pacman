@@ -1,59 +1,40 @@
 version: '3.3'
 
-#  FROM openjdk:8-jre-alpine
-#
-#  ENV VERTICLE_FILE hello-verticle-fatjar-3.0.0-SNAPSHOT-fat.jar
-#
-#  # Set the location of the verticles
-#  ENV VERTICLE_HOME /usr/verticles
-#
-#  EXPOSE 8080
-#
-#  # Copy your fat jar to the container
-#  COPY target/$VERTICLE_FILE $VERTICLE_HOME/
-#
-#  # Launch the verticle
-#  WORKDIR $VERTICLE_HOME
-#  ENTRYPOINT ["sh", "-c"]
-#  CMD ["exec java -jar $VERTICLE_FILE"]
-
 services:
   server:
-    image: 'openjdk:8-jre-alpine'
-    working_dir: /app
-    volumes:
-      - './server/build/libs/:/app/server/'
-      - './gradle.properties:/app/gradle.properties'
-    command: sh -c "exec java -jar ./server/server-$$(cat gradle.properties | grep 'version = ' | sed -e 's/^version = //')-fat.jar"
-    ports:
-      - '8080:8080'
-
+    build:
+      context: ./
+      dockerfile: ./server/Dockerfile
+    container_name: server
+    restart: unless-stopped
+#    ports:
+#      - '8080'
   lobby:
-    image: 'openjdk:8-jre-alpine'
-    working_dir: /app
-    volumes:
-      - './lobby/build/libs:/app/lobby'
-      - './gradle.properties:/app/gradle.properties'
-      - './lobby/src/main/resources/conf/config-docker.json:/app/config-docker.json'
-    environment:
-      - VERTX_CONFIG_PATH=/app/config-docker.json
-    command: sh -c "exec java -jar ./lobby/lobby-$$(cat gradle.properties | grep 'version = ' | sed -e 's/^version = //')-fat.jar"
-    ports:
-      - '8081:8081'
+    build:
+      context: ./
+      dockerfile: ./lobby/Dockerfile
+    container_name: lobby
+    restart: unless-stopped
+#    ports:
+#      - '8081'
     depends_on:
       - postgres
-
   postgres:
-    image: 'bitnami/postgresql:11.9.0'
-    volumes:
-      - 'postgresdata:/bitnami/postgresql'
-      - './lobby/src/main/resources/conf/sql:/docker-entrypoint-initdb.d'
+    build:
+      context: ./
+      dockerfile: ./database/Dockerfile
+    container_name: postgres
+    restart: unless-stopped
     environment:
       - POSTGRESQL_USERNAME=postgres
       - POSTGRESQL_PASSWORD=postgres
-      - POSTGRESQL_DATABASE=lobby
+#    ports:
+#      - '5432'
+  gateway:
+    build:
+      context: gateway
+      dockerfile: ./Dockerfile
+    container_name: gateway
+    restart: unless-stopped
     ports:
-      - '5432:5432'
-
-volumes:
-  postgresdata:
+      - '80'
