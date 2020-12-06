@@ -79,10 +79,7 @@ class LobbyView(implicit controller: Controller, viewChanger: ViewChanger) exten
     case _ => Unit
   }
 
-  private def handleLeaveButton(): Unit = {
-    askToController(LEAVE_LOBBY, None)
-    viewChanger.changeView(SETUP)
-  }
+  private def handleLeaveButton(): Unit = askToController(LEAVE_LOBBY, None)
 
   private def handleStartGameButton(): Unit = if (controller.model.lobby.get.hostUsername.equals(controller.model.username)) {
     askToController(START_LOBBY_GAME, None)

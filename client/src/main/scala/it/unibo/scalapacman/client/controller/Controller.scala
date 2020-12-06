@@ -13,13 +13,13 @@ import it.unibo.scalapacman.client.input.JavaKeyBinding.DefaultJavaKeyBinding
 import it.unibo.scalapacman.client.input.KeyMap
 import it.unibo.scalapacman.client.map.PacmanMap
 import it.unibo.scalapacman.client.model.LobbyJsonProtocol.lobbyFormat
+import it.unibo.scalapacman.client.model.LobbySSEEventType.LOBBY_DELETE
 import it.unibo.scalapacman.client.model.{CreateLobbyData, GameModel, JoinLobbyData, Lobby}
-import it.unibo.scalapacman.client.utils.UserDialog.{showError, showWarning}
+import it.unibo.scalapacman.client.utils.PacmanLogger
 import it.unibo.scalapacman.common.CommandType.CommandType
 import it.unibo.scalapacman.common.MoveCommandType.MoveCommandType
 import it.unibo.scalapacman.common.{Command, CommandType, CommandTypeHolder, JSONConverter, MapUpdater, MoveCommandTypeHolder, UpdateModelDTO}
 import it.unibo.scalapacman.lib.model.{Map, MapType}
-
 import spray.json.DefaultJsonProtocol.listFormat
 
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor}
@@ -51,14 +51,14 @@ trait Controller {
 }
 
 object Controller {
-  def apply(pacmanRestClient: PacmanRestClient): Controller = ControllerImpl(pacmanRestClient)
+  def apply(pacmanRestClient: PacmanRestClient, pacmanLogger: PacmanLogger): Controller = ControllerImpl(pacmanRestClient, pacmanLogger)
 }
 
 /**
  * Implementazione del Controller dell'applicazione
  * @param pacmanRestClient il servizio per la comunicazione col Server
  */
-private case class ControllerImpl(pacmanRestClient: PacmanRestClient) extends Controller with Logging {
+private case class ControllerImpl(pacmanRestClient: PacmanRestClient, pacmanLogger: PacmanLogger) extends Controller with Logging {
   implicit val ec: ExecutionContextExecutor = ExecutionContext.global
   val UNKNOWN_ACTION = "Azione non riconosciuta"
   /**
@@ -109,7 +109,7 @@ private case class ControllerImpl(pacmanRestClient: PacmanRestClient) extends Co
      * @param gameId id della partita
      */
     def startGame(gameId: String): Unit = {
-      info(s"Partita creata con successo: id $gameId")
+      pacmanLogger.info(s"Partita creata con successo: id $gameId")
       model = model.copy(gameId = Some(gameId))
       _prevUserAction = None
       new Thread(_webSocketRunnable).start()
@@ -119,7 +119,7 @@ private case class ControllerImpl(pacmanRestClient: PacmanRestClient) extends Co
 
     modelGameId match {
       case None => startGame(newGameId)
-      case Some(_) => error("Impossibile creare nuova partita quando ce n'è già una in corso")
+      case Some(_) => pacmanLogger.error("Impossibile creare nuova partita quando ce n'è già una in corso")
     }
   }
 
@@ -137,7 +137,7 @@ private case class ControllerImpl(pacmanRestClient: PacmanRestClient) extends Co
      * @param lobbyId id della lobby
      */
     def startLobbyGame(username: String, lobbyId: Int): Unit = pacmanRestClient.startLobbyGame(username, lobbyId) onComplete {
-      case Success(_) => info("Richiesta inviata correttamente")
+      case Success(_) => pacmanLogger.info("Richiesta inviata correttamente")
       case Failure(exception) => error(s"Errore durante la richiesta: ${exception.getMessage}")
     }
 
@@ -166,12 +166,12 @@ private case class ControllerImpl(pacmanRestClient: PacmanRestClient) extends Co
     def createLobby(cld: CreateLobbyData): Unit = pacmanRestClient.createLobby(cld.username, cld.username, cld.size) onComplete {
       case Success(value) =>
         val lobby: Lobby = value.parseJson.convertTo[Lobby]
-        info(s"Lobby ${lobby.description} creata con successo")
+        pacmanLogger.info(s"Lobby ${lobby.description} creata con successo")
         model = model.copy(lobby = Some(lobby))
         connectToLobby(lobby.id)
       case Failure(exception) =>
         error(s"Errore nella creazione della lobby: ${exception.getMessage}")
-        showError("Errore creazione lobby")
+        pacmanLogger.error("Errore creazione lobby")
         _publisher.notifySubscribers(LobbyError())
     }
 
@@ -195,12 +195,12 @@ private case class ControllerImpl(pacmanRestClient: PacmanRestClient) extends Co
 
     def joinLobby(jld: JoinLobbyData, username: String): Unit = pacmanRestClient.joinLobby(jld.lobby.id, username) onComplete {
       case Success(_) =>
-        info(s"Partecipazione a lobby ${jld.lobby.description} avvenuta con successo")
+        pacmanLogger.info(s"Partecipazione a lobby ${jld.lobby.description} avvenuta con successo")
         model = model.copy(lobby = Some(jld.lobby))
         connectToLobby(jld.lobby.id)
       case Failure(exception) =>
         error(s"Errore durante partecipazione lobby ${jld.lobby.description}: ${exception.getMessage}")
-        showError("Errore partecipazione lobby")
+        pacmanLogger.error("Errore partecipazione lobby")
         _publisher.notifySubscribers(LobbyError())
     }
 
@@ -224,8 +224,9 @@ private case class ControllerImpl(pacmanRestClient: PacmanRestClient) extends Co
 
     def leaveLobby(username: String, lobby: Lobby): Unit =  pacmanRestClient.leaveLobby(username) onComplete {
       case Success(_) =>
-        info(s"Lobby ${lobby.description} abbandonata con successo")
+        pacmanLogger.info(s"Lobby ${lobby.description} abbandonata con successo")
         model = model.copy(lobby = None)
+        _publisher.notifySubscribers(LobbyDeleted())
       case Failure(exception) =>
         error(s"Errore durante abbandono lobby ${lobby.description}: ${exception.getMessage}")
     }
@@ -275,11 +276,11 @@ private case class ControllerImpl(pacmanRestClient: PacmanRestClient) extends Co
 
     if (gameId.isDefined) {
       (newUserAction, prevUserAction) match {
-        case (Some(newInt), Some(prevInt)) if newInt == prevInt => info("Non invio aggiornamento al server")
+        case (Some(newInt), Some(prevInt)) if newInt == prevInt => pacmanLogger.info("Non invio aggiornamento al server")
         case (None, _) => error("Nuova azione utente è None")
         case _ =>
-          info("Invio aggiornamento al server")
-          debug(s"Invio al server l'azione ${newUserAction.get} dell'utente")
+          pacmanLogger.info("Invio aggiornamento al server")
+          pacmanLogger.debug(s"Invio al server l'azione ${newUserAction.get} dell'utente")
           _prevUserAction = newUserAction
           sendMovement(newUserAction)
       }
@@ -300,8 +301,8 @@ private case class ControllerImpl(pacmanRestClient: PacmanRestClient) extends Co
 
     if (gameId.isDefined) {
       newPauseResume match {
-        case Some(CommandType.PAUSE) if gamePaused => info("Gioco già in pausa")
-        case Some(CommandType.RESUME) if !gamePaused => info("Gioco già in esecuzione")
+        case Some(CommandType.PAUSE) if gamePaused => pacmanLogger.info("Gioco già in pausa")
+        case Some(CommandType.RESUME) if !gamePaused => pacmanLogger.info("Gioco già in esecuzione")
         case None => error("Pause/Resume è None")
         case _ =>
           model = model.copy(paused = !model.paused)
@@ -337,7 +338,7 @@ private case class ControllerImpl(pacmanRestClient: PacmanRestClient) extends Co
     case Some(keyMap) =>
       model = model.copy(keyMap = keyMap)
       _publisher.notifySubscribers(NewKeyMap(model.keyMap))
-      info(s"Nuova configurazione dei tasti salvata $keyMap") // scalastyle:ignore multiple.string.literals
+      pacmanLogger.info(s"Nuova configurazione dei tasti salvata $keyMap") // scalastyle:ignore multiple.string.literals
   }
 
   /**
@@ -347,7 +348,7 @@ private case class ControllerImpl(pacmanRestClient: PacmanRestClient) extends Co
   private def evalExitApp(): Unit = {
     evalLeaveLobby(model.gameId, model.lobby)
     evalEndGame(model.gameId)
-    info("Chiusura dell'applicazione")
+    pacmanLogger.info("Chiusura dell'applicazione")
     System.exit(0)
   }
 
@@ -378,7 +379,7 @@ private case class ControllerImpl(pacmanRestClient: PacmanRestClient) extends Co
    */
   private def handleWSConnectionError(serverError: Boolean = false): Unit = if (!serverError) {
     if (model.gameId.isDefined) {
-      debug(s"[handleWSConnectionError] Connessione websocket chiusa in modo anomalo, tentativo di riconnessione " +
+      pacmanLogger.debug(s"[handleWSConnectionError] Connessione websocket chiusa in modo anomalo, tentativo di riconnessione " +
         s"in ${WS_RECONNECTION_TIME_DELAY / 1000} secondi")
       _publisher.notifySubscribers(NetworkIssue(serverError = false, s"Riconnessione al server in corso"))
       val t = new Timer
@@ -393,7 +394,7 @@ private case class ControllerImpl(pacmanRestClient: PacmanRestClient) extends Co
       }, WS_RECONNECTION_TIME_DELAY)
     }
   } else {
-    debug(s"[handleWSConnectionError] Errore nella comunicazione col server, comunicazione tramite WebSocket terminata")
+    pacmanLogger.debug(s"[handleWSConnectionError] Errore nella comunicazione col server, comunicazione tramite WebSocket terminata")
     _publisher.notifySubscribers(NetworkIssue(serverError = true, "Errore comunicazione col server"))
   }
 
@@ -402,7 +403,7 @@ private case class ControllerImpl(pacmanRestClient: PacmanRestClient) extends Co
    */
   private def connectToLobbies(): Unit =
     pacmanRestClient.watchLobbies(handleLobbiesUpdate, handleLobbiesConnectionError, () => Unit) onComplete {
-      case Failure(exception) => info(s"Errore connessione SSE lobbies: ${exception.getMessage}"); handleLobbiesConnectionError()
+      case Failure(exception) => pacmanLogger.info(s"Errore connessione SSE lobbies: ${exception.getMessage}"); handleLobbiesConnectionError()
       case _ => Unit
     }
 
@@ -417,7 +418,7 @@ private case class ControllerImpl(pacmanRestClient: PacmanRestClient) extends Co
    * Gestisce l'interruzione al canale SSE delle lobby per un problema di rete
    */
   private def handleLobbiesConnectionError(): Unit = {
-    info(s"Nuovo tentativo connessione servizio lobbies tra ${LOBBIES_RECONNECTION_TIME_DELAY/1000} secondi")
+    pacmanLogger.info(s"Nuovo tentativo connessione servizio lobbies tra ${LOBBIES_RECONNECTION_TIME_DELAY/1000} secondi")
     val t = new Timer
     t.schedule(new TimerTask() {
       override def run(): Unit = {
@@ -432,8 +433,14 @@ private case class ControllerImpl(pacmanRestClient: PacmanRestClient) extends Co
    * @param lobbyId id della lobby a cui collegarsi
    */
   private def connectToLobby(lobbyId: Int): Unit =
-    pacmanRestClient.watchLobby(lobbyId, handleLobbyUpdate, handleLobbyConnectionError(lobbyId), handleLobbySSEClose) onComplete {
-      case Failure(exception) => info(s"Errore connessione SSE lobby: ${exception.getMessage}"); handleLobbyConnectionError(lobbyId)()
+    pacmanRestClient.watchLobby(
+      lobbyId,
+      handleLobbyUpdate,
+      handleLobbyConnectionError(lobbyId),
+      handleLobbySSEClose,
+      (sse: ServerSentEvent) => !sse.eventType.contains(LOBBY_DELETE.toString) && model.lobby.isDefined
+    ) onComplete {
+      case Failure(exception) => pacmanLogger.info(s"Errore connessione SSE lobby: ${exception.getMessage}"); handleLobbyConnectionError(lobbyId)()
       case _ => Unit
     }
 
@@ -451,7 +458,7 @@ private case class ControllerImpl(pacmanRestClient: PacmanRestClient) extends Co
    * Gestisce l'interruzione al canale SSE delle lobby per un problema di rete
    */
   private def handleLobbyConnectionError(lobbyId: Int)(): Unit = {
-    info(s"Nuovo tentativo connessione servizio lobby tra ${LOBBIES_RECONNECTION_TIME_DELAY/1000} secondi")
+    pacmanLogger.info(s"Nuovo tentativo connessione servizio lobby tra ${LOBBIES_RECONNECTION_TIME_DELAY/1000} secondi")
     val t = new Timer
     t.schedule(new TimerTask() {
       override def run(): Unit = {
@@ -462,9 +469,11 @@ private case class ControllerImpl(pacmanRestClient: PacmanRestClient) extends Co
   }
 
   private def handleLobbySSEClose(): Unit = {
+    if (model.lobby.isDefined) {
+      _publisher.notifySubscribers(LobbyDeleted())
+      if (model.gameId.isEmpty) pacmanLogger.warning("La lobby è stata eliminata")
+    }
     model = model.copy(lobby = None)
-    _publisher.notifySubscribers(LobbyDeleted())
-    if (model.gameId.isEmpty) showWarning("La lobby è stata eliminata")
   }
 }
 
