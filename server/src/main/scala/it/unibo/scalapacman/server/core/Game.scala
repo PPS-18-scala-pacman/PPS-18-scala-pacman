@@ -103,8 +103,12 @@ private class Game(setup: Setup) {
           prepareBehavior(runRoutine, model)
         } else {
           val updatedPlayers = model.players + (player.get._1 -> player.get._2.copy(hasLeft = true))
-          setup.engine ! Engine.DisablePlayer(nickname)
-          prepareBehavior(runRoutine, model.copy(players = updatedPlayers))
+          if(updatedPlayers.exists(!_._2.hasLeft)) {
+            setup.engine ! Engine.DisablePlayer(nickname)
+            prepareBehavior(runRoutine, model.copy(players = updatedPlayers))
+          } else {
+            close()
+          }
         }
       case _ =>
         setup.context.log.warn("Ricevuto messaggio non gestito")
@@ -147,8 +151,12 @@ private class Game(setup: Setup) {
     } else {
       val updatedPlayers = model.players + (player.get._1 -> editFunc(player.get._2))
       if(setup.components.size == updatedPlayers.count(player => player._2.isReady || player._2.hasLeft)) {
-        if(!model.gameStarted) setup.engine ! Start()
-        prepareBehavior(runRoutine, model.copy(players = updatedPlayers, gameStarted = true))
+        if(updatedPlayers.exists(!_._2.hasLeft)) {
+          if(!model.gameStarted) setup.engine ! Start()
+          prepareBehavior(runRoutine, model.copy(players = updatedPlayers, gameStarted = true))
+        } else {
+          close()
+        }
       } else {
         prepareBehavior(idleRoutine, model.copy(players = updatedPlayers))
       }
