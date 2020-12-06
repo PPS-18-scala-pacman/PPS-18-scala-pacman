@@ -19,7 +19,7 @@ public class GameActionsImpl implements GameActions {
   }
 
   public Single<Game> startGame(Game game) {
-    return this.client.post(this.serverPort, this.serverUrl, "/games")
+    return this.client.post(this.serverPort, this.serverUrl, "/api/games")
       .as(BodyCodec.string())
       .rxSendJson(game.toJson())
       .map(HttpResponse::body)

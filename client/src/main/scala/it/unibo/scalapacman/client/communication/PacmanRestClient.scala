@@ -360,11 +360,11 @@ case object PacmanRestClient {
   /**
    * Indirizzo per creazione/termine partita
    */
-  val GAMES_URL = s"http://$pacmanServerURL/games"
+  val GAMES_URL = s"http://$pacmanServerURL/api/games"
   /**
    * Indirizzo per canale WebSocket
    */
-  val GAMES_WS_URL = s"ws://$pacmanServerURL/connection-management/games"
+  val GAMES_WS_URL = s"ws://$pacmanServerURL/api/connection-management/games"
 //  /**
 //   * Indirizzo per lobby
 //   */
