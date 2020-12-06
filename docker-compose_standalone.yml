@@ -38,5 +38,13 @@ services:
     ports:
       - '5432:5432'
 
+  gateway:
+    image: 'nginx:1.19-alpine'
+    volumes:
+      - './gateway/nginx/nginx.conf:/etc/nginx/nginx.conf'
+      - './gateway/nginx/conf.d/default.conf:/etc/nginx/conf.d/default.conf'
+    ports:
+      - '80:80'
+
 volumes:
   postgresdata:
