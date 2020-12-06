@@ -116,7 +116,7 @@ private class Game(setup: Setup) {
     }
 
   private def close(): Behavior[GameCommand] = {
-    setup.context.log.info("CloseCommand ricevuto")
+    setup.context.log.info("Chiusura partita: " + setup.id)
     Behaviors.stopped
   }
 

@@ -6,8 +6,10 @@ import akka.http.scaladsl.model.ws.{Message, TextMessage}
 import it.unibo.scalapacman.common.{Command, CommandType, CommandTypeHolder, JSONConverter, MoveCommandType, MoveCommandTypeHolder}
 import it.unibo.scalapacman.server.communication.ConnectionProtocol.{ConnectionAck, ConnectionData, ConnectionEnded,
   ConnectionFailed, ConnectionInit, ConnectionMsg}
-import it.unibo.scalapacman.server.core.PlayerAct.{PlayerCommand, RegisterUser, RegistrationAccepted, RegistrationRejected,
-  Setup, WrapRespMessage, WrapRespUpdate}
+import it.unibo.scalapacman.server.core.Engine.EngineCommand
+import it.unibo.scalapacman.server.core.Game.GameCommand
+import it.unibo.scalapacman.server.core.PlayerAct.{PlayerCommand, RegisterUser, RegistrationAccepted,
+  RegistrationRejected, Setup, WrapRespMessage, WrapRespUpdate}
 import it.unibo.scalapacman.server.model.MoveDirection
 
 /**
@@ -96,17 +98,23 @@ class PlayerAct(setup: Setup) {
       case WrapRespMessage(ConnectionData(act, TextMessage.Strict(msg))) =>
         setup.context.log.debug("Ricevuto messaggio: " + msg)
         val command = JSONConverter.fromJSON[Command](msg) flatMap (parseClientCommand(_, nickname))
-        if(command.isDefined) setup.engine ! command.get
+        if(command.isDefined) sendCommand(command.get)
         act ! ConnectionAck()
-        Behaviors.same
+        if(command.isDefined && command.get.isInstanceOf[Game.PlayerLeftGame]) {
+          setup.context.log.info(s"Il Player $nickname ha abbandonato la partita")
+          setup.engine ! Engine.UnRegisterWatcher(updateMsgAdapter)
+          Behaviors.stopped
+        } else {
+          Behaviors.same
+        }
       case WrapRespMessage(ConnectionEnded()) =>
-        setup.context.log.info("Ricevuto messaggio connessione chiusa")
-        setup.game ! Game.PlayerLeftGame(nickname)
+        setup.context.log.error("Ricevuto messaggio connessione chiusa")
         setup.engine ! Engine.UnRegisterWatcher(updateMsgAdapter)
-        Behaviors.stopped
+        throw new IllegalStateException("Connesione chiusa in modo anomalo")
       case WrapRespMessage(ConnectionFailed(ex)) =>
         setup.context.log.error(s"Ricevuto messaggio connessione fallita ${ex.getMessage}")
         setup.context.log.debug(ex.getStackTrace.toString)
+        setup.engine ! Engine.UnRegisterWatcher(updateMsgAdapter)
         throw ex
       case msg:Any =>
         setup.context.log.warn(s"Ricevuto messaggio non gestito: $msg")
@@ -120,9 +128,10 @@ class PlayerAct(setup: Setup) {
    * @param nickname      self
    * @return              EngineCommand corrispondente
    */
-  private def parseClientCommand(clientCommand: Command, nickname: String): Option[Engine.EngineCommand] = clientCommand match {
+  private def parseClientCommand(clientCommand: Command, nickname: String): Option[Any] = clientCommand match {
     case Command(CommandTypeHolder(CommandType.PAUSE), None) => Some(Engine.Pause())
     case Command(CommandTypeHolder(CommandType.RESUME), None) => Some(Engine.Resume())
+    case Command(CommandTypeHolder(CommandType.LEFT_GAME), None) => Some(Game.PlayerLeftGame(nickname))
     case Command(CommandTypeHolder(CommandType.MOVE), Some(data)) =>
       JSONConverter.fromJSON[MoveCommandTypeHolder](data) flatMap (parseClientMoveCommand(_, nickname))
     case _ => None
@@ -149,4 +158,10 @@ class PlayerAct(setup: Setup) {
         Some(Engine.ChangeDirectionCur(nickname))
       case _ => None
     }
+
+  private def sendCommand(command: Any): Unit = command match {
+    case cmd: EngineCommand => setup.engine ! cmd
+    case cmd: GameCommand => setup.game ! cmd
+    case cmd: Any => setup.context.log.error("Impossibile inviare messaggio, comando non valido: " + cmd)
+  }
 }
