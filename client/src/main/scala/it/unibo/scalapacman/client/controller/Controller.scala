@@ -248,6 +248,7 @@ private case class ControllerImpl(pacmanRestClient: PacmanRestClient, pacmanLogg
    */
   private def evalEndGame(gameId: Option[String]): Unit = {
     _webSocketRunnable.terminate()
+    sendOverWebsocket(CommandType.LEFT_GAME, None)
     pacmanRestClient.closeWebSocket()
     clearModel()
   }
