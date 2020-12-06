@@ -137,9 +137,18 @@ public class MainVerticle extends AbstractVerticle {
       .setMaxSize(5);
 
     // Create the pooled client
+    this.logger.info("Connecting to postgres: " + connectOptions.getHost() + ":" + connectOptions.getPort());
     PgPool pgPool = PgPool.pool(vertx, connectOptions, poolOptions);
 
-    return Single.just(pgPool);
+    // Try to connect and on success return the pooled client
+    return pgPool.rxGetConnection()
+      .doOnSuccess(connection -> {
+          System.out.println("Successfully connected to postgres");
+          // Closing our connection
+          connection.close();
+      })
+      .doOnError(err -> System.out.println("Could not connect to postgres: " + err.getMessage()))
+      .map(conn -> pgPool);
   }
 
   private Logger initMainLogger() {

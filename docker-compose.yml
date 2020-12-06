@@ -7,18 +7,20 @@ services:
       dockerfile: ./server/Dockerfile
     container_name: server
     restart: unless-stopped
-#    ports:
-#      - '8080'
+    ports:
+      - '8080:8080'
+
   lobby:
     build:
       context: ./
       dockerfile: ./lobby/Dockerfile
     container_name: lobby
     restart: unless-stopped
-#    ports:
-#      - '8081'
+    ports:
+      - '8081:8081'
     depends_on:
       - postgres
+
   postgres:
     build:
       context: ./
@@ -28,13 +30,14 @@ services:
     environment:
       - POSTGRESQL_USERNAME=postgres
       - POSTGRESQL_PASSWORD=postgres
-#    ports:
-#      - '5432'
+    ports:
+      - '5432:5432'
+
   gateway:
     build:
-      context: gateway
+      context: ./gateway
       dockerfile: ./Dockerfile
     container_name: gateway
     restart: unless-stopped
     ports:
-      - '80'
+      - '80:80'
