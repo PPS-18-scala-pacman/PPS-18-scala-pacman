@@ -20,7 +20,6 @@ import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContextExecutor, Future}
 import scala.util.{Failure, Success}
 import akka.http.scaladsl.unmarshalling.sse.EventStreamUnmarshalling._ // scalastyle:ignore
-import it.unibo.scalapacman.client.model.LobbySSEEventType.LOBBY_DELETE // scalastyle:ignore
 
 // scalastyle:off multiple.string.literals
 
@@ -48,13 +47,14 @@ trait PacmanRestClient extends Logging { this: HttpClient =>
                     messageHandler: ServerSentEvent => Unit,
                     connectionErrorHandler: () => Unit,
                     onSSEClose: () => Unit,
+                    sseEventTypeStop: ServerSentEvent => Boolean = _ => true,
                   ): Future[Any] =
     connectSSE(
       PacmanRestClient.LOBBY_URL,
       messageHandler,
       connectionErrorHandler,
       onSSEClose,
-      _ => true
+      sseEventTypeStop,
     )
 
   /**
@@ -68,13 +68,14 @@ trait PacmanRestClient extends Logging { this: HttpClient =>
                   messageHandler: ServerSentEvent => Unit,
                   connectionErrorHandler: () => Unit,
                   onSSEClose: () => Unit,
+                  sseEventTypeStop: ServerSentEvent => Boolean = _ => true,
                 ): Future[Any] =
     connectSSE(
       s"${PacmanRestClient.LOBBY_URL}/$id",
       messageHandler,
       connectionErrorHandler,
       onSSEClose,
-      !_.eventType.contains(LOBBY_DELETE.toString)
+      sseEventTypeStop,
     )
 
   def connectSSE(
