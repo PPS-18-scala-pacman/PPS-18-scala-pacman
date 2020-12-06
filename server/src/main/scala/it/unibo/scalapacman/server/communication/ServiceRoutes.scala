@@ -43,42 +43,44 @@ object ServiceRoutes {
   private case class ListingResponse(listing: Receptionist.Listing)
 
   def apply(handler: ActorRef[RoutesCommand])(implicit system: ActorSystem[_]): Route =
-    concat(
-      pathPrefix("games") {
-        concat (
-          pathEnd {
-            post {
-              entity(as[CreateGameRequest]) { req =>
-                if(req.components.size < 1 || req.components.size > maxPlayersNumber) {
-                  complete(StatusCodes.UnprocessableEntity -> "Numero di giocatori non valido")
-                } else {
-                  val operationPerformed: Future[ResponseCreateGame] = handler.ask(CreateGame(_, req.components))
-                  onSuccess(operationPerformed) {
-                    case ServiceRoutes.SuccessCrG(gameId) => complete(StatusCodes.Created, gameId)
-                    case ServiceRoutes.FailureCrG(reason) => complete(StatusCodes.InternalServerError -> reason)
+    pathPrefix("api") {
+      concat(
+        pathPrefix("games") {
+          concat(
+            pathEnd {
+              post {
+                entity(as[CreateGameRequest]) { req =>
+                  if (req.components.size < 1 || req.components.size > maxPlayersNumber) {
+                    complete(StatusCodes.UnprocessableEntity -> "Numero di giocatori non valido")
+                  } else {
+                    val operationPerformed: Future[ResponseCreateGame] = handler.ask(CreateGame(_, req.components))
+                    onSuccess(operationPerformed) {
+                      case ServiceRoutes.SuccessCrG(gameId) => complete(StatusCodes.Created, gameId)
+                      case ServiceRoutes.FailureCrG(reason) => complete(StatusCodes.InternalServerError -> reason)
+                    }
                   }
                 }
               }
-            }
-          },
-          pathPrefix(Segment) { gameId =>
-            pathEnd {
-              delete {
-                handler ! DeleteGame(gameId)
-                complete((StatusCodes.Accepted, "delete request received"))
+            },
+            pathPrefix(Segment) { gameId =>
+              pathEnd {
+                delete {
+                  handler ! DeleteGame(gameId)
+                  complete((StatusCodes.Accepted, "delete request received"))
+                }
               }
             }
-          }
-        )
-      },
-      path("connection-management" / "games" / Segment) { gameId: String =>
-        parameters('playerName.as[String]) { nickname =>
-          val operationPerformed: Future[ResponseConnGame] = handler.ask(CreateConnectionGame(_, gameId, nickname))
-          onSuccess(operationPerformed) {
-            case ServiceRoutes.SuccessConG(flow) => handleWebSocketMessages(flow)
-            case ServiceRoutes.FailureConG(reason) => complete(StatusCodes.InternalServerError -> reason)
+          )
+        },
+        path("connection-management" / "games" / Segment) { gameId: String =>
+          parameters('playerName.as[String]) { nickname =>
+            val operationPerformed: Future[ResponseConnGame] = handler.ask(CreateConnectionGame(_, gameId, nickname))
+            onSuccess(operationPerformed) {
+              case ServiceRoutes.SuccessConG(flow) => handleWebSocketMessages(flow)
+              case ServiceRoutes.FailureConG(reason) => complete(StatusCodes.InternalServerError -> reason)
+            }
           }
         }
-      }
-    )
+      )
+    }
 }
