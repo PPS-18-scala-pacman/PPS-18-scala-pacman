@@ -11,7 +11,7 @@ RUN ["./gradlew", "--version"]
 
 # Build the project
 COPY ./ /app/
-RUN ["./gradlew", "--no-daemon", ":lobby:shadowJar"]
+RUN ["./gradlew", "--no-daemon", ":server:shadowJar"]
 
 # Stage 1, based on openjdk jre8, ready for production
 FROM openjdk:${VERSION}-jre-alpine
