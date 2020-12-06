@@ -98,7 +98,8 @@ public class LobbyStreamService {
       .ifPresent(subject -> {
         subject.onNext(event);
 
-        if (type.getHttpType().equals(REST.Delete)) {
+        boolean lobbyIsDeleted = type.getHttpType().equals(REST.Delete) && (type.getObject().equals(LobbyStreamObject.Lobby) || lobby == null);
+        if (lobbyIsDeleted) {
           subject.onCompleted();
           this.getByIdSubject.remove(lobbyId);
         }
