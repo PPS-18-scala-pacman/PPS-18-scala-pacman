@@ -1,7 +1,6 @@
 package it.unibo.scalapacman.client.controller
 
 import java.awt.event.KeyEvent
-
 import akka.actor.ActorSystem
 import akka.actor.testkit.typed.scaladsl.ScalaTestWithActorTestKit
 import akka.http.scaladsl.Http
@@ -14,6 +13,7 @@ import it.unibo.scalapacman.client.communication.{HttpClient, PacmanRestClient}
 import it.unibo.scalapacman.client.controller.Action.{END_GAME, MOVEMENT, PAUSE_RESUME, RESET_KEY_MAP, SAVE_KEY_MAP}
 import it.unibo.scalapacman.client.input.JavaKeyBinding.DefaultJavaKeyBinding
 import it.unibo.scalapacman.client.input.KeyMap
+import it.unibo.scalapacman.client.utils.PacmanLogger
 import it.unibo.scalapacman.common.{CommandType, MoveCommandType}
 import it.unibo.scalapacman.lib.model.{Map, MapType}
 import org.scalamock.function.MockFunction1
@@ -62,6 +62,7 @@ class ControllerTest
   var _defaultKeyMap: KeyMap = _
   var _notDefaultKeyMap: KeyMap = _
   var _pacmanRestClientWithMockClientHandler: PacmanRestClientWithMockClientHandler = _
+  var _logger: PacmanLogger = _
   var _controller: Controller = _
   val GAME_ID = "fakeID"
   val MAP_CLASSIC: Map = Map.create(MapType.CLASSIC)
@@ -73,11 +74,12 @@ class ControllerTest
       DefaultJavaKeyBinding.LEFT, DefaultJavaKeyBinding.PAUSE)
     _notDefaultKeyMap = KeyMap(KeyEvent.VK_W, KeyEvent.VK_S, KeyEvent.VK_D, KeyEvent.VK_A, KeyEvent.VK_O)
     _pacmanRestClientWithMockClientHandler = new PacmanRestClientWithMockClientHandler()
+    _logger = new PacmanLoggerTest()
   }
 
   override protected def beforeEach(): Unit = {
     super.beforeEach()
-    _controller = Controller(_pacmanRestClientWithMockClientHandler)
+    _controller = Controller(_pacmanRestClientWithMockClientHandler, _logger)
   }
 
   "Controller" when {
