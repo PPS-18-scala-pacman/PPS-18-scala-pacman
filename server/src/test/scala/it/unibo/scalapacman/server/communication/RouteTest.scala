@@ -69,14 +69,14 @@ class RouteTest extends AnyWordSpec with ScalatestRouteTest with Matchers {
     }
 
     "return a MethodNotAllowed error for PUT requests to the games path" in {
-      Put("/games") ~> Route.seal(routes) ~> check {
+      Put("/api/games") ~> Route.seal(routes) ~> check {
         status shouldEqual StatusCodes.MethodNotAllowed
         responseAs[String] shouldEqual "HTTP method not allowed, supported methods: POST"
       }
     }
 
     "return a new game for POST requests to the games path" in {
-      Post("/games", HttpEntity(ContentTypes.`application/json`, """{"components":{"nickname1":1,"nickname2":2}}""")) ~>
+      Post("/api/games", HttpEntity(ContentTypes.`application/json`, """{"components":{"nickname1":1,"nickname2":2}}""")) ~>
         routes ~> check {
           status shouldEqual StatusCodes.Created
           contentType shouldEqual ContentTypes.`text/plain(UTF-8)`
@@ -89,7 +89,7 @@ class RouteTest extends AnyWordSpec with ScalatestRouteTest with Matchers {
     }
 
     "delete a game for DELETE requests to the games path" in {
-      val res = Delete(s"/games/$testGameId") ~> routes //scalastyle:ignore
+      val res = Delete(s"/api/games/$testGameId") ~> routes //scalastyle:ignore
 
       probeRoutesHandler.expectMessage(ServiceRoutes.DeleteGame(testGameId))
 
@@ -99,7 +99,7 @@ class RouteTest extends AnyWordSpec with ScalatestRouteTest with Matchers {
     }
 
     "accept ws connection" in {
-      WS(s"/connection-management/games/$testGameId?playerName=fooId", probeWSClient.flow) ~> routes ~> check {
+      WS(s"/api/connection-management/games/$testGameId?playerName=fooId", probeWSClient.flow) ~> routes ~> check {
         isWebSocketUpgrade shouldEqual true
 
         probeWSClient.sendMessage("echo")
@@ -111,7 +111,7 @@ class RouteTest extends AnyWordSpec with ScalatestRouteTest with Matchers {
     }
 
     "decline ws connection" in {
-      WS(s"/connection-management/games/$failureTestGameId?playerName=fooId", probeWSClient.flow) ~> routes ~> check {
+      WS(s"/api/connection-management/games/$failureTestGameId?playerName=fooId", probeWSClient.flow) ~> routes ~> check {
         isWebSocketUpgrade shouldEqual false
 
         status shouldEqual StatusCodes.InternalServerError

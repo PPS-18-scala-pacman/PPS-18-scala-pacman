@@ -43,7 +43,7 @@ class PlayerUpdateTest extends ScalaTestWithActorTestKit with AnyWordSpecLike {
       "dir\":{\"direction\":\"NORTH\"}}],\"state\":{\"score\":2,\"ghostInFear\":false,\"pacmanEmpowered\":false,\"" +
       "levelStateHolder\":{\"levelState\":\"ONGOING\"}},\"dots\":[{\"dotHolder\":{\"dot\":\"SMALL_DOT\"},\"pos\":[5,6]},{\"" +
       "dotHolder\":{\"dot\":\"SMALL_DOT\"},\"pos\":[6,6]},{\"dotHolder\":{\"dot\":\"SMALL_DOT\"},\"pos\":[7,6]},{\"" +
-      "dotHolder\":{\"dot\":\"SMALL_DOT\"},\"pos\":[8,6]}],\"fruit\":{\"fruitHolder\":{\"fruit\":\"APPLE\"},\"pos\":[9,9]}}"
+      "dotHolder\":{\"dot\":\"SMALL_DOT\"},\"pos\":[8,6]}],\"fruit\":{\"fruitHolder\":{\"fruit\":\"APPLE\"},\"pos\":[9,9]},\"paused\":false}"
   }
 
   "A Player actor" must {
