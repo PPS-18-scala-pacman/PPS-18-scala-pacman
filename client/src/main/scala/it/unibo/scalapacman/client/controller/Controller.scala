@@ -305,10 +305,7 @@ private case class ControllerImpl(pacmanRestClient: PacmanRestClient, pacmanLogg
         case Some(CommandType.PAUSE) if gamePaused => pacmanLogger.info("Gioco già in pausa")
         case Some(CommandType.RESUME) if !gamePaused => pacmanLogger.info("Gioco già in esecuzione")
         case None => error("Pause/Resume è None")
-        case _ =>
-          model = model.copy(paused = !model.paused)
-          sendPauseResume(newPauseResume.get)
-          _publisher.notifySubscribers(GamePaused(model.paused))
+        case _ => sendPauseResume(newPauseResume.get)
       }
     }
   }
@@ -365,7 +362,10 @@ private case class ControllerImpl(pacmanRestClient: PacmanRestClient, pacmanLogg
    * @param updateModelDTO l'aggiornamento della partita
    */
   private def updateFromServer(updateModelDTO: UpdateModelDTO): Unit = {
-    model = model.copy(map = MapUpdater.update(model.map, updateModelDTO.dots, updateModelDTO.fruit))
+    if (model.paused != updateModelDTO.paused) {
+      _publisher.notifySubscribers(GamePaused(updateModelDTO.paused))
+    }
+    model = model.copy(map = MapUpdater.update(model.map, updateModelDTO.dots, updateModelDTO.fruit), paused = updateModelDTO.paused)
     _publisher.notifySubscribers(GameUpdate(PacmanMap.createWithCharacters(model.map, updateModelDTO.gameEntities), updateModelDTO.state))
   }
 
