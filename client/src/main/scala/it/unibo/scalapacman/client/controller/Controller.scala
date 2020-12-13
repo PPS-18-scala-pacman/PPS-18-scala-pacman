@@ -277,10 +277,10 @@ private case class ControllerImpl(pacmanRestClient: PacmanRestClient, pacmanLogg
 
     if (gameId.isDefined) {
       (newUserAction, prevUserAction) match {
-        case (Some(newInt), Some(prevInt)) if newInt == prevInt => pacmanLogger.info("Non invio aggiornamento al server")
-        case (None, _) => error("Nuova azione utente è None")
+        case (Some(newInt), Some(prevInt)) if newInt == prevInt => pacmanLogger.debug("Non invio aggiornamento al server")
+        case (None, _) => pacmanLogger.error("Nuova azione utente è None")
         case _ =>
-          pacmanLogger.info("Invio aggiornamento al server")
+          pacmanLogger.debug("Invio aggiornamento al server")
           pacmanLogger.debug(s"Invio al server l'azione ${newUserAction.get} dell'utente")
           _prevUserAction = newUserAction
           sendMovement(newUserAction)
