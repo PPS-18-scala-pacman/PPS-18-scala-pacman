@@ -403,8 +403,8 @@ private case class ControllerImpl(pacmanRestClient: PacmanRestClient, pacmanLogg
    * Esegue chiamata connessione a servizio SSE per recupero lista lobby
    */
   private def connectToLobbies(): Unit =
-    pacmanRestClient.watchLobbies(handleLobbiesUpdate, handleLobbiesConnectionError, () => Unit) onComplete {
-      case Failure(exception) => pacmanLogger.info(s"Errore connessione SSE lobbies: ${exception.getMessage}"); handleLobbiesConnectionError()
+    pacmanRestClient.watchLobbies(handleLobbiesUpdate, handleLobbiesReconnection, handleLobbiesReconnection) onComplete {
+      case Failure(exception) => pacmanLogger.info(s"Errore connessione SSE lobbies: ${exception.getMessage}"); handleLobbiesReconnection()
       case _ => Unit
     }
 
@@ -418,7 +418,7 @@ private case class ControllerImpl(pacmanRestClient: PacmanRestClient, pacmanLogg
   /**
    * Gestisce l'interruzione al canale SSE delle lobby per un problema di rete
    */
-  private def handleLobbiesConnectionError(): Unit = {
+  private def handleLobbiesReconnection(): Unit = {
     pacmanLogger.info(s"Nuovo tentativo connessione servizio lobbies tra ${LOBBIES_RECONNECTION_TIME_DELAY/1000} secondi")
     val t = new Timer
     t.schedule(new TimerTask() {
