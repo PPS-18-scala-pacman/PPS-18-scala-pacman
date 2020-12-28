@@ -1,13 +1,13 @@
 package it.unibo.scalapacman.client.gui
 
 import java.awt.BorderLayout
-
 import it.unibo.scalapacman.client.controller.Action.{LEAVE_LOBBY, START_LOBBY_GAME, SUBSCRIBE_TO_EVENTS}
 import it.unibo.scalapacman.client.controller.Controller
 import it.unibo.scalapacman.client.event.{GameStarted, LobbyDeleted, LobbyError, LobbyUpdate, PacmanEvent, PacmanSubscriber}
 import it.unibo.scalapacman.client.gui.View.{PLAY, SETUP}
 import it.unibo.scalapacman.client.model.{Lobby, Participant}
-import javax.swing.{BorderFactory, DefaultListModel, JButton, JLabel, JScrollPane, SwingConstants}
+
+import javax.swing.{BorderFactory, DefaultListModel, DefaultListSelectionModel, JButton, JLabel, JScrollPane, SwingConstants}
 
 object LobbyView {
   def apply()(implicit controller: Controller, viewChanger: ViewChanger): LobbyView = new LobbyView()
@@ -18,7 +18,6 @@ class LobbyView(implicit controller: Controller, viewChanger: ViewChanger) exten
   private val LEAVE_LOBBY_BUTTON_LABEL: String = "Abbandona"
   private val SUB_SL_EMPTY_BORDER_Y_AXIS: Int = 10
   private val SUB_SL_EMPTY_BORDER_X_AXIS: Int = 100
-  private val LOBBY_ERROR: String = "Errore partecipazione lobby"
 
   private val lobbyDescriptionLabel: JLabel = createTitleLabel("")
 
@@ -42,6 +41,8 @@ class LobbyView(implicit controller: Controller, viewChanger: ViewChanger) exten
   private val playersList = new DefaultListModel[Participant]()
   private val playersJList = createJList(playersList)
   private val listScrollPane = new JScrollPane(playersJList)
+
+  playersJList.setSelectionModel(NoSelectionModel())
 
   playersPanel setLayout new BorderLayout(0, 0)
   playersPanel add(listScrollPane, BorderLayout.CENTER)
@@ -83,5 +84,19 @@ class LobbyView(implicit controller: Controller, viewChanger: ViewChanger) exten
 
   private def handleStartGameButton(): Unit = if (controller.model.lobby.get.hostUsername.equals(controller.model.username)) {
     askToController(START_LOBBY_GAME, None)
+  }
+
+  private case class NoSelectionModel() extends DefaultListSelectionModel {
+    override def setAnchorSelectionIndex(anchorIndex: Int): Unit = {
+    }
+
+    override def setLeadAnchorNotificationEnabled(flag: Boolean): Unit = {
+    }
+
+    override def setLeadSelectionIndex(leadIndex: Int): Unit = {
+    }
+
+    override def setSelectionInterval(index0: Int, index1: Int): Unit = {
+    }
   }
 }
