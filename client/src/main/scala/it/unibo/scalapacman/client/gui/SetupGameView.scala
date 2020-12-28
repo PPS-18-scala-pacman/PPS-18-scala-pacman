@@ -130,9 +130,9 @@ class SetupGameView(implicit controller: Controller, viewChanger: ViewChanger) e
   }
 
   private def handleJoinGameButton(): Unit = if (checkNickName()) {
-    val lobby: Lobby = lobbyJList.getSelectedValue
+    if (!lobbyJList.isSelectionEmpty) {
+      val lobby: Lobby = lobbyJList.getSelectedValue
 
-    if (lobby != null) {
       askToController(JOIN_LOBBY, Some(JoinLobbyData(nicknameTextField.getText(), lobby)))
       lobbyJList.clearSelection()
 
