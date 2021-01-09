@@ -85,7 +85,9 @@ private class Game(setup: Setup) {
       case CloseCommand() => close()
       case RegisterPlayer(replyTo, source, nickname) => handlePlayerRegistration(replyTo, source, nickname, model)
       case NotifyPlayerReady(nickname) => handlePlayerChange(model, nickname, x => x.copy(isReady = true))
-      case PlayerLeftGame(nickname) => handlePlayerChange(model, nickname, x => x.copy(hasLeft = true))
+      case PlayerLeftGame(nickname) =>
+        if (model.players.exists(_._2.nickname == nickname)) setup.engine ! Engine.DisablePlayer(nickname)
+        handlePlayerChange(model, nickname, x => x.copy(hasLeft = true))
     }
 
   /**
