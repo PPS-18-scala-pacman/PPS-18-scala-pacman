@@ -32,7 +32,7 @@ public class GameService {
   private Single<Lobby> startGame(Lobby lobby) {
     LobbyStreamEventType type = new LobbyStreamEventType(LobbyStreamObject.Lobby, REST.Update);
     return gameActions.startGame(new Game(lobby))
-      .map(game -> new Lobby(lobby.getId(), lobby.getDescription(), lobby.getSize(), lobby.getHostUsername(), lobby.getParticipants(), game.getId()))
+      .map(game -> new Lobby(lobby.getId(), lobby.getDescription(), lobby.getSize(), lobby.getHostUsername(), lobby.getParticipants(), game.getId(), game.getHostId()))
       .doOnSuccess(lobbyResult -> lobbyStreamService.updateStreams(lobbyResult.getId(), lobbyResult, type))
       .flatMap(lobbyResult -> lobbyService.delete(lobbyResult.getId()));
   }

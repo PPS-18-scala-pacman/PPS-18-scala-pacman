@@ -5,11 +5,11 @@ import akka.actor.typed.receptionist.Receptionist
 import akka.actor.typed.scaladsl.AskPattern.{Askable, schedulerFromActorSystem}
 import akka.actor.typed.{ActorRef, ActorSystem}
 import akka.http.scaladsl.model.StatusCodes
+import akka.http.scaladsl.model.headers.RawHeader
 import akka.http.scaladsl.model.ws.Message
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import akka.stream.scaladsl.Flow
-
 import it.unibo.scalapacman.server.config.Settings.{askTimeout, maxPlayersNumber}
 import it.unibo.scalapacman.server.model.CreateGameRequest
 import it.unibo.scalapacman.server.model.CreateGameJsonProtocol._
@@ -49,14 +49,16 @@ object ServiceRoutes {
           concat(
             pathEnd {
               post {
-                entity(as[CreateGameRequest]) { req =>
-                  if (req.components.size < 1 || req.components.size > maxPlayersNumber) {
-                    complete(StatusCodes.UnprocessableEntity -> "Numero di giocatori non valido")
-                  } else {
-                    val operationPerformed: Future[ResponseCreateGame] = handler.ask(CreateGame(_, req.components))
-                    onSuccess(operationPerformed) {
-                      case ServiceRoutes.SuccessCrG(gameId) => complete(StatusCodes.Created, gameId)
-                      case ServiceRoutes.FailureCrG(reason) => complete(StatusCodes.InternalServerError -> reason)
+                respondWithHeaders(RawHeader("X-Real-IP", java.net.InetAddress.getLocalHost.getHostAddress)) {
+                  entity(as[CreateGameRequest]) { req =>
+                    if (req.components.size < 1 || req.components.size > maxPlayersNumber) {
+                      complete(StatusCodes.UnprocessableEntity -> "Numero di giocatori non valido")
+                    } else {
+                      val operationPerformed: Future[ResponseCreateGame] = handler.ask(CreateGame(_, req.components))
+                      onSuccess(operationPerformed) {
+                        case ServiceRoutes.SuccessCrG(gameId) => complete(StatusCodes.Created, gameId)
+                        case ServiceRoutes.FailureCrG(reason) => complete(StatusCodes.InternalServerError -> reason)
+                      }
                     }
                   }
                 }

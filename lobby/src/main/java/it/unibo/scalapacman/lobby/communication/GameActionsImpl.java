@@ -22,7 +22,6 @@ public class GameActionsImpl implements GameActions {
     return this.client.post(this.serverPort, this.serverUrl, "/api/games")
       .as(BodyCodec.string())
       .rxSendJson(game.toJson())
-      .map(HttpResponse::body)
-      .map(id -> new Game(id, game.getComponents()));
+      .map(response -> new Game(response.body(), game.getComponents(), response.getHeader("X-Real-IP")));
   }
 }

@@ -33,7 +33,7 @@ trait PacmanRestClient extends Logging { this: HttpClient =>
   implicit def executionContext: ExecutionContextExecutor
 
   val WS_BUFFER_SIZE: Int = 1
-  val TEXT_MESSAGE_TO_STRICT: Int = 100
+  val TEXT_MESSAGE_TO_STRICT: Int = 10000
 
   var _webSocketSpeaker: Option[ActorRef] = None
 
@@ -266,11 +266,12 @@ trait PacmanRestClient extends Logging { this: HttpClient =>
   // Source: https://stackoverflow.com/questions/40345697/how-to-use-akka-http-client-websocket-send-message
   def openWS(
               gameId: String,
+              hostId: String,
               playerName: String,
               serverMessageHandler: String => Unit,
               connectionErrorHandler: Boolean => Unit,
             ): Unit = {
-    val request = WebSocketRequest(s"${PacmanRestClient.GAMES_WS_URL}/$gameId?playerName=$playerName")
+    val request = WebSocketRequest(s"${PacmanRestClient.GAMES_WS_URL}/$hostId${PacmanRestClient.GAMES_WS_PATH}/$gameId?playerName=$playerName")
 
     val messageSource: Source[Message, ActorRef] =
       Source.actorRef(
@@ -364,7 +365,8 @@ case object PacmanRestClient {
   /**
    * Indirizzo per canale WebSocket
    */
-  val GAMES_WS_URL = s"ws://$pacmanServerURL/api/connection-management/games"
+  val GAMES_WS_URL = s"ws://$pacmanServerURL"
+  val GAMES_WS_PATH = "/api/connection-management/games"
 //  /**
 //   * Indirizzo per lobby
 //   */

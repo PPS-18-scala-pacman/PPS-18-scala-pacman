@@ -10,10 +10,12 @@ public class Game implements Jsonable {
 
   private final String id;
   private final Map<String, Integer> components;
+  private final String hostId;
 
-  public Game(String id, Map<String, Integer> components) {
+  public Game(String id, Map<String, Integer> components, String hostId) {
     this.id = id;
     this.components = components;
+    this.hostId = hostId;
   }
 
   public Game(Lobby lobby) {
@@ -23,6 +25,8 @@ public class Game implements Jsonable {
     this.id = lobby.getGameId();
     this.components = lobby.getParticipants().stream()
       .collect(Collectors.toMap(Participant::getUsername, Participant::getPacmanTypeAsInteger));
+
+    this.hostId = null;
   }
 
   public String getId() {
@@ -33,11 +37,16 @@ public class Game implements Jsonable {
     return components;
   }
 
+  public String getHostId() {
+    return hostId;
+  }
+
   @Override
   public JsonObject toJson() {
     Map<String, Object> components = new HashMap<>(this.components);
 
     return new JsonObject()
-      .put("components", new JsonObject(components));
+      .put("components", new JsonObject(components))
+      .put("hostId", hostId);
   }
 }

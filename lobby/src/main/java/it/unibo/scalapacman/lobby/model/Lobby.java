@@ -17,16 +17,17 @@ public class Lobby implements Jsonable {
   private String hostUsername;
   private List<Participant> participants;
   private String gameId;
+  private String hostId;
 
   public Lobby(final Long id, final String description, Short size, String hostUsername) {
     this(id, description, size, hostUsername, new ArrayList<>(size));
   }
 
   public Lobby(final Long id, final String description, Short size, String hostUsername, List<Participant> participants) {
-    this(id, description, size, hostUsername, participants, null);
+    this(id, description, size, hostUsername, participants, null, null);
   }
 
-  public Lobby(final Long id, final String description, Short size, String hostUsername, List<Participant> participants, String gameId) {
+  public Lobby(final Long id, final String description, Short size, String hostUsername, List<Participant> participants, String gameId, String hostId) {
     if (participants.size() > size) throw new IllegalArgumentException("participants can't have more items than size value");
     this.id = id;
     this.description = description;
@@ -34,6 +35,7 @@ public class Lobby implements Jsonable {
     this.hostUsername = hostUsername;
     this.participants = participants;
     this.gameId = gameId;
+    this.hostId = hostId;
   }
 
   public Lobby(final JsonObject json) {
@@ -92,6 +94,14 @@ public class Lobby implements Jsonable {
     this.gameId = gameId;
   }
 
+  public String getHostId() {
+    return hostId;
+  }
+
+  public void setHostId(String hostId) {
+    this.hostId = hostId;
+  }
+
   public String toString() {
     return Json.encodePrettily(this);
   }
@@ -103,7 +113,8 @@ public class Lobby implements Jsonable {
       .put("size", this.size)
       .put("hostUsername", this.hostUsername)
       .put("participants", this.participants.stream().map(Participant::toJson).collect(Collectors.toList()))
-      .put("gameId", this.gameId);
+      .put("gameId", this.gameId)
+      .put("hostId", this.hostId);
   }
 
   @Override
@@ -114,6 +125,7 @@ public class Lobby implements Jsonable {
     result = prime * result + ((size == null) ? 0 : size.hashCode());
     result = prime * result + ((hostUsername == null) ? 0 : hostUsername.hashCode());
     result = prime * result + ((gameId == null) ? 0 : gameId.hashCode());
+    result = prime * result + ((hostId == null) ? 0 : hostId.hashCode());
     result = prime * result + ((id == null) ? 0 : id.hashCode());
     return result;
   }
@@ -127,7 +139,8 @@ public class Lobby implements Jsonable {
         && this.description.equals(other.getDescription())
         && this.size.equals(other.getSize())
         && this.hostUsername.equals(other.getHostUsername())
-        && ((this.gameId == null && other.getGameId() == null) || this.gameId.equals(other.getGameId()));
+        && ((this.gameId == null && other.getGameId() == null) || this.gameId.equals(other.getGameId()))
+        && ((this.hostId == null && other.getHostId() == null) || this.hostId.equals(other.getHostId()));
     }
 
     return false;

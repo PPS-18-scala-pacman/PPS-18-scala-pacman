@@ -110,7 +110,7 @@ class PlayerAct(setup: Setup) {
       case WrapRespMessage(ConnectionEnded()) =>
         setup.context.log.error("Ricevuto messaggio connessione chiusa")
         setup.engine ! Engine.UnRegisterWatcher(updateMsgAdapter)
-        throw new IllegalStateException("Connesione chiusa in modo anomalo")
+        throw new IllegalStateException("Connessione chiusa in modo anomalo")
       case WrapRespMessage(ConnectionFailed(ex)) =>
         setup.context.log.error(s"Ricevuto messaggio connessione fallita ${ex.getMessage}")
         setup.context.log.debug(ex.getStackTrace.toString)

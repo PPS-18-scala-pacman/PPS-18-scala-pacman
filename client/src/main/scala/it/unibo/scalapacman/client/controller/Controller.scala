@@ -98,7 +98,7 @@ private case class ControllerImpl(pacmanRestClient: PacmanRestClient, pacmanLogg
    * @param modelGameId il valore attuale di gameId ottenuto dal Model
    * @param newGameId id della partita ricevuto dalla lobby
    */
-  private def evalStartGame(modelGameId: Option[String], newGameId: String, lobby: Lobby): Unit = {
+  private def evalStartGame(modelGameId: Option[String], newGameId: String, newHostId: String, lobby: Lobby): Unit = {
 
     /**
      * - Re-inizializza il Model
@@ -108,17 +108,17 @@ private case class ControllerImpl(pacmanRestClient: PacmanRestClient, pacmanLogg
      *
      * @param gameId id della partita
      */
-    def startGame(gameId: String): Unit = {
+    def startGame(gameId: String, hostId: String): Unit = {
       pacmanLogger.info(s"Partita creata con successo: id $gameId")
-      model = model.copy(gameId = Some(gameId))
+      model = model.copy(gameId = Some(gameId), hostId = Some(hostId))
       _prevUserAction = None
       new Thread(_webSocketRunnable).start()
-      pacmanRestClient.openWS(gameId, model.username, handleWebSocketMessage, handleWSConnectionError)
+      pacmanRestClient.openWS(gameId, hostId, model.username, handleWebSocketMessage, handleWSConnectionError)
       _publisher.notifySubscribers(GameStarted(lobby))
     }
 
     modelGameId match {
-      case None => startGame(newGameId)
+      case None => startGame(newGameId, newHostId)
       case Some(_) => pacmanLogger.error("Impossibile creare nuova partita quando ce n'è già una in corso")
     }
   }
@@ -388,7 +388,7 @@ private case class ControllerImpl(pacmanRestClient: PacmanRestClient, pacmanLogg
         override def run(): Unit = {
           // Devo ricontrollare perché potrebbe essere che nel frattempo l'utente sia uscito dalla schermata di gioco
           if (model.gameId.isDefined) {
-            pacmanRestClient.openWS(model.gameId.get, model.username, handleWebSocketMessage, handleWSConnectionError)
+            pacmanRestClient.openWS(model.gameId.get, model.hostId.get, model.username, handleWebSocketMessage, handleWSConnectionError)
           }
           t.cancel()
         }
@@ -450,9 +450,9 @@ private case class ControllerImpl(pacmanRestClient: PacmanRestClient, pacmanLogg
    * @param sse oggetto ServerSentEvent ricevuto dal server
    */
   private def handleLobbyUpdate(sse: ServerSentEvent): Unit = sse.getData().parseJson.convertTo[Lobby] match {
-    case lobby@Lobby(_, _, _, _, _, Some(gameId)) =>
-      evalStartGame(model.gameId, gameId, lobby)
-    case lobby@Lobby(_, _, _, _, _, None) => _publisher.notifySubscribers(LobbyUpdate(lobby))
+    case lobby@Lobby(_, _, _, _, _, Some(gameId), Some(hostId)) =>
+      evalStartGame(model.gameId, gameId, hostId, lobby)
+    case lobby: Lobby => _publisher.notifySubscribers(LobbyUpdate(lobby))
   }
 
   /**

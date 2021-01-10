@@ -5,10 +5,14 @@ services:
     build:
       context: ./
       dockerfile: ./server/Dockerfile
-    container_name: server
+    #container_name: server
     restart: unless-stopped
-    ports:
-      - '8080:8080'
+    networks:
+      - mynet
+    #ports:
+    #  - '8080:8080'
+    expose:
+      - '8080'
 
   lobby:
     build:
@@ -16,8 +20,10 @@ services:
       dockerfile: ./lobby/Dockerfile
     container_name: lobby
     restart: unless-stopped
-    ports:
-      - '8081:8081'
+    networks:
+      - mynet
+    #ports:
+    #  - '8081:8081'
     depends_on:
       - postgres
 
@@ -30,6 +36,8 @@ services:
     environment:
       - POSTGRESQL_USERNAME=postgres
       - POSTGRESQL_PASSWORD=postgres
+    networks:
+      - mynet
     ports:
       - '5432:5432'
 
@@ -39,5 +47,10 @@ services:
       dockerfile: ./Dockerfile
     container_name: gateway
     restart: unless-stopped
+    networks:
+      - mynet
     ports:
       - '80:80'
+
+networks:
+  mynet:

@@ -14,6 +14,7 @@ case class GameModel(
                       username: String = "GioL",
                       lobby: Option[Lobby] = None,
                       gameId: Option[String] = None,
+                      hostId: Option[String] = None,
                       paused: Boolean = false,
                       keyMap: KeyMap,
                       map: Map,
