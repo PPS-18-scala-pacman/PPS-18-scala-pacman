@@ -1,7 +1,7 @@
 package it.unibo.scalapacman.lobby.util;
 
 import io.vertx.core.VertxException;
-import io.vertx.rxjava.ext.web.RoutingContext;
+import io.vertx.reactivex.ext.web.RoutingContext;
 import it.unibo.scalapacman.lobby.model.Jsonable;
 
 public class SSE {

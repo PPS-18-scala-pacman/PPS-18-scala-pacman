@@ -1,6 +1,6 @@
 package it.unibo.scalapacman.lobby.dao;
 
-import rx.Single;
+import io.reactivex.Single;
 
 import java.util.List;
 

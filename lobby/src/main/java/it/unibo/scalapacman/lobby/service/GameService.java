@@ -1,11 +1,11 @@
 package it.unibo.scalapacman.lobby.service;
 
+import io.reactivex.Single;
 import it.unibo.scalapacman.lobby.communication.GameActions;
 import it.unibo.scalapacman.lobby.model.Game;
 import it.unibo.scalapacman.lobby.model.Lobby;
 import it.unibo.scalapacman.lobby.util.REST;
 import it.unibo.scalapacman.lobby.util.exception.UnauthorizedException;
-import rx.Single;
 
 public class GameService {
 
@@ -33,7 +33,7 @@ public class GameService {
     LobbyStreamEventType type = new LobbyStreamEventType(LobbyStreamObject.Lobby, REST.Update);
     return gameActions.startGame(new Game(lobby))
       .map(game -> new Lobby(lobby.getId(), lobby.getDescription(), lobby.getSize(), lobby.getHostUsername(), lobby.getParticipants(), game.getId(), game.getHostId()))
-      .doOnSuccess(lobbyResult -> lobbyStreamService.updateStreams(lobbyResult.getId(), lobbyResult, type))
-      .flatMap(lobbyResult -> lobbyService.delete(lobbyResult.getId()));
+       .doOnSuccess(lobbyResult -> lobbyStreamService.pushDataToStreams(new LobbyStreamService.OutputSingle(type, lobbyResult)))
+       .flatMap(lobbyResult -> lobbyService.delete(lobbyResult.getId()));
   }
 }

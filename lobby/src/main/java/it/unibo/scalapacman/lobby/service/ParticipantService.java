@@ -1,11 +1,11 @@
 package it.unibo.scalapacman.lobby.service;
 
+import io.reactivex.Single;
 import it.unibo.scalapacman.lib.model.PacmanType;
 import it.unibo.scalapacman.lobby.dao.ParticipantDao;
 import it.unibo.scalapacman.lobby.model.Participant;
 import it.unibo.scalapacman.lobby.util.REST;
 import it.unibo.scalapacman.lobby.util.exception.ConflictException;
-import rx.Single;
 
 import java.util.*;
 import java.util.stream.Collectors;

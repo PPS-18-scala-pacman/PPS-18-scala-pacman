@@ -1,19 +1,21 @@
 package it.unibo.scalapacman.lobby;
 
+import io.reactivex.Completable;
+import io.reactivex.Single;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 import io.vertx.pgclient.PgConnectOptions;
-import io.vertx.rxjava.config.ConfigRetriever;
-import io.vertx.rxjava.core.AbstractVerticle;
-import io.vertx.rxjava.core.http.HttpServer;
-import io.vertx.rxjava.ext.web.Router;
-import io.vertx.rxjava.ext.web.client.WebClient;
-import io.vertx.rxjava.ext.web.handler.BodyHandler;
-import io.vertx.rxjava.ext.web.handler.CorsHandler;
-import io.vertx.rxjava.pgclient.PgPool;
+import io.vertx.reactivex.config.ConfigRetriever;
+import io.vertx.reactivex.core.AbstractVerticle;
+import io.vertx.reactivex.core.http.HttpServer;
+import io.vertx.reactivex.ext.web.Router;
+import io.vertx.reactivex.ext.web.client.WebClient;
+import io.vertx.reactivex.ext.web.handler.BodyHandler;
+import io.vertx.reactivex.ext.web.handler.CorsHandler;
+import io.vertx.reactivex.pgclient.PgPool;
 import io.vertx.sqlclient.PoolOptions;
 import it.unibo.scalapacman.lobby.communication.GameActions;
 import it.unibo.scalapacman.lobby.communication.GameActionsImpl;
@@ -29,8 +31,6 @@ import it.unibo.scalapacman.lobby.service.LobbyStreamService;
 import it.unibo.scalapacman.lobby.service.ParticipantService;
 import it.unibo.scalapacman.lobby.util.VertxUtil;
 import it.unibo.scalapacman.lobby.util.exception.APIException;
-import rx.Completable;
-import rx.Single;
 
 import java.util.HashSet;
 import java.util.Set;

@@ -1,15 +1,15 @@
 package it.unibo.scalapacman.lobby.util;
 
+import io.reactivex.functions.Consumer;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
-import io.vertx.rxjava.ext.web.RoutingContext;
+import io.vertx.reactivex.ext.web.RoutingContext;
 import it.unibo.scalapacman.lobby.util.exception.APIException;
-import rx.functions.Action1;
 
 public class VertxUtil {
   private static final Logger logger = LoggerFactory.getLogger(VertxUtil.class);
 
-  public static Action1<Throwable> onRoutingError(final RoutingContext routingContext) {
+  public static Consumer<Throwable> onRoutingError(final RoutingContext routingContext) {
     return routingContext::fail;
   }
 

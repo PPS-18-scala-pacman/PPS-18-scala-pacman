@@ -1,14 +1,14 @@
 package it.unibo.scalapacman.lobby.dao;
 
+import io.reactivex.Single;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
-import io.vertx.rxjava.pgclient.PgPool;
-import io.vertx.rxjava.sqlclient.Row;
-import io.vertx.rxjava.sqlclient.Tuple;
+import io.vertx.reactivex.pgclient.PgPool;
+import io.vertx.reactivex.sqlclient.Row;
+import io.vertx.reactivex.sqlclient.Tuple;
 import it.unibo.scalapacman.lobby.model.Lobby;
 import it.unibo.scalapacman.lobby.model.Participant;
 import it.unibo.scalapacman.lobby.util.exception.NotFoundException;
-import rx.Single;
 
 import java.util.ArrayList;
 import java.util.List;

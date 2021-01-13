@@ -1,10 +1,9 @@
 package it.unibo.scalapacman.lobby.communication;
 
-import io.vertx.rxjava.ext.web.client.HttpResponse;
-import io.vertx.rxjava.ext.web.client.WebClient;
-import io.vertx.rxjava.ext.web.codec.BodyCodec;
+import io.reactivex.Single;
+import io.vertx.reactivex.ext.web.client.WebClient;
+import io.vertx.reactivex.ext.web.codec.BodyCodec;
 import it.unibo.scalapacman.lobby.model.Game;
-import rx.Single;
 
 public class GameActionsImpl implements GameActions {
 
