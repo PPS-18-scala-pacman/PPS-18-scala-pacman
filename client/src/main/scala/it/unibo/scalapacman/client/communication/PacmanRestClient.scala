@@ -94,7 +94,7 @@ trait PacmanRestClient extends Logging { this: HttpClient =>
         case StatusCodes.OK =>
           Unmarshal(response.entity).to[Source[ServerSentEvent, NotUsed]].foreach(
             _.takeWhile(sseEventTypeStop(_))
-              .runForeach(sse => messageHandler(sse)) onComplete {
+             .runForeach(sse => messageHandler(sse)) onComplete {
                 case Success(_) =>
                   info("SSE chiusa correttamente")
                   onSSEClose()

@@ -80,11 +80,15 @@ public class LobbyStreamService {
             .toFlowable(BackpressureStrategy.LATEST)
         )
         .takeUntil(output -> output.getType().getHttpType().equals(REST.Delete) && (output.getType().getObject().equals(LobbyStreamObject.Lobby) || output.getData() == null))
+        .doOnNext(data -> logger.info(data.getType().getHttpType()))
         .doOnError(error -> {
           logger.error(error.getMessage(), error);
           this.getObservableMap.remove(lobbyId);
         })
-        .doOnComplete(() -> this.getObservableMap.remove(lobbyId))
+        .doOnComplete(() -> {
+          logger.info("OnComplete succeded");
+          this.getObservableMap.remove(lobbyId);
+        })
         .replay(1) // Emit the latest value to new subscribers and don't create multiple observable instances
         .refCount() // Connect to replay with the first subscription
     );
@@ -93,6 +97,7 @@ public class LobbyStreamService {
   }
 
   public final Flowable<OutputSingle> getLobbyFromDao(LobbyStreamEventType eventType, Long lobbyId) {
+    if (eventType.httpType.equals(REST.Delete)) return Flowable.just(new OutputSingle(eventType, null));
     return this.dao.get(lobbyId)
       .map(entity -> new OutputSingle(eventType, entity))
       .toFlowable()
@@ -102,7 +107,7 @@ public class LobbyStreamService {
         } else {
           logger.error(ex.getMessage(), ex);
         }
-        return Flowable.empty(); // Don't close the stream
+        return Flowable.just(new OutputSingle(eventType, null)); // Don't close the stream
       });
   }
 
