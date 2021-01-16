@@ -17,13 +17,13 @@ import it.unibo.scalapacman.server.model.MoveDirection.MoveDirection
  */
 object GhostAct {
 
-  private case class Setup(gameId: String,
+  case class Setup(gameId: String,
                            context: ActorContext[Engine.UpdateCommand],
                            engine: ActorRef[Engine.EngineCommand],
                            nickname: String,
                           )
 
-  private case class Model(state: GameState, desMove: Option[MoveDirection])
+  case class Model(state: GameState, desMove: Option[MoveDirection])
 
   def apply(id: String, engine: ActorRef[Engine.EngineCommand], nickname: String): Behavior[Engine.UpdateCommand] =
     Behaviors.setup { context =>

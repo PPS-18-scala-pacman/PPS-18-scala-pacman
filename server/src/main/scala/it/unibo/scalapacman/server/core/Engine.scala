@@ -13,7 +13,8 @@ import it.unibo.scalapacman.lib.model.PacmanType.PacmanType
 import it.unibo.scalapacman.lib.model.{Character, GameObject, Level, LevelState, Map}
 import it.unibo.scalapacman.server.config.Settings
 import it.unibo.scalapacman.server.core.Engine.{ChangeDirectionCur, ChangeDirectionReq, DelayedResume, DisablePlayer,
-  EngineCommand, Model, Pause, RegisterWatcher, Resume, Setup, Start, UnRegisterWatcher, UpdateCommand, UpdateMsg, WakeUp}
+  EngineCommand, Model, Pause, RegisterWatcher, Resume, Setup, Start, UnRegisterWatcher, UpdateCommand, UpdateMsg,
+  WakeUp, computeUpdate, elaborateUpdateModel, initEngineModel}
 import it.unibo.scalapacman.server.model.GameParticipant.gameParticipantToGameEntity
 import it.unibo.scalapacman.server.model.MoveDirection.MoveDirection
 import it.unibo.scalapacman.server.model.{GameData, GameEntity, GameParameter, GameParticipant}
@@ -48,17 +49,80 @@ object Engine {
   sealed trait UpdateCommand
   case class UpdateMsg(model: UpdateModelDTO) extends UpdateCommand
 
-  private case class Setup(gameId: String, context: ActorContext[EngineCommand], info: GameParameter)
+  case class Setup(gameId: String, context: ActorContext[EngineCommand], info: GameParameter)
 
-  private case class Model(watchers: Set[ActorRef[UpdateCommand]], data: GameData)
+  case class Model(watchers: Set[ActorRef[UpdateCommand]], data: GameData)
 
   def apply(gameId: String, entities: List[GameEntity], level: Int): Behavior[EngineCommand] =
     Behaviors.setup { context =>
       new Engine(Setup(gameId, context, GameParameter(entities, level))).initRoutine(Set(), Set())
     }
+
+  def updateChar(participant: GameParticipant)(implicit map: Map, setup: Setup): GameParticipant = {
+    val newChar = GameMovement.move(participant.character, setup.info.gameRefreshRate, participant.desiredDir)
+    participant.copy(character = newChar)
+  }
+
+  def initEngineModel(watcher: Set[ActorRef[UpdateCommand]], disabledPlayers: Set[String], setup: Setup): Model = {
+    val classicFactory = Level.Classic(setup.info.level)
+    val participants: List[GameParticipant] = setup.info.players
+      .filter(p => !disabledPlayers.contains(p.nickname))
+      .map(char => char.charType match {
+        case typ: GhostType   => GameParticipant(char.nickname, classicFactory.ghost(typ))
+        case typ: PacmanType  => GameParticipant(char.nickname, classicFactory.pacman(typ))
+      })
+    Model(watcher, GameData(participants, classicFactory.map, classicFactory.gameState, classicFactory.gameEvents))
+  }
+  /**
+   * Calcolo del nuovo stato di gioco a partire dal precedente
+   */
+  def computeUpdate(model: Model, setup: Setup) : Model = {
+    //setup.context.log.debug("updateGame id: " + setup.gameId)
+    implicit val su: Setup = setup
+    implicit val map: Map = model.data.map
+    implicit var players: List[Character] = model.data.participants.map(updateChar).map(_.character)
+    implicit val collisions: List[(Character, GameObject)] = GameTick.collisions(players)
+
+    var newMap = GameTick.calculateMap(map)
+    var state = GameTick.calculateGameState(model.data.state)
+    players = GameTick.calculateDeaths(players, state)
+    players = GameTick.calculateSpeeds(players, setup.info.level, state)
+    state = GameTick.calculateLevelState(state, players, map)
+
+    var gameEvents = model.data.gameEvents
+    gameEvents = GameTick.consumeTimeOfGameEvents(gameEvents, setup.info.gameRefreshRate)
+    gameEvents = GameTick.updateEvents(gameEvents, state, collisions)
+    players = GameTick.handleEvents(gameEvents, players)
+    newMap = GameTick.handleEvents(gameEvents, newMap)
+    state = GameTick.handleEvents(gameEvents, state)
+    gameEvents = GameTick.removeTimedOutGameEvents(gameEvents)
+
+    val updatePlayers = model.data.participants.flatMap(par =>
+      players.find(_.characterType == par.character.characterType).map(c => par.copy(character = c))
+    )
+
+    val gameData: GameData = GameData(updatePlayers, newMap, state, gameEvents)
+    model.copy(data = gameData)
+  }
+
+  /**
+   * Crea il dto contentente lo stato della partita a partire dal modello di gioco
+   *
+   * @param model  modello contenente lo stato corrente del gioco
+   * @param paused indica se la partita è in pausa o meno
+   * @return       dto per aggiornamento osservatori
+   */
+  def elaborateUpdateModel(model: GameData, paused: Boolean): UpdateModelDTO = {
+
+    val gameEntities: Set[GameEntityDTO] = model.participants.toSet.map(gameParticipantToGameEntity)
+    val dots: Set[DotDTO]                = model.map.dots.map(rawToDotDTO).toSet
+    val fruit: Option[FruitDTO]          = model.map.fruit.map(rawToFruitDTO)
+
+    UpdateModelDTO(gameEntities, model.state, dots, fruit, paused)
+  }
 }
 
-private class Engine(setup: Setup) {
+class Engine(setup: Setup) {
 
   /**
    * Behavior iniziale, gestisce la prima registrazione da parte degli attori partecipanti alla partita
@@ -70,7 +134,7 @@ private class Engine(setup: Setup) {
       case UnRegisterWatcher(actor) => initRoutine(watchers = watchers - actor, disabledPlayers)
       case Start() =>
         setup.context.log.info("Start id: " + setup.gameId)
-        delayRoutine(initEngineModel(watchers, disabledPlayers), Settings.gameDelay)
+        delayRoutine(initEngineModel(watchers, disabledPlayers, setup), Settings.gameDelay)
       case DisablePlayer(nickname) =>
         setup.context.log.info("Remove player " + nickname + ", id: " + setup.gameId)
         initRoutine(watchers, disabledPlayers = disabledPlayers + nickname)
@@ -126,7 +190,7 @@ private class Engine(setup: Setup) {
    * Behavior utilizzato durante il corso della partita, effettua il ricalcolo periodico dello stato della
    * partita e si occupa di aggiornare gli osservatori, gestisce le richieste di pausa e cambio direzione
    */
-  private def mainRoutine(model: Model): Behavior[EngineCommand] =
+  def mainRoutine(model: Model): Behavior[EngineCommand] =
     Behaviors.withTimers { timers =>
       timers.startTimerWithFixedDelay(WakeUp(), WakeUp(), setup.info.gameRefreshRate)
 
@@ -145,33 +209,6 @@ private class Engine(setup: Setup) {
       }
     }
 
-  /**
-   * Crea il dto contentente lo stato della partita a partire dal modello di gioco
-   *
-   * @param model  modello contenente lo stato corrente del gioco
-   * @param paused indica se la partita è in pausa o meno
-   * @return       dto per aggiornamento osservatori
-   */
-  private def elaborateUpdateModel(model: GameData, paused: Boolean): UpdateModelDTO = {
-
-    val gameEntities: Set[GameEntityDTO] = model.participants.toSet.map(gameParticipantToGameEntity)
-    val dots: Set[DotDTO]                = model.map.dots.map(rawToDotDTO).toSet
-    val fruit: Option[FruitDTO]          = model.map.fruit.map(rawToFruitDTO)
-
-    UpdateModelDTO(gameEntities, model.state, dots, fruit, paused)
-  }
-
-  private def initEngineModel(watcher: Set[ActorRef[UpdateCommand]], disabledPlayers: Set[String]): Model = {
-    val classicFactory = Level.Classic(setup.info.level)
-    val participants: List[GameParticipant] = setup.info.players
-      .filter(p => !disabledPlayers.contains(p.nickname))
-      .map(char => char.charType match {
-        case typ: GhostType   => GameParticipant(char.nickname, classicFactory.ghost(typ))
-        case typ: PacmanType  => GameParticipant(char.nickname, classicFactory.pacman(typ))
-      })
-    Model(watcher, GameData(participants, classicFactory.map, classicFactory.gameState, classicFactory.gameEvents))
-  }
-
   private def updateWatchers(model: Model, paused: Boolean): Unit =
     model.watchers.foreach( _ ! UpdateMsg(elaborateUpdateModel(model.data, paused)) )
 
@@ -189,50 +226,19 @@ private class Engine(setup: Setup) {
   private def removeWatcher(model: Model, watcher: ActorRef[UpdateCommand]): Model =
     model.copy(watchers = model.watchers - watcher)
 
-  /**
-   * Calcolo del nuovo stato di gioco a partire dal precedente
-   */
-  private def updateGame(model: Model) : Behavior[EngineCommand] = {
-    setup.context.log.debug("updateGame id: " + setup.gameId)
-    implicit val map: Map = model.data.map
-    implicit var players: List[Character] = model.data.participants.map(updateChar).map(_.character)
-    implicit val collisions: List[(Character, GameObject)] = GameTick.collisions(players)
+  def updateGame(model: Model) : Behavior[EngineCommand] = {
 
-    var newMap = GameTick.calculateMap(map)
-    var state = GameTick.calculateGameState(model.data.state)
-    players = GameTick.calculateDeaths(players, state)
-    players = GameTick.calculateSpeeds(players, setup.info.level, state)
-    state = GameTick.calculateLevelState(state, players, map)
+    val updateModel = computeUpdate(model, setup)
 
-    var gameEvents = model.data.gameEvents
-    gameEvents = GameTick.consumeTimeOfGameEvents(gameEvents, setup.info.gameRefreshRate)
-    gameEvents = GameTick.updateEvents(gameEvents, state, collisions)
-    players = GameTick.handleEvents(gameEvents, players)
-    newMap = GameTick.handleEvents(gameEvents, newMap)
-    state = GameTick.handleEvents(gameEvents, state)
-    gameEvents = GameTick.removeTimedOutGameEvents(gameEvents)
-
-    val updatePlayers = model.data.participants.flatMap(par =>
-      players.find(_.characterType == par.character.characterType).map(c => par.copy(character = c))
-    )
-
-    val gameData: GameData = GameData(updatePlayers, newMap, state, gameEvents)
-    val updateModel = model.copy(data = gameData)
     updateWatchers(updateModel, paused = false)
 
-    if(state.levelState == LevelState.ONGOING) {
+    if(updateModel.data.state.levelState == LevelState.ONGOING) {
       mainRoutine(updateModel)
     } else {
       setup.context.log.info("Partita terminata spegnimento")
       Behaviors.stopped
     }
   }
-
-  private def updateChar(participant: GameParticipant)(implicit map: Map): GameParticipant = {
-    val newChar = GameMovement.move(participant.character, setup.info.gameRefreshRate, participant.desiredDir)
-    participant.copy(character = newChar)
-  }
-
   /**
    * Gestione aggiornamento direzione
    *

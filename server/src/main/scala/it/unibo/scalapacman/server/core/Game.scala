@@ -69,7 +69,7 @@ object Game {
     }
   }
 
-  private def generateGhostId(ghostType: GhostType, usedId: List[String])(implicit generator: Random): String = {
+  def generateGhostId(ghostType: GhostType, usedId: List[String])(implicit generator: Random): String = {
     lazy val genRandom: Stream[String] = { generator.nextInt().toString #:: genRandom }
     genRandom.iterator.map(ghostType.toString + _).dropWhile(usedId.contains).next()
   }
