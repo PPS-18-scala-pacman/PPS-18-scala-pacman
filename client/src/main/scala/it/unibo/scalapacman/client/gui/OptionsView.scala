@@ -20,7 +20,7 @@ object OptionsView {
  * @param controller il riferimento al componente Controller
  * @param viewChanger il riferimento al componente che gestisce il cambio schermata
  */
-class OptionsView()(implicit controller: Controller, viewChanger: ViewChanger) extends PanelImpl {
+class OptionsView()(implicit controller: Controller, viewChanger: ViewChanger) extends PanelImpl with AskToController {
   private val TITLE_LABEL: String = "Imposta tasti"
   private val SAVE_BUTTON_LABEL: String = "Salva"
   private val RESET_BUTTON_LABEL: String = "Reimposta"
@@ -176,7 +176,7 @@ class OptionsView()(implicit controller: Controller, viewChanger: ViewChanger) e
    * @param keyMap la nuova configurazione dei tasti
    */
   private def saveKeyMap(keyMap: KeyMap): Unit = {
-    controller.handleAction(SAVE_KEY_MAP, Some(keyMap))
+    askToController(SAVE_KEY_MAP, Some(keyMap))
     resetTextFields()
   }
 
@@ -205,7 +205,7 @@ class OptionsView()(implicit controller: Controller, viewChanger: ViewChanger) e
    * la configurazione dei tasti al valore di default
    */
   private def resetKeyMap(): Unit = {
-    controller.handleAction(RESET_KEY_MAP, None)
+    askToController(RESET_KEY_MAP, None)
     resetTextFields()
   }
 
