@@ -5,18 +5,26 @@ import it.unibo.scalapacman.lib.model.Character.{Ghost, Pacman}
 import it.unibo.scalapacman.lib.model.GhostType.{BLINKY, CLYDE, INKY, PINKY}
 import it.unibo.scalapacman.lib.model.Map.MapIndexes
 import it.unibo.scalapacman.lib.model.{Dot, Fruit, GameState}
+import it.unibo.scalapacman.lib.model.PacmanType.{PACMAN, MS_PACMAN, CAPMAN, RAPMAN}
 
 
-case class GameEntityDTO(gameCharacterHolder: GameCharacterHolder, position: Point2D, speed: Double, isDead: Boolean, dir: DirectionHolder) {
+case class GameEntityDTO( id: String, gameCharacterHolder: GameCharacterHolder, position: Point2D,
+                         speed: Double, isDead: Boolean, dir: DirectionHolder) {
+
   def toGhost: Option[Ghost] = gameCharacterHolder.gameChar match {
-    case GameCharacter.INKY   => Some(Ghost(INKY, position, speed, dir.direction, isDead))
+    case GameCharacter.INKY   => Some(Ghost(INKY,   position, speed, dir.direction, isDead))
     case GameCharacter.BLINKY => Some(Ghost(BLINKY, position, speed, dir.direction, isDead))
-    case GameCharacter.CLYDE  => Some(Ghost(CLYDE, position, speed, dir.direction, isDead))
-    case GameCharacter.PINKY  => Some(Ghost(PINKY, position, speed, dir.direction, isDead))
+    case GameCharacter.CLYDE  => Some(Ghost(CLYDE,  position, speed, dir.direction, isDead))
+    case GameCharacter.PINKY  => Some(Ghost(PINKY,  position, speed, dir.direction, isDead))
     case _ => None
   }
-  def toPacman: Option[Pacman] =
-    if(gameCharacterHolder.gameChar == GameCharacter.PACMAN) Some(Pacman(position, speed, dir.direction, isDead)) else None
+  def toPacman: Option[Pacman] = gameCharacterHolder.gameChar match {
+    case GameCharacter.PACMAN     => Some(Pacman(PACMAN,    position, speed, dir.direction, isDead))
+    case GameCharacter.MS_PACMAN  => Some(Pacman(MS_PACMAN, position, speed, dir.direction, isDead))
+    case GameCharacter.CAPMAN     => Some(Pacman(CAPMAN,    position, speed, dir.direction, isDead))
+    case GameCharacter.RAPMAN     => Some(Pacman(RAPMAN,    position, speed, dir.direction, isDead))
+    case _ => None
+  }
 }
 
 case class DotDTO(dotHolder: DotHolder, pos: MapIndexes)
@@ -42,5 +50,6 @@ case class UpdateModelDTO(
                            gameEntities: Set[GameEntityDTO],
                            state: GameStateDTO,
                            dots: Set[DotDTO],
-                           fruit: Option[FruitDTO]
-                      )
+                           fruit: Option[FruitDTO],
+                           paused: Boolean = false
+                         )

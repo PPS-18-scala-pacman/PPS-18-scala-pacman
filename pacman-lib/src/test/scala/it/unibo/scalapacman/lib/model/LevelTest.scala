@@ -76,16 +76,28 @@ class LevelTest extends AnyWordSpec with BeforeAndAfterAll {
     }
     "be generated using a generator" which {
       "create a classic game level" which {
-        "contains all characters" in {
+        "contains all characters with one player" in {
           val generator = Classic(1)
-          assert(generator.characters.size == 5)
-          generator.characters.foreach {
-            case Pacman(pos, _, _, _) => assert(pos == Map.Classic.PACMAN_START_POSITION)
+          val numPlayers = 1
+          assert(generator.characters(numPlayers).size == 4 + numPlayers)
+          generator.characters(numPlayers).foreach {
+            case Pacman(PacmanType.PACMAN, pos, _, _, _) => assert(pos == Map.Classic.PACMAN_START_POSITION)
             case Ghost(GhostType.BLINKY, pos, _, _, _) => assert(pos == Map.Classic.BLINKY_START_POSITION)
             case Ghost(GhostType.CLYDE, pos, _, _, _) => assert(pos == Map.Classic.CLYDE_START_POSITION)
             case Ghost(GhostType.INKY, pos, _, _, _) => assert(pos == Map.Classic.INKY_START_POSITION)
             case Ghost(GhostType.PINKY, pos, _, _, _) => assert(pos == Map.Classic.PINKY_START_POSITION)
           }
+        }
+        "contains all characters with one multiple players" in {
+          val generator = Classic(1)
+          val numPlayers = 4
+          assert(generator.characters(numPlayers).size == 4 + numPlayers)
+          val pacmans: List[Pacman] = generator.characters(numPlayers)
+            .collect({ case p: Pacman => p })
+          assert(pacmans.exists(_.characterType == PacmanType.PACMAN))
+          assert(pacmans.exists(_.characterType == PacmanType.MS_PACMAN))
+          assert(pacmans.exists(_.characterType == PacmanType.CAPMAN))
+          assert(pacmans.exists(_.characterType == PacmanType.RAPMAN))
         }
         "contains map" in {
           assert(Classic(1).map == Map.create(MapType.CLASSIC))

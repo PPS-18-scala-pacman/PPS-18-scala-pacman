@@ -45,8 +45,7 @@ neighbourhood(Graph, V, NB):-
 %
 % prune_neighboors(+ListOfVertices, +Closed, -ListOfNonClosedVertices)
 prune_neighboors([], _, []).
-prune_neighboors([H|T], Closed, NewT):-
-   H = V-_,
+prune_neighboors([V-_|T], Closed, NewT):-
    member(V-_-_, Closed), !,
    prune_neighboors(T, Closed, NewT).
 prune_neighboors([H|T], Closed, [H|NewT]):- prune_neighboors(T, Closed, NewT).
@@ -76,7 +75,7 @@ merge([V1-D1-P1|T], Open, D, [V1-(D+D1)-P1|SubOpen]):-
 % Se l'elemento non è presente nella lista, ritorna la lista invariata
 %
 % remove(+List, ?ElementToRemove, -Rest)
-remove([], _, []):- !.
+remove([], _, []).
 remove([H|T], H, T).
 remove([H|T], X, [H|NT]):-
    H \= X,

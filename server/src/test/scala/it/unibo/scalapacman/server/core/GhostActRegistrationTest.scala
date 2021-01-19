@@ -6,7 +6,7 @@ import it.unibo.scalapacman.lib.model.GhostType
 import it.unibo.scalapacman.server.config.ConfLoader
 import org.scalatest.wordspec.AnyWordSpecLike
 
-class GhostActRegistrationTest extends ScalaTestWithActorTestKit(ConfLoader.config) with AnyWordSpecLike {
+class GhostActRegistrationTest extends ScalaTestWithActorTestKit(ConfLoader.akkaConf) with AnyWordSpecLike {
 
   "A Ghost actor" must {
 
@@ -15,10 +15,10 @@ class GhostActRegistrationTest extends ScalaTestWithActorTestKit(ConfLoader.conf
       val fakeGameId = "fakeCreateGameId"
       val ghostType = GhostType.BLINKY
 
-      val props = MailboxSelector.fromConfig("server-app.ghost-mailbox")
-      val ghostActor: ActorRef[Engine.UpdateCommand] = spawn(GhostAct(fakeGameId, engineProbe.ref, ghostType), props)
+      val props = MailboxSelector.fromConfig("ghost-mailbox")
+      val ghostActor: ActorRef[Engine.UpdateCommand] = spawn(GhostAct(fakeGameId, engineProbe.ref, ghostType.toString()), props)
 
-      engineProbe.expectMessage(Engine.RegisterGhost(ghostActor, ghostType))
+      engineProbe.expectMessage(Engine.RegisterWatcher(ghostActor))
     }
   }
 }

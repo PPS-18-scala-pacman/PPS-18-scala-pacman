@@ -8,15 +8,19 @@ import akka.actor.typed.receptionist.{Receptionist, ServiceKey}
 import akka.actor.typed.scaladsl.{ActorContext, Behaviors}
 import akka.http.scaladsl.model.ws.Message
 import akka.stream.scaladsl.{Flow, Source}
+import it.unibo.scalapacman.lib.model.PacmanType.PacmanType
 import it.unibo.scalapacman.server.communication.ConnectionProtocol.ConnectionMsg
 import it.unibo.scalapacman.server.communication.ServiceHandler.{ListingResponse, PlayerRegisterRespFailure}
 import it.unibo.scalapacman.server.communication.ServiceHandler.{PlayerRegisterRespSuccess, Setup, WrapRespCreateGame}
 import it.unibo.scalapacman.server.communication.StreamFactory.{createActorWBSink, createActorWBSource}
-import it.unibo.scalapacman.server.core.Player.{PlayerRegistration, RegistrationAccepted, RegistrationRejected}
+import it.unibo.scalapacman.server.core.PlayerAct.{PlayerRegistration, RegistrationAccepted, RegistrationRejected}
 import it.unibo.scalapacman.server.core.{Game, Master}
 import it.unibo.scalapacman.server.config.Settings
 import it.unibo.scalapacman.server.config.Settings.askTimeout
 
+/**
+ * Attore incaricato di gestire le richieste in arrivo dal Client
+ */
 object ServiceHandler {
 
   private case class ListingResponse(listing: Receptionist.Listing) extends ServiceRoutes.RoutesCommand
@@ -38,21 +42,27 @@ private class ServiceHandler(setup: Setup) {
   val receptionistAdapter: ActorRef[Receptionist.Listing] = setup.context.messageAdapter[Receptionist.Listing](ListingResponse)
   val respondCreateGameAdapter: ActorRef[Master.GameCreated] = setup.context.messageAdapter(WrapRespCreateGame)
 
+  /**
+   * Behaviour principale
+   */
   def mainRoutine(): Behavior[ServiceRoutes.RoutesCommand] =
     Behaviors.receiveMessage {
       case ServiceRoutes.DeleteGame(gameId) =>
         val key = ServiceKey[Game.GameCommand](gameId)
         setup.context.system.receptionist ! Receptionist.Find(key, receptionistAdapter)
         deleteGameEx(key)
-      case ServiceRoutes.CreateGame(replyTo) =>
+      case ServiceRoutes.CreateGame(replyTo, components) =>
         setup.context.system.receptionist ! Receptionist.Find(Master.masterServiceKey, receptionistAdapter)
-        createGameEx(replyTo, Master.masterServiceKey)
-      case ServiceRoutes.CreateConnectionGame(replyTo, gameId) =>
+        createGameEx(replyTo, Master.masterServiceKey, components)
+      case ServiceRoutes.CreateConnectionGame(replyTo, gameId, nickname) =>
         val key = ServiceKey[Game.GameCommand](gameId)
         setup.context.system.receptionist ! Receptionist.Find(key, receptionistAdapter)
-        craeteGameConnectionEx(replyTo, key)
+        craeteGameConnectionEx(replyTo, key, nickname)
     }
 
+  /**
+   * Behaviour dedicato alla gestione della richiesta di cancellazione di una partita
+   */
   def deleteGameEx(key: ServiceKey[Game.GameCommand]): Behavior[ServiceRoutes.RoutesCommand] =
     Behaviors.withStash(Settings.stashSize) { buffer =>
       Behaviors.receiveMessage {
@@ -70,8 +80,12 @@ private class ServiceHandler(setup: Setup) {
       }
     }
 
+  /**
+   * Behaviour dedicato alla gestione della richiesta di creazione di una partita
+   */
   def createGameEx(replyTo: ActorRef[ServiceRoutes.ResponseCreateGame],
-                   key: ServiceKey[Master.MasterCommand]): Behavior[ServiceRoutes.RoutesCommand] =
+                   key: ServiceKey[Master.MasterCommand],
+                   components: Map[String, PacmanType]): Behavior[ServiceRoutes.RoutesCommand] =
     Behaviors.withStash(Settings.stashSize) { buffer =>
       Behaviors.receiveMessage {
         case ListingResponse(key.Listing(listings)) =>
@@ -79,7 +93,7 @@ private class ServiceHandler(setup: Setup) {
             replyTo ! ServiceRoutes.FailureCrG("Errore, servizio di gioco non attivo")
             buffer.unstashAll(mainRoutine())
           } else {
-            listings.head ! Master.CreateGame(respondCreateGameAdapter)
+            listings.head ! Master.CreateGame(respondCreateGameAdapter, components)
             Behaviors.same
           }
         case WrapRespCreateGame(response) =>
@@ -91,8 +105,11 @@ private class ServiceHandler(setup: Setup) {
       }
     }
 
-  def craeteGameConnectionEx(replyTo: ActorRef[ServiceRoutes.ResponseConnGame],
-                             key: ServiceKey[Game.GameCommand]): Behavior[ServiceRoutes.RoutesCommand] =
+  /**
+   * Behaviour dedicato alla gestione della richiesta di creazione di una connessione ad una partita avviata
+   */
+  def craeteGameConnectionEx(replyTo: ActorRef[ServiceRoutes.ResponseConnGame], key: ServiceKey[Game.GameCommand],
+                             nickname: String): Behavior[ServiceRoutes.RoutesCommand] =
     Behaviors.withStash(Settings.stashSize) { buffer =>
 
       setup.context.log.info(s"Richiesta connessione per game ${key.id}")
@@ -110,7 +127,7 @@ private class ServiceHandler(setup: Setup) {
       def sendRegisterRequest(gameAct: ActorRef[Game.GameCommand]): Behavior[ServiceRoutes.RoutesCommand] = {
         val (actorSourceRef, source) = createActorWBSource().preMaterialize()
         source.run()
-        setup.context.ask[Game.GameCommand, PlayerRegistration](gameAct, Game.RegisterPlayer(_, actorSourceRef)) {
+        setup.context.ask[Game.GameCommand, PlayerRegistration](gameAct, Game.RegisterPlayer(_, actorSourceRef, nickname)) {
           case Success(RegistrationAccepted(messageHandler)) => PlayerRegisterRespSuccess(messageHandler, source)
           case Success(RegistrationRejected(errMsg)) => PlayerRegisterRespFailure(errMsg)
           case Failure(errMsg) => PlayerRegisterRespFailure(errMsg.getMessage)

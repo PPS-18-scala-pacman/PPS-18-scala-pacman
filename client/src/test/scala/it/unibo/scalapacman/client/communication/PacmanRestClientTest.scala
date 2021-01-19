@@ -5,7 +5,7 @@ import java.io.IOException
 import akka.actor.ActorSystem
 import akka.actor.testkit.typed.scaladsl.ScalaTestWithActorTestKit
 import akka.http.scaladsl.model.ws.{Message, WebSocketRequest, WebSocketUpgradeResponse}
-import akka.http.scaladsl.model.{HttpEntity, HttpMethods, HttpRequest, HttpResponse, StatusCodes}
+import akka.http.scaladsl.model.{ContentTypes, HttpEntity, HttpMethods, HttpRequest, HttpResponse, StatusCodes}
 import akka.stream.scaladsl.Flow
 import akka.util.ByteString
 import org.scalamock.function.MockFunction1
@@ -13,6 +13,8 @@ import org.scalamock.scalatest.MockFactory
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AsyncWordSpecLike
+import spray.json.DefaultJsonProtocol.{IntJsonFormat, StringJsonFormat, mapFormat}
+import spray.json.enrichAny
 
 import scala.concurrent.{ExecutionContextExecutor, Future}
 
@@ -44,6 +46,8 @@ class PacmanRestClientTest
   private var pacmanRestClient: PacmanRestClientWithMockClientHandler = _
   private val GAME_ID_EXAMPLE = "1"
   private val FAILURE_MESSAGE = "Failure message"
+  private val NUM_PLAYERS: Int = 1
+  private val START_GAME_REQUEST_ENTITY = HttpEntity(ContentTypes.`application/json`, Map("playersNumber" -> NUM_PLAYERS).toJson.toString())
 
   override protected def beforeAll(): Unit = {
     super.beforeAll()
@@ -57,10 +61,10 @@ class PacmanRestClientTest
       val expectedGameId = GAME_ID_EXAMPLE
 
       pacmanRestClient.mockHttp
-        .expects(HttpRequest(method = HttpMethods.POST, uri = PacmanRestClient.GAMES_URL))
+        .expects(HttpRequest(method = HttpMethods.POST, uri = PacmanRestClient.GAMES_URL, entity = START_GAME_REQUEST_ENTITY))
         .returning(Future.successful(HttpResponse(status = StatusCodes.Created, entity = HttpEntity(ByteString(expectedGameId)))))
 
-      whenReady(pacmanRestClient.startGame) { res =>
+      whenReady(pacmanRestClient.startGame(NUM_PLAYERS)) { res =>
         res shouldEqual expectedGameId
       }
     }
@@ -69,11 +73,11 @@ class PacmanRestClientTest
       val failureMessage = FAILURE_MESSAGE
 
       pacmanRestClient.mockHttp
-        .expects(HttpRequest(method = HttpMethods.POST, uri = PacmanRestClient.GAMES_URL))
+        .expects(HttpRequest(method = HttpMethods.POST, uri = PacmanRestClient.GAMES_URL, entity = START_GAME_REQUEST_ENTITY))
         .returning(Future.successful(HttpResponse(status = StatusCodes.InternalServerError, entity = HttpEntity(ByteString(FAILURE_MESSAGE)))))
 
       recoverToSucceededIf[IOException] {
-        pacmanRestClient.startGame flatMap { res =>
+        pacmanRestClient.startGame(NUM_PLAYERS) flatMap { res =>
           res shouldEqual failureMessage
         }
       }
@@ -83,11 +87,11 @@ class PacmanRestClientTest
       val failureMessage = FAILURE_MESSAGE
 
       pacmanRestClient.mockHttp
-        .expects(HttpRequest(method = HttpMethods.POST, uri = PacmanRestClient.GAMES_URL))
+        .expects(HttpRequest(method = HttpMethods.POST, uri = PacmanRestClient.GAMES_URL, entity = START_GAME_REQUEST_ENTITY))
         .returning(Future.successful(HttpResponse(status = StatusCodes.NotFound, entity = HttpEntity(ByteString(failureMessage)))))
 
       recoverToSucceededIf[IOException] {
-        pacmanRestClient.startGame flatMap { res =>
+        pacmanRestClient.startGame(NUM_PLAYERS) flatMap { res =>
           res shouldEqual failureMessage
         }
       }

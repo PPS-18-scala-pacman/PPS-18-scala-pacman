@@ -1,0 +1,56 @@
+version: '3.3'
+
+services:
+  server:
+    build:
+      context: ./
+      dockerfile: ./server/Dockerfile
+    #container_name: server
+    restart: unless-stopped
+    networks:
+      - mynet
+    #ports:
+    #  - '8080:8080'
+    expose:
+      - '8080'
+
+  lobby:
+    build:
+      context: ./
+      dockerfile: ./lobby/Dockerfile
+    container_name: lobby
+    restart: unless-stopped
+    networks:
+      - mynet
+    #ports:
+    #  - '8081:8081'
+    depends_on:
+      - postgres
+
+  postgres:
+    build:
+      context: ./
+      dockerfile: ./database/Dockerfile
+    container_name: postgres
+    restart: unless-stopped
+    environment:
+      - POSTGRESQL_USERNAME=postgres
+      - POSTGRESQL_PASSWORD=postgres
+    networks:
+      - mynet
+    ports:
+      - '5432:5432'
+
+  gateway:
+    build:
+      context: ./gateway
+      dockerfile: ./Dockerfile
+    container_name: gateway
+    restart: unless-stopped
+    networks:
+      - mynet
+    ports:
+      - '80:80'
+
+networks:
+  mynet:

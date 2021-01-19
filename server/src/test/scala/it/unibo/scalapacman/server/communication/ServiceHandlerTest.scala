@@ -3,9 +3,10 @@ package it.unibo.scalapacman.server.communication
 import akka.actor.testkit.typed.scaladsl.{ScalaTestWithActorTestKit, TestProbe}
 import akka.actor.typed.ActorRef
 import akka.actor.typed.receptionist.{Receptionist, ServiceKey}
+import it.unibo.scalapacman.lib.model.PacmanType
 import it.unibo.scalapacman.server.communication.ConnectionProtocol.ConnectionMsg
 import it.unibo.scalapacman.server.core.Game.GameCommand
-import it.unibo.scalapacman.server.core.Player.{RegistrationAccepted, RegistrationRejected}
+import it.unibo.scalapacman.server.core.PlayerAct.{RegistrationAccepted, RegistrationRejected}
 import it.unibo.scalapacman.server.core.{Game, Master}
 import it.unibo.scalapacman.server.config.TestSettings.askTestDuration
 import org.scalatest.wordspec.AnyWordSpecLike
@@ -33,7 +34,7 @@ class ServiceHandlerTest extends ScalaTestWithActorTestKit with AnyWordSpecLike 
         val masterProbe = createTestProbe[Master.MasterCommand]()
         system.receptionist ! Receptionist.Register(Master.masterServiceKey, masterProbe.ref)
 
-        serviceHandlerActor ! ServiceRoutes.CreateGame(clientProbe.ref)
+        serviceHandlerActor ! ServiceRoutes.CreateGame(clientProbe.ref, Map("fooId"-> PacmanType.PACMAN))
         masterProbe.expectMessageType[Master.CreateGame]
 
         serviceHandlerActor ! ServiceHandler.WrapRespCreateGame(Master.GameCreated(fakeGameId))
@@ -53,10 +54,11 @@ class ServiceHandlerTest extends ScalaTestWithActorTestKit with AnyWordSpecLike 
       "requested" in {
         val clientProbe = createTestProbe[ServiceRoutes.ResponseConnGame]()
         val fooProbe = createTestProbe[ConnectionMsg]()
+        val testId = "testId"
 
-        serviceHandlerActor ! ServiceRoutes.CreateConnectionGame(clientProbe.ref, fakeGameId)
+        serviceHandlerActor ! ServiceRoutes.CreateConnectionGame(clientProbe.ref, fakeGameId, testId)
         gameProbe.receiveMessage() match {
-          case Game.RegisterPlayer(replyTo, _) => replyTo ! RegistrationAccepted(fooProbe.ref)
+          case Game.RegisterPlayer(replyTo, _, `testId`) => replyTo ! RegistrationAccepted(fooProbe.ref)
           case _ => fail()
         }
 
@@ -68,10 +70,11 @@ class ServiceHandlerTest extends ScalaTestWithActorTestKit with AnyWordSpecLike 
       "requested" in {
         val clientProbe = createTestProbe[ServiceRoutes.ResponseConnGame]()
         val errMsg: String = "err:RegistrationRejected"
+        val testId = "testId"
 
-        serviceHandlerActor ! ServiceRoutes.CreateConnectionGame(clientProbe.ref, fakeGameId)
+        serviceHandlerActor ! ServiceRoutes.CreateConnectionGame(clientProbe.ref, fakeGameId, testId)
         gameProbe.receiveMessage() match {
-          case Game.RegisterPlayer(replyTo, _) => replyTo ! RegistrationRejected(errMsg)
+          case Game.RegisterPlayer(replyTo, _, `testId`) => replyTo ! RegistrationRejected(errMsg)
           case _ => fail()
         }
 
@@ -83,7 +86,7 @@ class ServiceHandlerTest extends ScalaTestWithActorTestKit with AnyWordSpecLike 
       "missing" in {
         val clientProbe = createTestProbe[ServiceRoutes.ResponseConnGame]()
 
-        serviceHandlerActor ! ServiceRoutes.CreateConnectionGame(clientProbe.ref, fakeGameId)
+        serviceHandlerActor ! ServiceRoutes.CreateConnectionGame(clientProbe.ref, fakeGameId, "fooId")
         gameProbe.expectMessageType[Game.RegisterPlayer]
 
         clientProbe.expectMessageType[ServiceRoutes.FailureConG](askTestDuration)

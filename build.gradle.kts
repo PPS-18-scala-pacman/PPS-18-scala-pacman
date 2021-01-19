@@ -12,9 +12,7 @@ plugins {
 
 buildscript {
   repositories {
-    maven {
-      url = uri("https://plugins.gradle.org/m2/")
-    }
+    maven { url = uri("https://plugins.gradle.org/m2/") }
   }
   dependencies {
     classpath("com.github.alisiikh:gradle-scalastyle-plugin:3.4.0")
@@ -66,6 +64,11 @@ allprojects {
     scoverage(group = "org.scoverage", name = "scalac-scoverage-runtime_$scalaVersion", version = scoverageVersion)
   }
 
+  java {
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
+  }
+
   tasks.withType<ScalaCompile> {
     sourceCompatibility = "1.8"
     targetCompatibility = "1.8"
@@ -77,10 +80,10 @@ allprojects {
   }
 }
 
-subprojects {
-}
+//subprojects {
+//}
 
-tasks.register("release") {
+//tasks.register("release") {
 //  dependsOn(tasks.test)
 //  dependsOn(tasks.scalatest)
-}
+//}

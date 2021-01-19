@@ -5,9 +5,11 @@ import akka.actor.typed.ActorRef
 import it.unibo.scalapacman.common.{GameCharacter, UpdateModelDTO}
 import it.unibo.scalapacman.common.GameCharacter.{CLYDE, GameCharacter, INKY, PACMAN}
 import it.unibo.scalapacman.lib.model.Direction.Direction
-import it.unibo.scalapacman.lib.model.GhostType
+import it.unibo.scalapacman.lib.model.{GhostType, PacmanType}
+import it.unibo.scalapacman.server.config.Settings
 import it.unibo.scalapacman.server.config.TestSettings.{awaitLowerBound, awaitUpperBound, waitTime}
 import it.unibo.scalapacman.server.core.Engine.ChangeDirectionReq
+import it.unibo.scalapacman.server.model.GameEntity
 import org.scalatest.wordspec.AnyWordSpecLike
 
 class EngineCommandTest extends ScalaTestWithActorTestKit with AnyWordSpecLike {
@@ -19,17 +21,25 @@ class EngineCommandTest extends ScalaTestWithActorTestKit with AnyWordSpecLike {
   private var watcherMap: Map[GameCharacter, TestProbe[Engine.UpdateCommand]] = _
 
   override def beforeAll(): Unit = {
-    engineActor = spawn(Engine(fakeGameId, 1))
+    val gameEntities = List(GameEntity(PacmanType.PACMAN.toString(), PacmanType.PACMAN),
+      GameEntity(GhostType.BLINKY.toString(), GhostType.BLINKY),
+      GameEntity(GhostType.INKY.toString(), GhostType.INKY),
+      GameEntity(GhostType.PINKY.toString(), GhostType.PINKY),
+      GameEntity(GhostType.CLYDE.toString(), GhostType.CLYDE))
+
+    engineActor = spawn(Engine(fakeGameId, gameEntities, 1))
     watcherPlayerProbe = createTestProbe[Engine.UpdateCommand]()
 
-    engineActor ! Engine.RegisterPlayer(watcherPlayerProbe.ref)
-    val ghostMap = GhostType.values.map( gt => {
+    engineActor ! Engine.RegisterWatcher(watcherPlayerProbe.ref)
+    val ghostMap = GhostType.values.map(gt => {
       val curProbe = createTestProbe[Engine.UpdateCommand]()
-      engineActor ! Engine.RegisterGhost(curProbe.ref, gt)
-      GameCharacter.ghostTypeToGameCharacter(gt) -> curProbe
+      engineActor ! Engine.RegisterWatcher(curProbe.ref)
+      GameCharacter.ghostTypeToGameCharacter(gt.asInstanceOf[GhostType.GhostType]) -> curProbe
     }).toMap
 
-    engineActor ! Engine.Resume()
+    engineActor ! Engine.Start()
+    // Attesa delayed start
+    Thread.sleep(Settings.gameDelay.toMillis)
 
     watcherMap = ghostMap + (PACMAN -> watcherPlayerProbe)
   }
@@ -62,24 +72,22 @@ class EngineCommandTest extends ScalaTestWithActorTestKit with AnyWordSpecLike {
     }
 
     "change direction when requested for all game characters" in {
-      //rimuovo dal controllo inky e clyde perchè a inizio partita sono morti
-      GameCharacter.values.filter(gameChar => gameChar != INKY && gameChar != CLYDE).foreach(gameChar => {
-        val probe = watcherMap(gameChar)
+      watcherMap.filter(elem => elem._1 != INKY && elem._1 != CLYDE).foreach(elem => {
         var newDirection: Option[Direction] = None
 
-        probe.receiveMessage(waitTime) match {
+        elem._2.receiveMessage(waitTime * 4) match {
           case Engine.UpdateMsg(model) =>
-            val charDTO = model.gameEntities.find(_.gameCharacterHolder.gameChar == gameChar)
+            val charDTO = model.gameEntities.find(_.gameCharacterHolder.gameChar == elem._1)
             assert(charDTO.isDefined)
             newDirection = Some(charDTO.get.dir.direction.reverse)
-            engineActor ! ChangeDirectionReq(probe.ref, newDirection.get)
+            engineActor ! ChangeDirectionReq(elem._1.toString, newDirection.get)
           case _ => fail()
         }
 
         TestProbe().awaitAssert({
-          probe.receiveMessage() match {
+          elem._2.receiveMessage() match {
             case Engine.UpdateMsg(model) =>
-              val charDTO = model.gameEntities.find(_.gameCharacterHolder.gameChar == gameChar)
+              val charDTO = model.gameEntities.find(_.gameCharacterHolder.gameChar == elem._1)
               assert(charDTO.isDefined)
               val curDirection = Some(charDTO.get.dir.direction)
               curDirection shouldEqual newDirection

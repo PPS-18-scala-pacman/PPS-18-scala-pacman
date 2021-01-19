@@ -1,19 +1,19 @@
 package it.unibo.scalapacman.client.controller
 
 import java.awt.event.KeyEvent
-
 import akka.actor.ActorSystem
 import akka.actor.testkit.typed.scaladsl.ScalaTestWithActorTestKit
 import akka.http.scaladsl.Http
+import akka.http.scaladsl.model.sse.ServerSentEvent
 import akka.http.scaladsl.model.ws.{Message, WebSocketRequest, WebSocketUpgradeResponse}
-import akka.http.scaladsl.model.{HttpEntity, HttpMethods, HttpRequest, HttpResponse, StatusCodes}
+import akka.http.scaladsl.model.{HttpRequest, HttpResponse}
 import akka.stream.scaladsl.Flow
-import akka.util.ByteString
 import grizzled.slf4j.Logging
 import it.unibo.scalapacman.client.communication.{HttpClient, PacmanRestClient}
-import it.unibo.scalapacman.client.controller.Action.{END_GAME, MOVEMENT, PAUSE_RESUME, RESET_KEY_MAP, SAVE_KEY_MAP, START_GAME}
+import it.unibo.scalapacman.client.controller.Action.{END_GAME, MOVEMENT, PAUSE_RESUME, RESET_KEY_MAP, SAVE_KEY_MAP}
 import it.unibo.scalapacman.client.input.JavaKeyBinding.DefaultJavaKeyBinding
 import it.unibo.scalapacman.client.input.KeyMap
+import it.unibo.scalapacman.client.utils.PacmanLogger
 import it.unibo.scalapacman.common.{CommandType, MoveCommandType}
 import it.unibo.scalapacman.lib.model.{Map, MapType}
 import org.scalamock.function.MockFunction1
@@ -50,11 +50,19 @@ class ControllerTest
 
     // Non mi serve inviare effettivamente al server per il test
     override def sendOverWebSocket(message: String): Unit = debug(s"Messaggio da inviare $message")// scalastyle:ignore
+    override def connectSSE(
+                             requestUri: String,
+                             messageHandler: ServerSentEvent => Unit,
+                             connectionErrorHandler: () => Unit,
+                             onSSEClose: () => Unit,
+                             sseEventTypeStop: ServerSentEvent => Boolean
+                           ): Future[Any] = Future.successful("OK")
   }
 
   var _defaultKeyMap: KeyMap = _
   var _notDefaultKeyMap: KeyMap = _
   var _pacmanRestClientWithMockClientHandler: PacmanRestClientWithMockClientHandler = _
+  var _logger: PacmanLogger = _
   var _controller: Controller = _
   val GAME_ID = "fakeID"
   val MAP_CLASSIC: Map = Map.create(MapType.CLASSIC)
@@ -66,11 +74,12 @@ class ControllerTest
       DefaultJavaKeyBinding.LEFT, DefaultJavaKeyBinding.PAUSE)
     _notDefaultKeyMap = KeyMap(KeyEvent.VK_W, KeyEvent.VK_S, KeyEvent.VK_D, KeyEvent.VK_A, KeyEvent.VK_O)
     _pacmanRestClientWithMockClientHandler = new PacmanRestClientWithMockClientHandler()
+    _logger = new PacmanLoggerTest()
   }
 
   override protected def beforeEach(): Unit = {
     super.beforeEach()
-    _controller = Controller(_pacmanRestClientWithMockClientHandler)
+    _controller = Controller(_pacmanRestClientWithMockClientHandler, _logger)
   }
 
   "Controller" when {
@@ -85,80 +94,14 @@ class ControllerTest
     }
 
     "handling user action" must {
-      "be able to start a new game" in {
-        _controller.model.gameId shouldEqual None
 
-        _pacmanRestClientWithMockClientHandler.mockHttp
-          .expects(HttpRequest(method = HttpMethods.POST, uri = PacmanRestClient.GAMES_URL))
-          .returning(Future.successful(HttpResponse(status = StatusCodes.Created, entity = HttpEntity(ByteString(GAME_ID)))))
+      // TODO test sulle lobby
 
-        _controller.handleAction(START_GAME, None)
-
-        // TODO si riesce a cambiare metodo?
-        // Attendo molto per dare tempo alla websocket(?) poiché non so come mockarla?
-        Thread.sleep(500)// scalastyle:ignore
-
-        _controller.model.gameId shouldEqual Some(GAME_ID)
-      }
-
-      "be able to handle failure when starting a new game" in {
-        val FAILURE_MESSAGE: String = "failure"
-
-        _controller.model.gameId shouldEqual None
-
-        _pacmanRestClientWithMockClientHandler.mockHttp
-          .expects(HttpRequest(method = HttpMethods.POST, uri = PacmanRestClient.GAMES_URL))
-          .returning(Future.successful(HttpResponse(status = StatusCodes.InternalServerError, entity = HttpEntity(ByteString(FAILURE_MESSAGE)))))
-
-        _controller.handleAction(START_GAME, None)
-
-        // TODO si riesce a cambiare metodo?
-        Thread.sleep(100)// scalastyle:ignore
-
-        _controller.model.gameId shouldEqual None
-      }
-
-      "not start a new game when one is already on" in {
-        _controller.model = _controller.model.copy(gameId = Some(GAME_ID))
-
-        _controller.handleAction(START_GAME, None)
-        _controller.model.gameId shouldEqual Some(GAME_ID)
-      }
-
-      "be able to end a game when request is successful" in {
+      "be able to end a game" in {
         _controller.model = _controller.model.copy(gameId = Some(GAME_ID))
         _controller.model.gameId shouldEqual Some(GAME_ID)
-
-        val uri = s"${PacmanRestClient.GAMES_URL}/$GAME_ID"
-        val expectedMessage = "Delete request received"
-
-        _pacmanRestClientWithMockClientHandler.mockHttp
-          .expects(HttpRequest(method = HttpMethods.DELETE, uri = uri))
-          .returning(Future.successful(HttpResponse(status = StatusCodes.Accepted, entity = HttpEntity(ByteString(expectedMessage)))))
 
         _controller.handleAction(END_GAME, None)
-
-        // TODO si riesce a cambiare metodo?
-        Thread.sleep(100)// scalastyle:ignore
-
-        _controller.model.gameId shouldEqual None
-      }
-
-      "be able to end a game when request is not successful" in {
-        _controller.model = _controller.model.copy(gameId = Some(GAME_ID))
-        _controller.model.gameId shouldEqual Some(GAME_ID)
-
-        val uri = s"${PacmanRestClient.GAMES_URL}/$GAME_ID"
-        val failureMessage = "failure"
-
-        _pacmanRestClientWithMockClientHandler.mockHttp
-          .expects(HttpRequest(method = HttpMethods.DELETE, uri = uri))
-          .returning(Future.successful(HttpResponse(status = StatusCodes.InternalServerError, entity = HttpEntity(ByteString(failureMessage)))))
-
-        _controller.handleAction(END_GAME, None)
-
-        // TODO si riesce a cambiare metodo?
-        Thread.sleep(100)// scalastyle:ignore
 
         _controller.model.gameId shouldEqual None
       }
@@ -256,71 +199,6 @@ class ControllerTest
 
         _controller.handleAction(MOVEMENT, Some(MoveCommandType.NONE))
         _controller.userAction shouldEqual None
-      }
-
-      "be able to pause game when game is on and not paused" in {
-        _controller.model = _controller.model.copy(gameId = Some(GAME_ID))
-
-        _controller.model.paused shouldEqual false
-
-        _controller.handleAction(PAUSE_RESUME, Some(CommandType.PAUSE))
-        _controller.model.paused shouldEqual true
-      }
-
-      "do nothing when pause is requested and game is already paused" in {
-        _controller.model = _controller.model.copy(gameId = Some(GAME_ID), paused = true)
-
-        _controller.model.paused shouldEqual true
-
-        _controller.handleAction(PAUSE_RESUME, Some(CommandType.PAUSE))
-        _controller.model.paused shouldEqual true
-      }
-
-      "be able to resume game when game is on and paused" in {
-        _controller.model = _controller.model.copy(gameId = Some(GAME_ID), paused = true)
-
-        _controller.model.paused shouldEqual true
-
-        _controller.handleAction(PAUSE_RESUME, Some(CommandType.RESUME))
-        _controller.model.paused shouldEqual false
-      }
-
-      "do nothing when resume is requested and game is not paused" in {
-        _controller.model = _controller.model.copy(gameId = Some(GAME_ID), paused = false)
-
-        _controller.model.paused shouldEqual false
-
-        _controller.handleAction(PAUSE_RESUME, Some(CommandType.RESUME))
-        _controller.model.paused shouldEqual false
-      }
-
-      "not pausing/resuming when a game is not on" in {
-        _controller.model.paused shouldEqual false
-
-        _controller.handleAction(PAUSE_RESUME, Some(CommandType.PAUSE))
-        _controller.model.paused shouldEqual false
-
-        _controller.model = _controller.model.copy(paused = true)
-        _controller.model.paused shouldEqual true
-
-        _controller.handleAction(PAUSE_RESUME, Some(CommandType.RESUME))
-        _controller.model.paused shouldEqual true
-      }
-
-      "handle missing pause/resume value" in {
-        _controller.model = _controller.model.copy(gameId = Some(GAME_ID))
-
-        _controller.model.paused shouldEqual false
-
-        _controller.handleAction(PAUSE_RESUME, None)
-        _controller.model.paused shouldEqual false
-
-        _controller.model = _controller.model.copy(paused = true)
-
-        _controller.model.paused shouldEqual true
-
-        _controller.handleAction(PAUSE_RESUME, None)
-        _controller.model.paused shouldEqual true
       }
     }
   }

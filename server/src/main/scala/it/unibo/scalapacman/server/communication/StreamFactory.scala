@@ -10,6 +10,9 @@ import it.unibo.scalapacman.server.communication.ConnectionProtocol.{Ack, Connec
   ConnectionEnded, ConnectionFailed, ConnectionInit, ConnectionMsg}
 import it.unibo.scalapacman.server.config.Settings
 
+/**
+ * Contiene le funzioni di utility per la crezione di Sink e Source per costrunzione Flow di connessione
+ */
 object StreamFactory {
 
   def createActorWBSink(actor: ActorRef[ConnectionMsg]): Sink[Message, NotUsed] =

@@ -1,0 +1,13 @@
+{
+  "vertx.logger-delegate-factory-class-name": "io.vertx.core.logging.SLF4JLogDelegateFactory",
+  "HTTP_PORT": 8081,
+  "GAME_SERVER_URL": "server",
+  "GAME_SERVER_PORT": 8080,
+  "DATABASE": {
+    "HOST": "postgres",
+    "PORT": 5432,
+    "DATABASE": "lobby",
+    "USER": "postgres",
+    "PASSWORD": "postgres"
+  }
+}

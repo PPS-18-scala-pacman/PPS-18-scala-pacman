@@ -5,6 +5,7 @@ import it.unibo.scalapacman.lib.ai.GhostAI.prologEngine
 import it.unibo.scalapacman.lib.math.{Point2D, TileGeography}
 import it.unibo.scalapacman.lib.model.Character.{Ghost, Pacman}
 import it.unibo.scalapacman.lib.model.Map.{emptyTrack, wall}
+import it.unibo.scalapacman.lib.model.PacmanType.PACMAN
 import org.scalatest.wordspec.AnyWordSpec
 
 class GhostAITest extends AnyWordSpec {
@@ -59,7 +60,7 @@ class GhostAITest extends AnyWordSpec {
         val map = generator.map
         var blinky = generator.ghost(GhostType.BLINKY)
         blinky = blinky.copy(position = blinky.position + Point2D(TileGeography.SIZE * -4, 0)) // scalastyle:ignore magic.number
-        val pacman = generator.pacman
+        val pacman = generator.pacman(PACMAN)
         val desiredDirection = GhostAI.desiredDirection(blinky, pacman)(prologEngine, map)
         assert(desiredDirection == Direction.SOUTH)
       }
@@ -133,6 +134,15 @@ class GhostAITest extends AnyWordSpec {
           assert(GhostAI.calculateDirectionClassic(ghost, pacman).contains(Direction.EAST))
         }
       }
+    }
+    "find the nearest Pacman" in {
+      val ghost = Ghost(GhostType.BLINKY, ORIGIN, 1.0, Direction.EAST)
+      val nearestPacman = Pacman(ORIGIN + Point2D(TileGeography.SIZE, TileGeography.SIZE), 1.0, Direction.EAST)
+      val pacmanList = Pacman(ORIGIN + Point2D(TileGeography.SIZE * 3, 0), 1.0, Direction.EAST) ::
+        Pacman(ORIGIN + Point2D(TileGeography.SIZE, TileGeography.SIZE * 3), 1.0, Direction.EAST) ::
+        nearestPacman ::
+        Nil
+      assert(nearestPacman == GhostAI.choosePacmanToFollow(ghost, pacmanList))
     }
   }
 }

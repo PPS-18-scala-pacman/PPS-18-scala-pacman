@@ -19,7 +19,7 @@ class WebSocketConsumerTest extends AnyWordSpecLike with MockFactory with Before
 
     // scalastyle:off magic.number
     val gameEntities:Set[GameEntityDTO] = Set(
-      GameEntityDTO(GameCharacterHolder(GameCharacter.PACMAN), Point2D(1,2), 1, isDead=false, DirectionHolder(Direction.NORTH))
+      GameEntityDTO("1", GameCharacterHolder(GameCharacter.PACMAN), Point2D(1,2), 1, isDead=false, DirectionHolder(Direction.NORTH))
     )
 
     val dots: Set[DotDTO] = Set(DotDTO(DotHolder(Dot.SMALL_DOT), (5,6)))
@@ -29,7 +29,7 @@ class WebSocketConsumerTest extends AnyWordSpecLike with MockFactory with Before
     testModel = UpdateModelDTO(gameEntities, GameState(score = 2), dots, fruit)
     // scalastyle:on magic.number
 
-    testModelJSON = "{\"gameEntities\":[{\"gameCharacterHolder\":{\"gameChar\":\"PACMAN\"},\"position\":{\"x\":1.0,\"y\"" +
+    testModelJSON = "{\"gameEntities\":[{\"id\":\"1\",\"gameCharacterHolder\":{\"gameChar\":\"PACMAN\"},\"position\":{\"x\":1.0,\"y\"" +
       ":2.0},\"speed\":1.0,\"isDead\":false,\"dir\":{\"direction\":\"NORTH\"}}],\"state\":{\"score\":2,\"ghostInFear\":false," +
       "\"pacmanEmpowered\":false,\"levelStateHolder\":{\"levelState\":\"ONGOING\"}},\"dots\":[{\"dotHolder\":{\"dot\":\"SMALL_DOT\"}," +
       "\"pos\":[5,6]}],\"fruit\":{\"fruitHolder\":{\"fruit\":\"APPLE\"},\"pos\":[9,9]}}"

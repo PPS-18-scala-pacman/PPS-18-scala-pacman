@@ -29,15 +29,15 @@ class UpdateModelDTOTest extends AnyWordSpec with BeforeAndAfterAll with Matcher
 
   "GameEntityDTO" should {
     "return correct character" in {
-      val pacmanDTO = GameEntityDTO(GameCharacterHolder(GameCharacter.PACMAN), Point2D(0, 0), 1, isDead=false, DirectionHolder(Direction.EAST))
+      val pacmanDTO = GameEntityDTO("1", GameCharacterHolder(GameCharacter.PACMAN), Point2D(0, 0), 1, isDead=false, DirectionHolder(Direction.EAST))
       pacmanDTO.toPacman shouldEqual Some(pacman)
-      val blinkyDTO = GameEntityDTO(GameCharacterHolder(GameCharacter.BLINKY), Point2D(0, 0), 1, isDead=false, DirectionHolder(Direction.EAST))
+      val blinkyDTO = GameEntityDTO("2", GameCharacterHolder(GameCharacter.BLINKY), Point2D(0, 0), 1, isDead=false, DirectionHolder(Direction.EAST))
       blinkyDTO.toGhost shouldEqual Some(blinky)
-      val pinkyDTO = GameEntityDTO(GameCharacterHolder(GameCharacter.PINKY), Point2D(0, 0), 1, isDead=false, DirectionHolder(Direction.EAST))
+      val pinkyDTO = GameEntityDTO("3", GameCharacterHolder(GameCharacter.PINKY), Point2D(0, 0), 1, isDead=false, DirectionHolder(Direction.EAST))
       pinkyDTO.toGhost shouldEqual Some(pinky)
-      val inkyDTO = GameEntityDTO(GameCharacterHolder(GameCharacter.INKY), Point2D(0, 0), 1, isDead=false, DirectionHolder(Direction.EAST))
+      val inkyDTO = GameEntityDTO("4", GameCharacterHolder(GameCharacter.INKY), Point2D(0, 0), 1, isDead=false, DirectionHolder(Direction.EAST))
       inkyDTO.toGhost shouldEqual Some(inky)
-      val clydeDTO = GameEntityDTO(GameCharacterHolder(GameCharacter.CLYDE), Point2D(0, 0), 1, isDead=false, DirectionHolder(Direction.EAST))
+      val clydeDTO = GameEntityDTO("5", GameCharacterHolder(GameCharacter.CLYDE), Point2D(0, 0), 1, isDead=false, DirectionHolder(Direction.EAST))
       clydeDTO.toGhost shouldEqual Some(clyde)
     }
   }
