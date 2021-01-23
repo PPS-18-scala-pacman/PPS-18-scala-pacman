@@ -12,8 +12,7 @@ object GameCanvas {
 
 /**
  * Oggetto sul quale viene disegnata la mappa del gioco, utilizzato in PlayView.
- * Implementato come thread separato per non pesare sull'esecuzione del thread principale
- * con il rischio di limitare l'esperienza dell'utente durante l'uso dell'interfaccia
+ * Implementato richiamando manualmente repaint quando necessario.
  */
 class GameCanvas extends JPanel with Logging {
 
@@ -35,9 +34,6 @@ class GameCanvas extends JPanel with Logging {
    * Le informazioni all'interno dell'oggetto messages fanno riferimento
    * alla posizione dove disegnare ogni singolo carattere accompagnate
    * dall'eventuale stile da assegnarli.
-   *
-   * Se il thread attuale non è in funzione (running è a false), allora il messaggio
-   * viene stampato immediatamente, altrimenti viene rispettata l'attesa del semaforo
    *
    * @param messages il messaggio da mostrare
    */

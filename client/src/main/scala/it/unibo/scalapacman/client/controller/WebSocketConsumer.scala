@@ -1,7 +1,5 @@
 package it.unibo.scalapacman.client.controller
 
-import java.util.concurrent.Semaphore
-
 import grizzled.slf4j.Logging
 import it.unibo.scalapacman.common.{JSONConverter, UpdateModelDTO}
 
