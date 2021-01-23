@@ -13,17 +13,23 @@ import it.unibo.scalapacman.common.{JSONConverter, UpdateModelDTO}
  * @param notifyModelUpdate funzione a cui viene passato l'aggiornamento della partita convertito
  */
 class WebSocketConsumer(notifyModelUpdate: UpdateModelDTO => Unit) extends Runnable with Logging {
-  val semaphore = new Semaphore(0)
   private var message: Option[String] = None
+  private var messageAvailable = false
   private var running = true
 
   def addMessage(msg: String): Unit = this.synchronized {
     message = Some(msg)
-    if (semaphore.availablePermits() == 0) semaphore.release()
+    messageAvailable = true
+    notify()
   }
 
   private def getMessage: Option[String] = this.synchronized {
-    semaphore.acquire()
+    while (!messageAvailable)
+      try wait()
+      catch {
+        case ex: InterruptedException =>
+      }
+    messageAvailable = false
     message
   }
 
