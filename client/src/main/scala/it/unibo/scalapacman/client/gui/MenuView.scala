@@ -18,7 +18,7 @@ object MenuView {
  * @param controller il riferimento al componente Controller
  * @param viewChanger il riferimento al componente che gestisce il cambio schermata
  */
-class MenuView(implicit controller: Controller, viewChanger: ViewChanger) extends PanelImpl {
+class MenuView(implicit controller: Controller, viewChanger: ViewChanger) extends PanelImpl with AskToController {
   private val MAIN_TITLE_LABEL: String = "<html><div style='text-align: center'>Scala<br>Pacman<div></html>"
   private val PLAY_VIEW_BUTTON_LABEL: String = "Gioca"
   private val OPTIONS_VIEW_BUTTON_LABEL: String = "Opzioni"
@@ -45,7 +45,7 @@ class MenuView(implicit controller: Controller, viewChanger: ViewChanger) extend
   playButton addActionListener (_ => viewChanger.changeView(SETUP))
   optionsButton addActionListener (_ => viewChanger.changeView(OPTIONS))
   statsButton addActionListener (_ => viewChanger.changeView(STATS))
-  exitButton addActionListener (_ => controller.handleAction(EXIT_APP, None))
+  exitButton addActionListener (_ => askToController(EXIT_APP, None))
 
   private val splitPane: JSplitPane = new JSplitPane
   private val titlePanel: PanelImpl = PanelImpl()

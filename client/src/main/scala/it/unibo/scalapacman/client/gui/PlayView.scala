@@ -154,7 +154,6 @@ class PlayView(implicit controller: Controller, viewChanger: ViewChanger) extend
   private def gameStarted(lobby: Lobby): Unit = {
     updateButtonsVisibility(lobby.participants.size)
     updateUserType(lobby.participants.find(_.username.equals(controller.model.username)))
-    gameCanvas start()
     _gameRunning = true
     _map = None
     _gameState = None
@@ -263,7 +262,6 @@ class PlayView(implicit controller: Controller, viewChanger: ViewChanger) extend
   private def handleLeaveGame(): Unit = {
     askToController(END_GAME, None)
     viewChanger.changeView(MENU)
-    gameCanvas stop()
     gameCanvas setText ""
   }
 
