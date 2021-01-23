@@ -17,12 +17,12 @@ class WebSocketConsumer(notifyModelUpdate: UpdateModelDTO => Unit) extends Runna
   private var message: Option[String] = None
   private var running = true
 
-  def addMessage(msg: String): Unit = {
+  def addMessage(msg: String): Unit = this.synchronized {
     message = Some(msg)
     if (semaphore.availablePermits() == 0) semaphore.release()
   }
 
-  private def getMessage: Option[UpdateModelDTO] = {
+  private def getMessage: Option[UpdateModelDTO] = this.synchronized {
     semaphore.acquire()
     message flatMap(JSONConverter.fromJSON[UpdateModelDTO](_))
   }
@@ -30,8 +30,6 @@ class WebSocketConsumer(notifyModelUpdate: UpdateModelDTO => Unit) extends Runna
   def terminate(): Unit = running = false
 
   override def run(): Unit = {
-    semaphore tryAcquire semaphore.availablePermits()
-    running = true
     while (running) {
       getMessage match {
         case None => error("Aggiornamento dati dal server non valido")

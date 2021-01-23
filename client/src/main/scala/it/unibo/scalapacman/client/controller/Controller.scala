@@ -68,7 +68,7 @@ private case class ControllerImpl(pacmanRestClient: PacmanRestClient, pacmanLogg
     DefaultJavaKeyBinding.LEFT, DefaultJavaKeyBinding.PAUSE)
   var _prevUserAction: Option[MoveCommandType] = None
   val _publisher: PacmanPublisher = PacmanPublisher()
-  val _webSocketRunnable = new WebSocketConsumer(updateFromServer)
+  var _webSocketRunnable: WebSocketConsumer = _
   var model: GameModel = GameModel(keyMap = _defaultKeyMap, map = Map.create(MapType.CLASSIC))
 
   connectToLobbies()
@@ -112,6 +112,7 @@ private case class ControllerImpl(pacmanRestClient: PacmanRestClient, pacmanLogg
       pacmanLogger.info(s"Partita creata con successo: id $gameId")
       model = model.copy(gameId = Some(gameId), hostId = Some(hostId))
       _prevUserAction = None
+      _webSocketRunnable = new WebSocketConsumer(updateFromServer)
       new Thread(_webSocketRunnable).start()
       pacmanRestClient.openWS(gameId, hostId, model.username, handleWebSocketMessage, handleWSConnectionError)
       _publisher.notifySubscribers(GameStarted(lobby))
