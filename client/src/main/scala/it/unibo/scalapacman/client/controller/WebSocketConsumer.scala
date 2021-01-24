@@ -1,7 +1,5 @@
 package it.unibo.scalapacman.client.controller
 
-import java.util.concurrent.Semaphore
-
 import grizzled.slf4j.Logging
 import it.unibo.scalapacman.common.{JSONConverter, UpdateModelDTO}
 
@@ -13,27 +11,31 @@ import it.unibo.scalapacman.common.{JSONConverter, UpdateModelDTO}
  * @param notifyModelUpdate funzione a cui viene passato l'aggiornamento della partita convertito
  */
 class WebSocketConsumer(notifyModelUpdate: UpdateModelDTO => Unit) extends Runnable with Logging {
-  val semaphore = new Semaphore(0)
   private var message: Option[String] = None
+  private var messageAvailable = false
   private var running = true
 
-  def addMessage(msg: String): Unit = {
+  def addMessage(msg: String): Unit = this.synchronized {
     message = Some(msg)
-    if (semaphore.availablePermits() == 0) semaphore.release()
+    messageAvailable = true
+    notify()
   }
 
-  private def getMessage: Option[UpdateModelDTO] = {
-    semaphore.acquire()
-    message flatMap(JSONConverter.fromJSON[UpdateModelDTO](_))
+  private def getMessage: Option[String] = this.synchronized {
+    while (!messageAvailable)
+      try wait()
+      catch {
+        case ex: InterruptedException =>
+      }
+    messageAvailable = false
+    message
   }
 
   def terminate(): Unit = running = false
 
   override def run(): Unit = {
-    semaphore tryAcquire semaphore.availablePermits()
-    running = true
     while (running) {
-      getMessage match {
+      getMessage flatMap(JSONConverter.fromJSON[UpdateModelDTO](_)) match {
         case None => error("Aggiornamento dati dal server non valido")
         case Some(model) => /*debug(model);*/ notifyModelUpdate(model)
       }
