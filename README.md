@@ -12,3 +12,5 @@ Avviare istanze: ```docker-compose up```
 Re-buildare immagini: ```docker-compose up --build```
 
 Avviare senza immagini custom: ```docker-compose -f docker-compose_standalone.yml up```
+
+Avviare più istanze server: ```docker-compose up --scale server=2```
